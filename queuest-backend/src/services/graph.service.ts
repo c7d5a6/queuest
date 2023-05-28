@@ -28,7 +28,10 @@ export class GraphService {
             recStack[i] = true;
             const children = g.adj[i];
             if (children)
-                for (let c = 0; c < children.length; c++)
+                for (let c = 0; c < children.length; c++) {
+                    if (recStack[children[c]]) {
+                        return [children[c], i];
+                    }
                     if (!visited[children[c]]) {
                         const result = this.isGraphCylicUtill(
                             g,
@@ -37,12 +40,12 @@ export class GraphService {
                             recStack,
                         );
                         if (result.length > 0) {
-                            if (i  === result[0]) return result;
-                            else return result.concat([children[c]]);
+                            if (result[result.length - 1] === result[0])
+                                return result;
+                            else return result.concat([i]);
                         }
-                    } else if (recStack[children[c]]) {
-                        return [children[c]];
                     }
+                }
         }
         recStack[i] = false;
         return [];

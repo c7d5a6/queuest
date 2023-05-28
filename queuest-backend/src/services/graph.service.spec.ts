@@ -18,12 +18,13 @@ describe('GraphService', () => {
     });
 
     it('detect cyclic graph', () => {
-        const g: Graph = new Graph(3);
+        const g: Graph = new Graph(4);
         g.addEdge(0, 1);
         g.addEdge(1, 2);
-        g.addEdge(2, 0);
+        g.addEdge(2, 3);
+        g.addEdge(3, 1);
 
-        expect(service.isGraphCylic(g)).toStrictEqual([1,2,0]);
+        expect(service.isGraphCylic(g)).toStrictEqual([1, 2, 3, 1]);
     });
 
     it('detect cyclic graph', () => {
@@ -34,7 +35,7 @@ describe('GraphService', () => {
         g.addEdge(2, 0);
         g.addEdge(2, 3);
         g.addEdge(3, 3);
-        expect(service.isGraphCylic(g)).toStrictEqual([1,2,0]);
+        expect(service.isGraphCylic(g)).toStrictEqual([0, 1, 2, 0]);
     });
 
     it('detect cyclic graph', () => {
@@ -49,7 +50,7 @@ describe('GraphService', () => {
         g.addEdge(4, 6);
         g.addEdge(4, 7);
         g.addEdge(7, 8);
-        expect(service.isGraphCylic(g)).toStrictEqual([]);
+        expect(service.isGraphCylic(g)).toStrictEqual([3, 4, 2, 3]);
     });
 
     it('detect acyclic graph', () => {
