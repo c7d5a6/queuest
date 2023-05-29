@@ -4,31 +4,50 @@ import cloneDeep from 'lodash.clonedeep';
 
 @Injectable()
 export class GraphService {
-    // isGraphCylic(g: Graph): number[] {
-    //     const inDegree: number[] = new Array(g.size).fill(0);
-    //     for (let u = 0; u < g.size; u++) {
-    //         for (let i = 0; i < g.adj[u].length; i++) {
-    //             inDegree[g.adj[u][i]]++;
-    //         }
-    //     }
-    //     const q = [];
-    //     for (let i = 0; i < g.size; i++) {
-    //         if (inDegree[i] == 0) q.push(i);
-    //     }
-    //     const topOrderResult = [];
-    //     while (s.size > 0) {
-    //         const u: number = Array.from(s).sort()[0];
-    //         s.delete(u);
-    //         topOrderResult.push(u);
-    //         for (let i = 0; i < g.adj[u].length; i++) {
-    //             if (--inDegree[g.adj[u][i]] == 0) s.add(g.adj[u][i]);
-    //         }
-    //         cnt++;
-    //     }
-    //     if (cnt != g.size) {
-    //         throw new Error("Can't do topological sort for graph with cycles");
-    //     }
-    // }
+    isGraphCylicx(g: Graph): number[] {
+        const q: number[] = [];
+        const map = new Map<number, number>();
+        const stack = new Set<number>();
+        const visited = new Set<number>();
+        let k = 0;
+        console.log('start bfs', JSON.stringify(g));
+        while (visited.size < g.size) {
+            if (!visited.has(k)) {
+                q.push(k);
+                stack.add(k);
+            }
+            k++;
+            while (q.length != 0) {
+                const u = q[0];
+                q.shift();
+                visited.add(u);
+                stack.delete(u);
+                console.log('step', u);
+                for (let i = 0; i < g.adj[u].length; i++) {
+                    const next = g.adj[u][i];
+                    console.log('next', next);
+                    if (visited.has(next)) {
+                        console.log('visited', next);
+                        const result: number[] = [];
+                        result.push(next);
+                        result.push(u);
+                        let n: number = u;
+                        while (map.has(n) && map.get(n) != next) {
+                            n = <number>map.get(n);
+                            result.push(n);
+                        }
+                        result.push(next);
+                        return result.reverse();
+                    } else if (!stack.has(next)) {
+                        q.push(next);
+                        stack.add(next);
+                        map.set(next, u);
+                    }
+                }
+            }
+        }
+        return [];
+    }
 
     isGraphCylic(g: Graph): number[] {
         const visited: boolean[] = new Array<boolean>(g.size);
@@ -46,13 +65,10 @@ export class GraphService {
 
     feedbackArkSet(graph: Graph): Graph {
         const w: number[][] = new Array(graph.size);
-        const d0 = new Date();
         const g: Graph = new Graph(graph.size);
         g.adj = cloneDeep(graph.adj);
         const F = new Graph(graph.size);
         let cycle = this.isGraphCylic(g);
-        const d1 = new Date();
-        console.log(`Creation graph time: ${d1.getTime() - d0.getTime()} ms`);
         while (cycle.length > 0) {
             let e = undefined;
             for (let i = 0; i < cycle.length - 1; i++) {
@@ -78,10 +94,6 @@ export class GraphService {
             }
             cycle = this.isGraphCylic(g);
         }
-        const d2 = new Date();
-        console.log(
-            `Removind cycles graph time: ${d2.getTime() - d1.getTime()} ms`,
-        );
         for (let i = 0; i < F.size; i++) {
             const adjElement = cloneDeep(F.adj[i]);
             for (let j = 0; j < adjElement.length; j++) {
@@ -93,10 +105,6 @@ export class GraphService {
                 }
             }
         }
-        const d3 = new Date();
-        console.log(
-            `Added edges cycles graph time: ${d3.getTime() - d2.getTime()} ms`,
-        );
         return F;
     }
 
