@@ -1,5 +1,5 @@
 export class Graph {
-    private readonly v;
+    private v;
     adj: number[][] = [];
 
     constructor(v: number) {
@@ -13,5 +13,10 @@ export class Graph {
 
     addEdge(s: number, d: number) {
         this.adj[s].push(d);
+    }
+
+    removeEdge(s: number, d: number) {
+        const index = this.adj[s].indexOf(d, 0);
+        if (index > -1) this.adj[s].splice(index, 1);
     }
 }
