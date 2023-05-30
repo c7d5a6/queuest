@@ -1,4 +1,4 @@
-<app-add-item></app-add-item>
+<app-add-item (changes)="getItems()"></app-add-item>
 <app-list [items]="items"></app-list>
 <hr/>
 <app-pairs (changes)="getItems()"></app-pairs>

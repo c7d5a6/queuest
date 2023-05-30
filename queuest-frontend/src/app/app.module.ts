@@ -10,6 +10,7 @@ import {ApiModule} from "./api/api.module";
 import { PairsComponent } from './components/pairs/pairs.component';
 import { AddItemComponent } from './components/add-item/add-item.component';
 import { PairComponent } from './components/pairs/pair/pair.component';
+import {ReactiveFormsModule} from "@angular/forms";
 
 @NgModule({
   declarations: [
@@ -22,6 +23,7 @@ import { PairComponent } from './components/pairs/pair/pair.component';
   imports: [
     BrowserModule,
     HttpClientModule,
+    ReactiveFormsModule.withConfig({warnOnNgModelWithFormControl: 'always'}),
     ApiModule.forRoot({rootUrl: environment.application.apiUrl}),
     AppRoutingModule
   ],

@@ -72,15 +72,10 @@ export class ItemsService {
                 (2 * Math.random() - 1) +
                 (this.relations.get(i2.id)?.length ?? 0),
         );
-        const toArray = cloneDeep(this.items).sort(
-            (i1, i2) =>
-                -(this.relations.get(i1.id)?.length ?? 0) +
-                (2 * Math.random() - 1) +
-                (this.relations.get(i2.id)?.length ?? 0),
-        );
+        const toArray = cloneDeep(fromArray);
         const result = [];
         let i = 0;
-        let j = 0;
+        let j = 1;
         while (result.length < filter.size && i < fromArray.length) {
             const item1 = fromArray[i];
             const item2 = toArray[j];
@@ -103,15 +98,12 @@ export class ItemsService {
                 }
                 j = (j + 1) % fromArray.length;
             } else {
-                j = (j + 1) % fromArray.length;
-            }
-            if (++i >= fromArray.length) {
-                return [];
+                j = (j + 2) % fromArray.length;
             }
             i++;
         }
         i = 0;
-        j = 0;
+        j = 1;
         while (result.length < filter.size && i < fromArray.length) {
             const item1 = fromArray[i];
             const item2 = toArray[j];
@@ -134,10 +126,7 @@ export class ItemsService {
                 }
                 j = (j + 1) % fromArray.length;
             } else {
-                j = (j + 1) % fromArray.length;
-            }
-            if (++i >= fromArray.length) {
-                return [];
+                j = (j + 2) % fromArray.length;
             }
             i++;
         }
