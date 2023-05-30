@@ -1,8 +1,10 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ItemsService } from '../services/items.service';
 import { ItemEntity } from '../persistence/entities/item.entity';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ItemRelation } from '../models/item-relation';
+import { ItemPair } from '../models/item-pair';
+import { ItemPairFilter } from './filter/item-pair-filter';
 
 @ApiTags('Items')
 @Controller('items')
@@ -16,6 +18,15 @@ export class ItemsController {
         return result;
     }
 
+    @Get('pairs')
+    @ApiOkResponse({
+        description: 'Get best pairs to compare',
+        type: [ItemPair],
+    })
+    getBestPairs(@Query() exclude: ItemPairFilter): ItemPair[] {
+        return this.itemsService.getBestPairs(exclude);
+    }
+
     @Post()
     addItem(@Body() item: ItemEntity) {
         this.itemsService.addItem(item);
@@ -24,5 +35,10 @@ export class ItemsController {
     @Post('relation')
     addRelation(@Body() relation: ItemRelation) {
         this.itemsService.addRelation(relation);
+    }
+
+    @Delete('relation')
+    deleteRelation(@Body() relation: ItemRelation) {
+        this.itemsService.deleteRelation(relation);
     }
 }

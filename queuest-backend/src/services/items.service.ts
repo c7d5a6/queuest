@@ -3,6 +3,9 @@ import { ItemEntity } from '../persistence/entities/item.entity';
 import { Graph } from '../models/graph';
 import { GraphService } from './graph.service';
 import { ItemRelation } from '../models/item-relation';
+import { ItemPair } from '../models/item-pair';
+import { ItemPairFilter } from '../controllers/filter/item-pair-filter';
+import cloneDeep from 'lodash.clonedeep';
 
 @Injectable()
 export class ItemsService {
@@ -47,13 +50,7 @@ export class ItemsService {
     }
 
     addRelation(relation: ItemRelation) {
-        if (this.relations.has(relation.to)) {
-            const index = this.relations
-                .get(relation.to)
-                ?.findIndex((value) => value == relation.from);
-            if ((index || index === 0) && index > -1)
-                this.relations.get(relation.to)?.splice(index, 1);
-        }
+        this.removeRelationFromTo(relation.to, relation.from);
         if (!this.relations.has(relation.from)) {
             this.relations.set(relation.from, []);
         }
@@ -61,6 +58,58 @@ export class ItemsService {
             .get(relation.from)
             ?.findIndex((value) => value == relation.to);
         if (index == -1) this.relations.get(relation.from)?.push(relation.to);
+    }
+
+    deleteRelation(relation: ItemRelation) {
+        this.removeRelationFromTo(relation.from, relation.to);
+        this.removeRelationFromTo(relation.to, relation.from);
+    }
+
+    getBestPairs(filter: ItemPairFilter): ItemPair[] {
+        const fromArray = cloneDeep(this.items).sort(() => Math.random() - 0.5);
+        const toArray = cloneDeep(this.items).sort(() => Math.random() - 0.5);
+        const result = [];
+        let i = 0;
+        while (result.length < filter.size) {
+            const item1 = fromArray[i];
+            const item2 = toArray[i];
+            if (item1.id !== item2.id) {
+                let itemRelation = undefined;
+                if (
+                    this.relations.has(item1.id)
+                        ? this.relations
+                              .get(item1.id)
+                              ?.findIndex((v) => v === item2.id)
+                        : -1 >= 0
+                ) {
+                    itemRelation = new ItemRelation(item1.id, item2.id);
+                } else if (
+                    this.relations.has(item2.id)
+                        ? this.relations
+                              .get(item2.id)
+                              ?.findIndex((v) => v === item1.id)
+                        : -1 >= 0
+                ) {
+                    itemRelation = new ItemRelation(item2.id, item1.id);
+                }
+                const itemPair = new ItemPair(item1, item2, itemRelation);
+                result.push(itemPair);
+            }
+            if (++i >= fromArray.length) {
+                return [];
+            }
+        }
+        return result;
+    }
+
+    private removeRelationFromTo(from: number, to: number) {
+        if (this.relations.has(from)) {
+            const index = this.relations
+                .get(from)
+                ?.findIndex((value) => value == to);
+            if ((index || index === 0) && index > -1)
+                this.relations.get(from)?.splice(index, 1);
+        }
     }
 
     private getEdges(graph: Graph) {
