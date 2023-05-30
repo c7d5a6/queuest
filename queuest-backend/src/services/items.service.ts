@@ -66,38 +66,80 @@ export class ItemsService {
     }
 
     getBestPairs(filter: ItemPairFilter): ItemPair[] {
-        const fromArray = cloneDeep(this.items).sort(() => Math.random() - 0.5);
-        const toArray = cloneDeep(this.items).sort(() => Math.random() - 0.5);
+        const fromArray = cloneDeep(this.items).sort(
+            (i1, i2) =>
+                -(this.relations.get(i1.id)?.length ?? 0) +
+                (2 * Math.random() - 1) +
+                (this.relations.get(i2.id)?.length ?? 0),
+        );
+        const toArray = cloneDeep(this.items).sort(
+            (i1, i2) =>
+                -(this.relations.get(i1.id)?.length ?? 0) +
+                (2 * Math.random() - 1) +
+                (this.relations.get(i2.id)?.length ?? 0),
+        );
         const result = [];
         let i = 0;
-        while (result.length < filter.size) {
+        let j = 0;
+        while (result.length < filter.size && i < fromArray.length) {
             const item1 = fromArray[i];
-            const item2 = toArray[i];
+            const item2 = toArray[j];
             if (item1.id !== item2.id) {
                 let itemRelation = undefined;
-                if (
-                    this.relations.has(item1.id)
-                        ? this.relations
-                              .get(item1.id)
-                              ?.findIndex((v) => v === item2.id)
-                        : -1 >= 0
-                ) {
+                const indexOf1 = this.relations
+                    .get(item1.id)
+                    ?.findIndex((v) => v === item2.id);
+                const indexOf2 = this.relations
+                    .get(item2.id)
+                    ?.findIndex((v) => v === item1.id);
+                if ((indexOf1 ? indexOf1 : -1) >= 0) {
                     itemRelation = new ItemRelation(item1.id, item2.id);
-                } else if (
-                    this.relations.has(item2.id)
-                        ? this.relations
-                              .get(item2.id)
-                              ?.findIndex((v) => v === item1.id)
-                        : -1 >= 0
-                ) {
+                } else if ((indexOf2 ? indexOf2 : -1) >= 0) {
                     itemRelation = new ItemRelation(item2.id, item1.id);
                 }
-                const itemPair = new ItemPair(item1, item2, itemRelation);
-                result.push(itemPair);
+                if (!itemRelation) {
+                    const itemPair = new ItemPair(item1, item2, itemRelation);
+                    result.push(itemPair);
+                }
+                j = (j + 1) % fromArray.length;
+            } else {
+                j = (j + 1) % fromArray.length;
             }
             if (++i >= fromArray.length) {
                 return [];
             }
+            i++;
+        }
+        i = 0;
+        j = 0;
+        while (result.length < filter.size && i < fromArray.length) {
+            const item1 = fromArray[i];
+            const item2 = toArray[j];
+            if (item1.id !== item2.id) {
+                let itemRelation = undefined;
+                const indexOf1 = this.relations
+                    .get(item1.id)
+                    ?.findIndex((v) => v === item2.id);
+                const indexOf2 = this.relations
+                    .get(item2.id)
+                    ?.findIndex((v) => v === item1.id);
+                if ((indexOf1 ? indexOf1 : -1) >= 0) {
+                    itemRelation = new ItemRelation(item1.id, item2.id);
+                } else if ((indexOf2 ? indexOf2 : -1) >= 0) {
+                    itemRelation = new ItemRelation(item2.id, item1.id);
+                }
+                if (!!itemRelation) {
+                    const itemPair = new ItemPair(item1, item2, itemRelation);
+                    result.push(itemPair);
+                }
+                j = (j + 1) % fromArray.length;
+            } else {
+                j = (j + 1) % fromArray.length;
+            }
+            if (++i >= fromArray.length) {
+                return [];
+            }
+            i++;
         }
         return result;
     }

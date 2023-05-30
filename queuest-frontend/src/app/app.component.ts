@@ -1,10 +1,6 @@
-import {Component, OnInit} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
-
-class Item {
-  name!:string;
-  id!:number;
-}
+import {Component, Input, OnInit} from '@angular/core';
+import {ItemsService} from "./api/services/items.service";
+import {ItemEntity} from "./api/models/item-entity";
 
 @Component({
   selector: 'app-root',
@@ -12,22 +8,16 @@ class Item {
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  title = 'queuest-frontend';
-  public items: Item[] = [];
+  items: ItemEntity[] = [];
 
-
-
-  constructor(
-    private http: HttpClient
-  ) {
+  constructor(private itemsService: ItemsService) {
   }
 
   ngOnInit(): void {
-    this.getShippingPrices().subscribe((value) => this.items = value)
+    this.getItems();
 
   }
-
-  getShippingPrices() {
-    return this.http.get<Item[]>('http://localhost:3001/items');
+  getItems() {
+    this.itemsService.itemsControllerGetItems().subscribe(value => this.items = value);
   }
 }

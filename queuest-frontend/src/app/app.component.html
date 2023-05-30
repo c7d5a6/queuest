@@ -1,5 +1,4 @@
-<div>
-  <ol>
-    <li *ngFor="let item of items">{{item.name}}</li>
-  </ol>
-</div>
+<app-add-item></app-add-item>
+<app-list [items]="items"></app-list>
+<hr/>
+<app-pairs (changes)="getItems()"></app-pairs>
