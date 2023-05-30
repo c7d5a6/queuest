@@ -1,8 +1,8 @@
-import {Body, Controller, Get, Post} from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ItemsService } from '../services/items.service';
 import { ItemEntity } from '../persistence/entities/item.entity';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import {ItemRelation} from "../models/item-relation";
+import { ItemRelation } from '../models/item-relation';
 
 @ApiTags('Items')
 @Controller('items')

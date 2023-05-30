@@ -51,7 +51,8 @@ export class ItemsService {
             const index = this.relations
                 .get(relation.to)
                 ?.findIndex((value) => value == relation.from);
-            if ((index || index === 0) && index > -1) this.relations.get(relation.to)?.splice(index, 1);
+            if ((index || index === 0) && index > -1)
+                this.relations.get(relation.to)?.splice(index, 1);
         }
         if (!this.relations.has(relation.from)) {
             this.relations.set(relation.from, []);
