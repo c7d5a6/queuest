@@ -1,1 +1,0 @@
-{"ast":null,"code":"export const environment = {\n  production: false,\n  application: {\n    apiUrl: 'http://localhost:3001'\n  }\n};","map":null,"metadata":{},"sourceType":"module","externalDependencies":[]}

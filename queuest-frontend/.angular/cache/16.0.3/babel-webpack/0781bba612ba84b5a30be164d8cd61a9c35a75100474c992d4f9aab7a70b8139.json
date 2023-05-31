@@ -1,1 +1,0 @@
-{"ast":null,"code":"export const environment = {\n  production: true,\n  application: {\n    apiUrl: 'https://api.queuest.owlbeardm.com'\n  }\n};","map":null,"metadata":{},"sourceType":"module","externalDependencies":[]}
