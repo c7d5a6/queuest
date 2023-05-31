@@ -41,6 +41,7 @@ rm *.html
 cp -a dist/queuest-frontend/. ../
 cd ..
 cp index.html 404.html
+touch .nojekyll
 git add -A
 git commit -am "gh-pages release $version"
 git push
