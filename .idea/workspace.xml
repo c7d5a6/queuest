@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="b4f735ac-29f0-4c2e-967f-ca6a864b7b3a" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/queuest-frontend/src/environments/application-environment.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/queuest-frontend/src/environments/environment.prod.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/queuest-frontend/angular.json" beforeDir="false" afterPath="$PROJECT_DIR$/queuest-frontend/angular.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/queuest-frontend/src/environments/environment.ts" beforeDir="false" afterPath="$PROJECT_DIR$/queuest-frontend/src/environments/environment.ts" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectId" id="2QCNtciEGD3GfmqI5HaOAJO3tNU" />
+  <component name="ProjectViewState">
+    <option name="autoscrollFromSource" value="true" />
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="javascript.nodejs.core.library.configured.version" value="16.17.1" />
+    <property name="javascript.nodejs.core.library.typings.version" value="16.18.32" />
+    <property name="jdk.selected.JAVA_MODULE" value="openjdk-17 (2)" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/queuest-frontend/src/environments" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="nodejs.jest.jest_package" value="$PROJECT_DIR$/queuest-backend/node_modules/jest" />
+    <property name="nodejs_interpreter_path" value="$USER_HOME$/.nvm/versions/node/v16.17.1/bin/node" />
+    <property name="nodejs_package_manager_path" value="npm" />
+    <property name="project.structure.last.edited" value="Modules" />
+    <property name="project.structure.proportion" value="0.15" />
+    <property name="project.structure.side.proportion" value="0.2" />
+    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.JavaScript" />
+    <property name="ts.external.directory.path" value="$PROJECT_DIR$/queuest-frontend/node_modules/typescript/lib" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/queuest-frontend/src/environments" />
+      <recent name="$PROJECT_DIR$/queuest-backend/profile" />
+    </key>
+  </component>
+  <component name="RunManager" selected="npm.start:dev">
+    <configuration name="FunctionUtils.compose sample string functions" type="JavaScriptTestRunnerJest" temporary="true" nameIsGenerated="true">
+      <node-interpreter value="project" />
+      <node-options value="" />
+      <jest-package value="$PROJECT_DIR$/queuest-backend/node_modules/jest" />
+      <working-dir value="$PROJECT_DIR$/queuest-backend" />
+      <envs />
+      <scope-kind value="TEST" />
+      <test-file value="$PROJECT_DIR$/queuest-backend/src/utils/function.utils.spec.ts" />
+      <test-names>
+        <test-name value="FunctionUtils" />
+        <test-name value="compose sample string functions" />
+      </test-names>
+      <method v="2" />
+    </configuration>
+    <configuration name="GraphService.Detecting cyclic graph.detect cyclic graph" type="JavaScriptTestRunnerJest" temporary="true" nameIsGenerated="true">
+      <node-interpreter value="project" />
+      <node-options value="" />
+      <jest-package value="$PROJECT_DIR$/queuest-backend/node_modules/jest" />
+      <working-dir value="$PROJECT_DIR$/queuest-backend" />
+      <envs />
+      <scope-kind value="TEST" />
+      <test-file value="$PROJECT_DIR$/queuest-backend/src/services/graph.service.spec.ts" />
+      <test-names>
+        <test-name value="GraphService" />
+        <test-name value="Detecting cyclic graph" />
+        <test-name value="detect cyclic graph" />
+      </test-names>
+      <method v="2" />
+    </configuration>
+    <configuration name="Items.get size of new epmty" type="JavaScriptTestRunnerJest" temporary="true" nameIsGenerated="true">
+      <node-interpreter value="project" />
+      <node-options value="" />
+      <jest-package value="$PROJECT_DIR$/queuest-backend/node_modules/jest" />
+      <working-dir value="$PROJECT_DIR$/queuest-backend" />
+      <envs />
+      <scope-kind value="TEST" />
+      <test-file value="$PROJECT_DIR$/queuest-backend/src/models/items.spec.ts" />
+      <test-names>
+        <test-name value="Items" />
+        <test-name value="get size of new epmty" />
+      </test-names>
+      <method v="2" />
+    </configuration>
+    <configuration name="function.utils.spec.ts" type="JavaScriptTestRunnerJest" temporary="true" nameIsGenerated="true">
+      <node-interpreter value="project" />
+      <node-options value="" />
+      <jest-package value="$PROJECT_DIR$/queuest-backend/node_modules/jest" />
+      <working-dir value="$PROJECT_DIR$/queuest-backend" />
+      <envs />
+      <scope-kind value="TEST_FILE" />
+      <test-file value="$PROJECT_DIR$/queuest-backend/src/utils/function.utils.spec.ts" />
+      <method v="2" />
+    </configuration>
+    <configuration name="items.spec.ts" type="JavaScriptTestRunnerJest" temporary="true" nameIsGenerated="true">
+      <node-interpreter value="project" />
+      <node-options value="" />
+      <jest-package value="$PROJECT_DIR$/queuest-backend/node_modules/jest" />
+      <working-dir value="$PROJECT_DIR$/queuest-backend" />
+      <envs />
+      <scope-kind value="TEST_FILE" />
+      <test-file value="$PROJECT_DIR$/queuest-backend/src/models/items.spec.ts" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="SwaggerCodegen">
+      <option name="activeConfigurationType" value="FILE" />
+      <option name="configurationPath" value="" />
+      <option name="customJreEnabled" value="false" />
+      <option name="customTemplatesPath" value="" />
+      <option name="enableDebugLogging" value="false" />
+      <option name="generateToPath" value="$PROJECT_DIR$/gen" />
+      <option name="generationParameters">
+        <list />
+      </option>
+      <option name="generatorPath" value="https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/5.0.0/openapi-generator-cli-5.0.0.jar" />
+      <option name="jdkPath" value="" />
+      <option name="language" value="java" />
+      <option name="specificationPath" value="$PROJECT_DIR$/api/swagger-spec.json" />
+      <method v="2" />
+    </configuration>
+    <configuration name="frontend start" type="js.build_tools.npm">
+      <package-json value="$PROJECT_DIR$/queuest-frontend/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="start" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="lint" type="js.build_tools.npm" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/queuest-backend/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="lint" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="start:dev" type="js.build_tools.npm" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/queuest-backend/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="start:dev" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2">
+        <option name="NpmBeforeRunTask" enabled="true">
+          <package-json value="$PROJECT_DIR$/queuest-backend/package.json" />
+          <command value="run" />
+          <scripts>
+            <script value="format" />
+          </scripts>
+          <node-interpreter value="project" />
+          <envs />
+        </option>
+        <option name="NpmBeforeRunTask" enabled="true">
+          <package-json value="$PROJECT_DIR$/queuest-backend/package.json" />
+          <command value="run" />
+          <scripts>
+            <script value="lint" />
+          </scripts>
+          <node-interpreter value="project" />
+          <envs />
+        </option>
+      </method>
+    </configuration>
+    <configuration name="test:watch" type="js.build_tools.npm" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/queuest-backend/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="test:watch" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2">
+        <option name="NpmBeforeRunTask" enabled="true">
+          <package-json value="$PROJECT_DIR$/queuest-backend/package.json" />
+          <command value="run" />
+          <scripts>
+            <script value="format" />
+          </scripts>
+          <node-interpreter value="project" />
+          <envs />
+        </option>
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="Jest.function.utils.spec.ts" />
+      <item itemvalue="Jest.FunctionUtils.compose sample string functions" />
+      <item itemvalue="Jest.Items.get size of new epmty" />
+      <item itemvalue="Jest.items.spec.ts" />
+      <item itemvalue="Jest.GraphService.Detecting cyclic graph.detect cyclic graph" />
+      <item itemvalue="npm.lint" />
+      <item itemvalue="npm.start:dev" />
+      <item itemvalue="npm.frontend start" />
+      <item itemvalue="npm.test:watch" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Jest.GraphService.Detecting cyclic graph.detect cyclic graph" />
+        <item itemvalue="Jest.items.spec.ts" />
+        <item itemvalue="Jest.Items.get size of new epmty" />
+        <item itemvalue="Jest.FunctionUtils.compose sample string functions" />
+        <item itemvalue="Jest.function.utils.spec.ts" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="b4f735ac-29f0-4c2e-967f-ca6a864b7b3a" name="Changes" comment="" />
+      <created>1684853819296</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1684853819296</updated>
+      <workItem from="1684853820971" duration="7317000" />
+      <workItem from="1684862768393" duration="2595000" />
+      <workItem from="1685357274989" duration="22869000" />
+      <workItem from="1685441940416" duration="19610000" />
+      <workItem from="1685538323524" duration="621000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+</project>
