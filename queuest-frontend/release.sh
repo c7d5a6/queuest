@@ -25,6 +25,7 @@ else
   version=$(npm version $1)
 fi
 
+npm ci
 npm run build
 git add -A
 git commit -am "prerelease $version"
