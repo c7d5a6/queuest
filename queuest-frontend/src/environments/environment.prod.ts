@@ -1,8 +1,8 @@
 import { ApplicationEnvironment } from './application-environment';
 
 export const environment: ApplicationEnvironment = {
-  production: false,
+  production: true,
   application: {
-    apiUrl: 'http://localhost:3001',
+    apiUrl: 'https://api.queuest.owlbeardm.com',
   },
 };
