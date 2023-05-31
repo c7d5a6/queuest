@@ -38,6 +38,9 @@ rm *.css
 rm *.svg
 rm *.html
 cp -a dist/queuest-frontend/. .
+rm -rf queuest-frontend/
+rm -rf queuest-backend/
+rm -rf out/
 cp index.html 404.html
 git add -A
 git commit -am "gh-pages release $version"
