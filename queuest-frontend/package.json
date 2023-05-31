@@ -5,7 +5,7 @@
     "ng": "ng",
     "api-gen": "ng-openapi-gen",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --base-href=https://c7d5a6.github.io/queuest/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
