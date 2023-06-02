@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { ItemEntity } from '../persistence/entities/item.entity';
-import { Graph } from '../models/graph';
-import { GraphService } from './graph.service';
-import { ItemRelation } from '../models/item-relation';
-import { ItemPair } from '../models/item-pair';
-import { ItemPairFilter } from '../controllers/filter/item-pair-filter';
+import {Injectable} from '@nestjs/common';
+import {ItemEntity} from '../persistence/entities/item.entity';
+import {Graph} from '../models/graph';
+import {GraphService} from './graph.service';
+import {ItemRelation} from '../models/item-relation';
+import {ItemPair} from '../models/item-pair';
+import {ItemPairFilter} from '../controllers/filter/item-pair-filter';
 import cloneDeep from 'lodash.clonedeep';
 
 @Injectable()
