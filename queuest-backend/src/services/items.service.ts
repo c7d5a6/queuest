@@ -13,25 +13,22 @@ export class ItemsService {
     relations: Map<number, number[]> = new Map<number, number[]>();
 
     constructor(private readonly graphService: GraphService) {
-        this.items.push(new ItemEntity(0, 'The Godfather'));
-        this.items.push(new ItemEntity(1, 'The Shawshank Redemption'));
-        this.items.push(new ItemEntity(2, 'The Dark Knight'));
-        this.items.push(new ItemEntity(3, 'Pulp Fiction'));
-        this.items.push(new ItemEntity(4, 'Forrest Gump'));
-        this.items.push(new ItemEntity(5, 'The Matrix'));
-        this.items.push(
-            new ItemEntity(6, 'Star Wars: Episode IV - A New Hope'),
-        );
-        this.items.push(new ItemEntity(7, 'The Silence of the Lambs'));
-        this.items.push(
-            new ItemEntity(
-                8,
-                'The Lord of the Rings: The Fellowship of the Ring',
-            ),
-        );
-        this.items.push(new ItemEntity(9, 'Goodfellas'));
-        this.items.push(new ItemEntity(10, 'The Social Network'));
-        this.items.push(new ItemEntity(11, 'Parasite'));
+        this.items.push(new ItemEntity(0, 'Pizza'));
+        this.items.push(new ItemEntity(1, 'Sushi'));
+        this.items.push(new ItemEntity(2, 'Burgers'));
+        this.items.push(new ItemEntity(3, 'Ramen'));
+        this.items.push(new ItemEntity(4, 'Star Wars'));
+        this.items.push(new ItemEntity(5, 'The Lord of the Rings'));
+        this.items.push(new ItemEntity(6, 'The Matrix'));
+        this.items.push(new ItemEntity(7, 'Titanic'));
+        this.items.push(new ItemEntity(8, 'Taking a warm bath'));
+        this.items.push(new ItemEntity(9, 'Getting a massage'));
+        this.items.push(new ItemEntity(10, 'Taking a walk in nature'));
+        this.items.push(new ItemEntity(11, 'Taking a nap'));
+        this.items.push(new ItemEntity(12, 'Harry Potter'));
+        this.items.push(new ItemEntity(13, 'Bohemian Rhapsody'));
+        this.items.push(new ItemEntity(14, 'Stairway to Heaven'));
+        this.items.push(new ItemEntity(15, 'Chocolate'));
     }
 
     getItemsSorted(): ItemEntity[] {
