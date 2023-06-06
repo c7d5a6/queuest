@@ -1,1 +1,43 @@
 /* You can add global styles to this file, and also import other style files */
+*, *:before, *:after {
+  box-sizing: border-box;
+}
+*:focus {outline:none !important}
+::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+  color: #8D697A;
+  opacity: 1; /* Firefox */
+}
+
+input, button {
+  padding: 5px 10px 5px 10px;
+  margin: 5px 0;
+  border: none;
+  border-radius: 0.25rem;
+  color: #FFECD6;
+}
+
+input {
+  border:1px solid #544E68; // add only bottom border
+  background-color: #0D2B45;
+}
+
+input:hover,input:focus {
+  border:1px solid #8D697A; // add only bottom border
+}
+
+input[type=text] {
+  // input elements with type="text" attribute
+}
+input[type=password] {
+  // input elements with type="password" attribute
+}
+
+html {
+  background-color: #203C56;
+  color: #FFECD6;
+
+}
+button {
+  background-color: #FFAA5E;
+  color: #0D2B45;
+}
