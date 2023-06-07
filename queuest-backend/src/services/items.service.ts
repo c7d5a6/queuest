@@ -1,16 +1,17 @@
-import {Injectable} from '@nestjs/common';
-import {ItemEntity} from '../persistence/entities/item.entity';
-import {Graph} from '../models/graph';
-import {GraphService} from './graph.service';
-import {ItemRelation} from '../models/item-relation';
-import {ItemPair} from '../models/item-pair';
-import {ItemPairFilter} from '../controllers/filter/item-pair-filter';
+import { Injectable } from '@nestjs/common';
+import { ItemEntity } from '../persistence/entities/item.entity';
+import { Graph } from '../models/graph';
+import { GraphService } from './graph.service';
+import { ItemRelation } from '../models/item-relation';
+import { ItemPair } from '../models/item-pair';
+import { ItemPairFilter } from '../controllers/filter/item-pair-filter';
 import cloneDeep from 'lodash.clonedeep';
 
 @Injectable()
 export class ItemsService {
     items: ItemEntity[] = [];
     relations: Map<number, number[]> = new Map<number, number[]>();
+    relationsInverted: Map<number, number[]> = new Map<number, number[]>();
 
     constructor(private readonly graphService: GraphService) {
         this.items.push(new ItemEntity(0, 'Pizza'));
@@ -51,10 +52,19 @@ export class ItemsService {
         if (!this.relations.has(relation.from)) {
             this.relations.set(relation.from, []);
         }
+        if (!this.relationsInverted.has(relation.to)) {
+            this.relationsInverted.set(relation.to, []);
+        }
         const index = this.relations
             .get(relation.from)
             ?.findIndex((value) => value == relation.to);
         if (index == -1) this.relations.get(relation.from)?.push(relation.to);
+
+        const indexInverted = this.relationsInverted
+            .get(relation.to)
+            ?.findIndex((value) => value == relation.from);
+        if (indexInverted == -1)
+            this.relationsInverted.get(relation.to)?.push(relation.from);
     }
 
     deleteRelation(relation: ItemRelation) {
@@ -63,71 +73,120 @@ export class ItemsService {
     }
 
     getBestPairs(filter: ItemPairFilter): ItemPair[] {
+        const itemsSorted = this.getItemsSorted();
         const fromArray = cloneDeep(this.items).sort(
             (i1, i2) =>
-                -(this.relations.get(i1.id)?.length ?? 0) +
+                -(
+                    (this.relations.get(i1.id)?.length ?? 0) +
+                    (this.relationsInverted.get(i1.id)?.length ?? 0)
+                ) +
                 (2 * Math.random() - 1) +
-                (this.relations.get(i2.id)?.length ?? 0),
+                ((this.relations.get(i2.id)?.length ?? 0) +
+                    (this.relationsInverted.get(i2.id)?.length ?? 0)),
         );
-        const toArray = cloneDeep(fromArray);
         const result = [];
         let i = 0;
-        let j = 1;
+        const exclude = new Set<number>();
         while (result.length < filter.size && i < fromArray.length) {
-            const item1 = fromArray[i];
-            const item2 = toArray[j];
-            if (item1.id !== item2.id) {
+            const item = fromArray[i];
+            const bestPairForItem = this.getBestPairForItem(
+                item.id,
+                itemsSorted,
+                exclude,
+            );
+            if (!!bestPairForItem) {
+                exclude.add(item.id);
+                exclude.add(bestPairForItem.id);
                 let itemRelation = undefined;
-                const indexOf1 = this.relations
-                    .get(item1.id)
-                    ?.findIndex((v) => v === item2.id);
-                const indexOf2 = this.relations
-                    .get(item2.id)
-                    ?.findIndex((v) => v === item1.id);
-                if ((indexOf1 ? indexOf1 : -1) >= 0) {
-                    itemRelation = new ItemRelation(item1.id, item2.id);
-                } else if ((indexOf2 ? indexOf2 : -1) >= 0) {
-                    itemRelation = new ItemRelation(item2.id, item1.id);
+                if (this.isThereRelationFromTo(item.id, bestPairForItem.id)) {
+                    itemRelation = new ItemRelation(
+                        item.id,
+                        bestPairForItem.id,
+                    );
+                } else if (
+                    this.isThereRelationFromTo(bestPairForItem.id, item.id)
+                ) {
+                    itemRelation = new ItemRelation(
+                        bestPairForItem.id,
+                        item.id,
+                    );
                 }
-                if (!itemRelation) {
-                    const itemPair = new ItemPair(item1, item2, itemRelation);
-                    result.push(itemPair);
-                }
-                j = (j + 1) % fromArray.length;
-            } else {
-                j = (j + 2) % fromArray.length;
-            }
-            i++;
-        }
-        i = 0;
-        j = 1;
-        while (result.length < filter.size && i < fromArray.length) {
-            const item1 = fromArray[i];
-            const item2 = toArray[j];
-            if (item1.id !== item2.id) {
-                let itemRelation = undefined;
-                const indexOf1 = this.relations
-                    .get(item1.id)
-                    ?.findIndex((v) => v === item2.id);
-                const indexOf2 = this.relations
-                    .get(item2.id)
-                    ?.findIndex((v) => v === item1.id);
-                if ((indexOf1 ? indexOf1 : -1) >= 0) {
-                    itemRelation = new ItemRelation(item1.id, item2.id);
-                } else if ((indexOf2 ? indexOf2 : -1) >= 0) {
-                    itemRelation = new ItemRelation(item2.id, item1.id);
-                }
-                if (!!itemRelation) {
-                    const itemPair = new ItemPair(item1, item2, itemRelation);
-                    result.push(itemPair);
-                }
-                j = (j + 1) % fromArray.length;
-            } else {
-                j = (j + 2) % fromArray.length;
+                const itemPair = new ItemPair(
+                    item,
+                    bestPairForItem,
+                    itemRelation,
+                );
+                result.push(itemPair);
             }
             i++;
         }
         return result;
+    }
+
+    private getBestPairForItem(
+        itemId: number,
+        itemsList: ItemEntity[],
+        exclude: Set<number>,
+    ): ItemEntity | undefined {
+        const positions: Map<number, number> = new Map<number, number>();
+        itemsList.forEach((value, index) => positions.set(value.id, index));
+        const itemPosition = positions.get(itemId)!;
+        const lastIdx = !this.relations.has(itemId)
+            ? itemsList.length - 1
+            : this.relations
+                  .get(itemId)!
+                  .map((id) => positions.get(id)!)
+                  .reduce(
+                      (prevValue, currentValue) =>
+                          Math.min(prevValue, currentValue),
+                      itemsList.length - 1,
+                  );
+        const firstIdx = !this.relationsInverted.has(itemId)
+            ? 0
+            : this.relationsInverted
+                  .get(itemId)!
+                  .map((id) => positions.get(id)!)
+                  .reduce(
+                      (prevValue, currentValue) =>
+                          Math.max(prevValue, currentValue),
+                      0,
+                  );
+        const relationPosition =
+            Math.abs(itemPosition - firstIdx) < Math.abs(itemPosition - lastIdx)
+                ? Math.ceil((itemPosition + firstIdx) / 2)
+                : Math.floor((itemPosition + lastIdx) / 2);
+        let backupItem = undefined;
+        let resortItem = undefined;
+        for (let i = 0; i < itemsList.length * 2; i++) {
+            const position =
+                relationPosition + (2 * (i % 2) - 1) * Math.ceil(i / 2);
+            if (position < 0 || position >= itemsList.length) {
+                continue;
+            }
+            const itemForRelation = itemsList[position];
+            if (
+                !backupItem &&
+                itemForRelation.id !== itemId &&
+                !exclude.has(itemForRelation.id)
+            ) {
+                backupItem = itemForRelation;
+            }
+            if (!resortItem && itemForRelation.id !== itemId) {
+                resortItem = itemForRelation;
+            }
+            if (
+                itemForRelation.id === itemId ||
+                exclude.has(itemForRelation.id)
+            ) {
+                continue;
+            }
+            if (!this.isThereRelation(itemId, itemForRelation.id)) {
+                return itemForRelation;
+            }
+        }
+        if (!!backupItem) return backupItem;
+        if (!!resortItem) return resortItem;
+        return undefined;
     }
 
     private removeRelationFromTo(from: number, to: number) {
@@ -137,6 +196,13 @@ export class ItemsService {
                 ?.findIndex((value) => value == to);
             if ((index || index === 0) && index > -1)
                 this.relations.get(from)?.splice(index, 1);
+        }
+        if (this.relationsInverted.has(to)) {
+            const index = this.relationsInverted
+                .get(to)
+                ?.findIndex((value) => value == from);
+            if ((index || index === 0) && index > -1)
+                this.relations.get(to)?.splice(index, 1);
         }
     }
 
@@ -151,5 +217,21 @@ export class ItemsService {
                 });
             }
         }
+    }
+
+    private isThereRelation(itemAId: number, itemBId: number) {
+        return (
+            this.isThereRelationFromTo(itemAId, itemBId) ||
+            this.isThereRelationFromTo(itemBId, itemAId)
+        );
+    }
+
+    private isThereRelationFromTo(fromId: number, toId: number) {
+        if (this.relations.has(fromId))
+            return (
+                0 <=
+                this.relations.get(fromId)!.findIndex((idx) => idx === toId)
+            );
+        return false;
     }
 }
