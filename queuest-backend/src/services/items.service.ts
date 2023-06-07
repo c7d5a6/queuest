@@ -81,6 +81,10 @@ export class ItemsService {
                 -(this.relations.get(i2.id)?.length ?? 0) +
                 -(this.relationsInverted.get(i2.id)?.length ?? 0),
         );
+        return this.getBestConnectedPairs(filter, fromArray, itemsSorted);
+    }
+
+    private getBestConnectedPairs(filter: ItemPairFilter, fromArray: any, itemsSorted: ItemEntity[]) {
         const result = [];
         let i = 0;
         const exclude = new Set<number>();
