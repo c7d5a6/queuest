@@ -152,7 +152,7 @@ export class ItemsService {
                       0,
                   );
         const relationPosition =
-            Math.abs(itemPosition - firstIdx) < Math.abs(itemPosition - lastIdx)
+            Math.abs(itemPosition - firstIdx) > Math.abs(itemPosition - lastIdx)
                 ? Math.ceil((itemPosition + firstIdx) / 2)
                 : Math.floor((itemPosition + lastIdx) / 2);
         let backupItem = undefined;
