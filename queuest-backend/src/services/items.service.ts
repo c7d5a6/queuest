@@ -76,13 +76,10 @@ export class ItemsService {
         const itemsSorted = this.getItemsSorted();
         const fromArray = cloneDeep(this.items).sort(
             (i1, i2) =>
-                -(
-                    (this.relations.get(i1.id)?.length ?? 0) +
-                    (this.relationsInverted.get(i1.id)?.length ?? 0)
-                ) +
-                (2 * Math.random() - 1) +
-                ((this.relations.get(i2.id)?.length ?? 0) +
-                    (this.relationsInverted.get(i2.id)?.length ?? 0)),
+                (this.relations.get(i1.id)?.length ?? 0) +
+                (this.relationsInverted.get(i1.id)?.length ?? 0) +
+                -(this.relations.get(i2.id)?.length ?? 0) +
+                -(this.relationsInverted.get(i2.id)?.length ?? 0),
         );
         const result = [];
         let i = 0;
