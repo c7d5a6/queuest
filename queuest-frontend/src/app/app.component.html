@@ -1,4 +1,5 @@
-<app-add-item (changes)="getItems()"></app-add-item>
+<app-add-item (changes)="reloadItems()"></app-add-item>
 <app-list [items]="items"></app-list>
 <hr/>
-<app-pairs (changes)="getItems()"></app-pairs>
+<app-calibrate-item *ngIf="!!lastItem" (changes)="reloadItems()" [lastItem]="lastItem"></app-calibrate-item>
+<app-pairs (changes)="reloadItems()"></app-pairs>

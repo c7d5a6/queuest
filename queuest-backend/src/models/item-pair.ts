@@ -9,7 +9,7 @@ export class ItemPair {
     @ApiProperty()
     item2: ItemEntity;
 
-    @ApiProperty()
+    @ApiProperty({ required: false })
     relation?: ItemRelation;
 
     constructor(item1: ItemEntity, item2: ItemEntity, relation?: ItemRelation) {

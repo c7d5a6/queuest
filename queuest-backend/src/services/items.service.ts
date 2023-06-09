@@ -6,20 +6,27 @@ import { ItemRelation } from '../models/item-relation';
 import { ItemPair } from '../models/item-pair';
 import { ItemPairFilter } from '../controllers/filter/item-pair-filter';
 import cloneDeep from 'lodash.clonedeep';
+import { Item } from '../models/item';
 
 @Injectable()
 export class ItemsService {
     items: ItemEntity[] = [];
     relations: Map<number, number[]> = new Map<number, number[]>();
     relationsInverted: Map<number, number[]> = new Map<number, number[]>();
-
+    // D
+    // C
+    // A
+    // B
+    // E
+    // F
+    // G
     constructor(private readonly graphService: GraphService) {
-        this.items.push(new ItemEntity(0, 'A'));
-        this.items.push(new ItemEntity(1, 'B'));
-        this.items.push(new ItemEntity(2, 'C'));
-        this.items.push(new ItemEntity(3, 'D'));
-        this.items.push(new ItemEntity(4, 'E'));
-        this.items.push(new ItemEntity(5, 'F'));
+        // this.items.push(new ItemEntity(0, 'A'));
+        // this.items.push(new ItemEntity(1, 'B'));
+        // this.items.push(new ItemEntity(2, 'C'));
+        // this.items.push(new ItemEntity(3, 'D'));
+        // this.items.push(new ItemEntity(4, 'E'));
+        // this.items.push(new ItemEntity(5, 'F'));
         // this.items.push(new ItemEntity(5, 'The Lord of the Rings'));
         // this.items.push(new ItemEntity(6, 'The Matrix'));
         // this.items.push(new ItemEntity(7, 'Titanic'));
@@ -43,9 +50,8 @@ export class ItemsService {
         return result;
     }
 
-    addItem(item: ItemEntity) {
-        item.id = this.items.length;
-        this.items.push(item);
+    addItem(item: Item) {
+        this.items.push({ name: item.name, id: this.items.length });
     }
 
     addRelation(relation: ItemRelation) {
@@ -73,7 +79,13 @@ export class ItemsService {
         this.removeRelationFromTo(relation.to, relation.from);
     }
 
-    getBestPairs(filter: ItemPairFilter): ItemPair[] {
+    getLastItem(): ItemEntity | undefined {
+        if (this.items.length) {
+            return this.items[this.items.length - 1];
+        }
+    }
+
+    getBestPairs(size: number): ItemPair[] {
         const itemsSorted = this.getItemsSorted();
         const fromArray = cloneDeep(this.items).sort(
             (i1, i2) =>
@@ -82,15 +94,43 @@ export class ItemsService {
                 -(this.relations.get(i2.id)?.length ?? 0) +
                 -(this.relationsInverted.get(i2.id)?.length ?? 0),
         );
-        return this.getBestConnectedPairs(filter, fromArray, itemsSorted);
+        return this.getBestConnectedPairs(size, fromArray, itemsSorted);
     }
 
     getBestPair(id: number, exclude?: number[]) {
         const item = this.items.find((item) => item.id == id);
-        if (!item) {
+        if (!item || this.items.length === 1) {
             return undefined;
         }
         const itemsSorted = this.getItemsSorted();
+        const itemPosition = itemsSorted.findIndex((item) => item.id == id);
+        if (
+            itemPosition === 0 &&
+            this.isThereRelationFromTo(item.id, itemsSorted[1].id)
+        ) {
+            return undefined;
+        }
+        if (
+            itemPosition === itemsSorted.length - 1 &&
+            this.isThereRelationFromTo(
+                itemsSorted[itemsSorted.length - 2].id,
+                item.id,
+            )
+        ) {
+            return undefined;
+        }
+        if (
+            this.isThereRelationFromTo(
+                itemsSorted[itemPosition - 1].id,
+                item.id,
+            ) &&
+            this.isThereRelationFromTo(
+                item.id,
+                itemsSorted[itemPosition + 1].id,
+            )
+        ) {
+            return undefined;
+        }
         const excludeSet = exclude
             ? new Set<number>(exclude)
             : new Set<number>();
@@ -107,15 +147,16 @@ export class ItemsService {
     }
 
     private getBestConnectedPairs(
-        filter: ItemPairFilter,
-        fromArray: any,
+        size: number,
+        fromArray: ItemEntity[],
         itemsSorted: ItemEntity[],
     ) {
         const result = [];
         let i = 0;
         const exclude = new Set<number>();
-        while (result.length < filter.size && i < fromArray.length) {
+        while (result.length < size && i < fromArray.length) {
             const item = fromArray[i];
+            console.log(`item ${JSON.stringify(item)}`);
             const bestPairForItem = this.getBestPairForItem(
                 item.id,
                 itemsSorted,

@@ -1,5 +1,4 @@
 import {Component, EventEmitter, Output} from '@angular/core';
-import {ItemEntity} from "../../api/models/item-entity";
 import {ItemsService} from "../../api/services/items.service";
 import {ItemPair} from "../../api/models/item-pair";
 
@@ -21,10 +20,10 @@ export class PairsComponent {
   }
 
   getPairs() {
-    this.itemsService.itemsControllerGetBestPairs({size: 5, exclude: []}).subscribe(value => this.items = value);
+    this.itemsService.itemsControllerGetBestPairs({size: 5}).subscribe(value => this.items = value);
   }
 
-  itemPressed(){
+  itemPressed() {
     this.changes.emit();
   }
 }

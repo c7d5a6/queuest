@@ -13,8 +13,7 @@ import { ItemEntity } from '../persistence/entities/item.entity';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ItemRelation } from '../models/item-relation';
 import { ItemPair } from '../models/item-pair';
-import { ItemPairFilter } from './filter/item-pair-filter';
-import { BestItemPairFilter } from './filter/best-item-pair-filter';
+import { Item } from '../models/item';
 
 @ApiTags('Items')
 @Controller('items')
@@ -29,12 +28,22 @@ export class ItemsController {
     }
 
     @Get('pairs')
+    @ApiQuery({ name: 'size', type: Number, required: true })
     @ApiOkResponse({
         description: 'Get best pairs to compare',
         type: [ItemPair],
     })
-    getBestPairs(@Query() exclude: ItemPairFilter): ItemPair[] {
-        return this.itemsService.getBestPairs(exclude);
+    getBestPairs(@Query('size') size: number): ItemPair[] {
+        return this.itemsService.getBestPairs(size);
+    }
+
+    @Get('last')
+    @ApiOkResponse({
+        description: 'Get last item',
+        type: ItemEntity,
+    })
+    getLastItem(): ItemEntity | undefined {
+        return this.itemsService.getLastItem();
     }
 
     @Get(':id/bestpair')
@@ -59,17 +68,20 @@ export class ItemsController {
     }
 
     @Post()
-    addItem(@Body() item: ItemEntity) {
+    addItem(@Body() item: Item) {
+        console.log(JSON.stringify(item));
         this.itemsService.addItem(item);
     }
 
     @Post('relation')
     addRelation(@Body() relation: ItemRelation) {
+        console.log(JSON.stringify(relation));
         this.itemsService.addRelation(relation);
     }
 
     @Delete('relation')
     deleteRelation(@Body() relation: ItemRelation) {
+        console.log(JSON.stringify(relation));
         this.itemsService.deleteRelation(relation);
     }
 }
