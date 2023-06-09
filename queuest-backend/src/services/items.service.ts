@@ -14,22 +14,23 @@ export class ItemsService {
     relationsInverted: Map<number, number[]> = new Map<number, number[]>();
 
     constructor(private readonly graphService: GraphService) {
-        this.items.push(new ItemEntity(0, 'Pizza'));
-        this.items.push(new ItemEntity(1, 'Sushi'));
-        this.items.push(new ItemEntity(2, 'Burgers'));
-        this.items.push(new ItemEntity(3, 'Ramen'));
-        this.items.push(new ItemEntity(4, 'Star Wars'));
-        this.items.push(new ItemEntity(5, 'The Lord of the Rings'));
-        this.items.push(new ItemEntity(6, 'The Matrix'));
-        this.items.push(new ItemEntity(7, 'Titanic'));
-        this.items.push(new ItemEntity(8, 'Taking a warm bath'));
-        this.items.push(new ItemEntity(9, 'Getting a massage'));
-        this.items.push(new ItemEntity(10, 'Taking a walk in nature'));
-        this.items.push(new ItemEntity(11, 'Taking a nap'));
-        this.items.push(new ItemEntity(12, 'Harry Potter'));
-        this.items.push(new ItemEntity(13, 'Bohemian Rhapsody'));
-        this.items.push(new ItemEntity(14, 'Stairway to Heaven'));
-        this.items.push(new ItemEntity(15, 'Chocolate'));
+        this.items.push(new ItemEntity(0, 'A'));
+        this.items.push(new ItemEntity(1, 'B'));
+        this.items.push(new ItemEntity(2, 'C'));
+        this.items.push(new ItemEntity(3, 'D'));
+        this.items.push(new ItemEntity(4, 'E'));
+        this.items.push(new ItemEntity(5, 'F'));
+        // this.items.push(new ItemEntity(5, 'The Lord of the Rings'));
+        // this.items.push(new ItemEntity(6, 'The Matrix'));
+        // this.items.push(new ItemEntity(7, 'Titanic'));
+        // this.items.push(new ItemEntity(8, 'Taking a warm bath'));
+        // this.items.push(new ItemEntity(9, 'Getting a massage'));
+        // this.items.push(new ItemEntity(10, 'Taking a walk in nature'));
+        // this.items.push(new ItemEntity(11, 'Taking a nap'));
+        // this.items.push(new ItemEntity(12, 'Harry Potter'));
+        // this.items.push(new ItemEntity(13, 'Bohemian Rhapsody'));
+        // this.items.push(new ItemEntity(14, 'Stairway to Heaven'));
+        // this.items.push(new ItemEntity(15, 'Chocolate'));
     }
 
     getItemsSorted(): ItemEntity[] {
@@ -84,7 +85,32 @@ export class ItemsService {
         return this.getBestConnectedPairs(filter, fromArray, itemsSorted);
     }
 
-    private getBestConnectedPairs(filter: ItemPairFilter, fromArray: any, itemsSorted: ItemEntity[]) {
+    getBestPair(id: number, exclude?: number[]) {
+        const item = this.items.find((item) => item.id == id);
+        if (!item) {
+            return undefined;
+        }
+        const itemsSorted = this.getItemsSorted();
+        const excludeSet = exclude
+            ? new Set<number>(exclude)
+            : new Set<number>();
+        const bestPairForItem = this.getBestPairForItem(
+            id,
+            itemsSorted,
+            excludeSet,
+        );
+        if (!bestPairForItem) return undefined;
+        if (excludeSet.has(bestPairForItem.id)) return undefined;
+        const itemPair = this.itemPairFromItems(item, bestPairForItem);
+        if (!!itemPair.relation) return undefined;
+        return itemPair;
+    }
+
+    private getBestConnectedPairs(
+        filter: ItemPairFilter,
+        fromArray: any,
+        itemsSorted: ItemEntity[],
+    ) {
         const result = [];
         let i = 0;
         const exclude = new Set<number>();
@@ -98,25 +124,7 @@ export class ItemsService {
             if (!!bestPairForItem) {
                 exclude.add(item.id);
                 exclude.add(bestPairForItem.id);
-                let itemRelation = undefined;
-                if (this.isThereRelationFromTo(item.id, bestPairForItem.id)) {
-                    itemRelation = new ItemRelation(
-                        item.id,
-                        bestPairForItem.id,
-                    );
-                } else if (
-                    this.isThereRelationFromTo(bestPairForItem.id, item.id)
-                ) {
-                    itemRelation = new ItemRelation(
-                        bestPairForItem.id,
-                        item.id,
-                    );
-                }
-                const itemPair = new ItemPair(
-                    item,
-                    bestPairForItem,
-                    itemRelation,
-                );
+                const itemPair = this.itemPairFromItems(item, bestPairForItem);
                 result.push(itemPair);
             }
             i++;
@@ -124,14 +132,28 @@ export class ItemsService {
         return result;
     }
 
+    private itemPairFromItems(item: ItemEntity, bestPairForItem: ItemEntity) {
+        let itemRelation = undefined;
+        if (this.isThereRelationFromTo(item.id, bestPairForItem.id)) {
+            itemRelation = new ItemRelation(item.id, bestPairForItem.id);
+        } else if (this.isThereRelationFromTo(bestPairForItem.id, item.id)) {
+            itemRelation = new ItemRelation(bestPairForItem.id, item.id);
+        }
+        return new ItemPair(item, bestPairForItem, itemRelation);
+    }
+
     private getBestPairForItem(
         itemId: number,
         itemsList: ItemEntity[],
         exclude: Set<number>,
     ): ItemEntity | undefined {
-        const positions: Map<number, number> = new Map<number, number>();
-        itemsList.forEach((value, index) => positions.set(value.id, index));
-        const itemPosition = positions.get(itemId)!;
+        const itemPosition = itemsList.findIndex((item) => item.id == itemId);
+        if (itemPosition < 0)
+            throw new Error(`There is no item with ${itemId}`);
+        const positions: Map<number, number> = new Map();
+        for (let i = 0; i < itemsList.length; i++) {
+            positions.set(itemsList[i].id, i);
+        }
         const lastIdx = !this.relations.has(itemId)
             ? itemsList.length - 1
             : this.relations

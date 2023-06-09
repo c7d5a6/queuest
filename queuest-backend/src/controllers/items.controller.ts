@@ -1,10 +1,20 @@
-import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseArrayPipe,
+    Post,
+    Query,
+} from '@nestjs/common';
 import { ItemsService } from '../services/items.service';
 import { ItemEntity } from '../persistence/entities/item.entity';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ItemRelation } from '../models/item-relation';
 import { ItemPair } from '../models/item-pair';
 import { ItemPairFilter } from './filter/item-pair-filter';
+import { BestItemPairFilter } from './filter/best-item-pair-filter';
 
 @ApiTags('Items')
 @Controller('items')
@@ -25,6 +35,27 @@ export class ItemsController {
     })
     getBestPairs(@Query() exclude: ItemPairFilter): ItemPair[] {
         return this.itemsService.getBestPairs(exclude);
+    }
+
+    @Get(':id/bestpair')
+    @ApiQuery({ name: 'exclude', type: [Number], required: false })
+    @ApiOkResponse({
+        description: 'Get best pair for item to compare',
+        type: ItemPair,
+    })
+    getBestPair(
+        @Param('id') itemId: number,
+        @Query(
+            'exclude',
+            new ParseArrayPipe({
+                optional: true,
+                items: Number,
+                separator: ',',
+            }),
+        )
+        exclude: number[] | undefined,
+    ): ItemPair | undefined {
+        return this.itemsService.getBestPair(itemId, exclude);
     }
 
     @Post()
