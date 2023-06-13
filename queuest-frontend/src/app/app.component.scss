@@ -1,11 +1,16 @@
 @import '../styles.scss';
 
 .card {
-  background-color: $color-dark;
-  border: 1px solid $color-accent-dark;
-  padding: 10px;
+  border: 12px solid;
   margin: 10px;
   max-width: 800px;
   margin-left: auto;
   margin-right: auto;
+  border-image: url(./border.png) 30% / 1 stretch;
+}
+
+.card-content {
+  background-color: $color-dark;
+  padding: 5px;
+  width: available;
 }

@@ -1,10 +1,16 @@
 <div class="card">
-  <app-add-item (changes)="reloadItems()"></app-add-item>
-  <app-list [items]="items"></app-list>
+  <div class="card-content">
+    <app-add-item (changes)="reloadItems()"></app-add-item>
+    <app-list [items]="items"></app-list>
+  </div>
 </div>
 <div class="card">
-  <app-calibrate-item (changes)="reloadItems()" *ngIf="!!lastItem" [lastItem]="lastItem"></app-calibrate-item>
+  <div class="card-content">
+    <app-calibrate-item (changes)="reloadItems()" *ngIf="!!lastItem" [lastItem]="lastItem"></app-calibrate-item>
+  </div>
 </div>
 <div class="card">
-  <app-pairs (changes)="reloadItems()"></app-pairs>
+  <div class="card-content">
+    <app-pairs (changes)="reloadItems()"></app-pairs>
+  </div>
 </div>
