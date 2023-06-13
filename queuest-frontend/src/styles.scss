@@ -50,6 +50,10 @@ $color-success-lighter: #BFCE95;
 $color-success-lightest: #D2D7A9;
 $color-success-darker: #466D4D;
 $color-success-darkest: #35594B;
+
+@import url('https://fonts.googleapis.com/css2?family=PT+Mono&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+
 /* You can add global styles to this file, and also import other style files */
 *, *:before, *:after {
   box-sizing: border-box;
@@ -107,8 +111,13 @@ input[type=password] {
 html {
   background-color: $color-darker;
   color: #FFECD6;
-
+  font-family: 'PT Serif', serif;
 }
+
+button, input {
+  font-family: 'PT Serif', serif;
+}
+
 button {
   background-color: transparent;
   color: #FFAA5E;
