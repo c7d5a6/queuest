@@ -1,0 +1,8 @@
+@import '../styles.scss';
+
+.card {
+  background-color: $color-dark;
+  border: 1px solid $color-accent-dark;
+  padding: 10px;
+  margin: 10px;
+}
