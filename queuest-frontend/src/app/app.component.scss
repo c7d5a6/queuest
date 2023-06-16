@@ -14,3 +14,27 @@
   padding: 5px;
   width: available;
 }
+
+.topbar{
+  display: flex;
+}
+
+.login-block{
+  margin-left: auto;
+  padding: 5px;
+  width: fit-content;
+}
+
+.login{
+  display: block;
+  width: 24px;
+  height: 24px;
+  background: url(./profile.webp);
+}
+
+.login:hover{
+  background: url(./profile-focused.webp);
+}
+.login:active{
+  background: url(./profile-clicked.webp);
+}
