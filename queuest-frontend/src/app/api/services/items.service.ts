@@ -9,6 +9,7 @@ import { RequestBuilder } from '../request-builder';
 import { Observable } from 'rxjs';
 import { map, filter } from 'rxjs/operators';
 
+import { Item } from '../models/item';
 import { ItemEntity } from '../models/item-entity';
 import { ItemPair } from '../models/item-pair';
 import { ItemRelation } from '../models/item-relation';
@@ -86,7 +87,7 @@ export class ItemsService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   itemsControllerAddItem$Response(params: {
-    body: ItemEntity
+    body: Item
   },
   context?: HttpContext
 
@@ -116,7 +117,7 @@ export class ItemsService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   itemsControllerAddItem(params: {
-    body: ItemEntity
+    body: Item
   },
   context?: HttpContext
 
@@ -139,7 +140,6 @@ export class ItemsService extends BaseService {
    * This method doesn't expect any request body.
    */
   itemsControllerGetBestPairs$Response(params: {
-    exclude: Array<string>;
     size: number;
   },
   context?: HttpContext
@@ -148,7 +148,6 @@ export class ItemsService extends BaseService {
 
     const rb = new RequestBuilder(this.rootUrl, ItemsService.ItemsControllerGetBestPairsPath, 'get');
     if (params) {
-      rb.query('exclude', params.exclude, {});
       rb.query('size', params.size, {});
     }
 
@@ -171,7 +170,6 @@ export class ItemsService extends BaseService {
    * This method doesn't expect any request body.
    */
   itemsControllerGetBestPairs(params: {
-    exclude: Array<string>;
     size: number;
   },
   context?: HttpContext
@@ -180,6 +178,112 @@ export class ItemsService extends BaseService {
 
     return this.itemsControllerGetBestPairs$Response(params,context).pipe(
       map((r: StrictHttpResponse<Array<ItemPair>>) => r.body as Array<ItemPair>)
+    );
+  }
+
+  /**
+   * Path part for operation itemsControllerGetLastItem
+   */
+  static readonly ItemsControllerGetLastItemPath = '/items/last';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `itemsControllerGetLastItem()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  itemsControllerGetLastItem$Response(params?: {
+  },
+  context?: HttpContext
+
+): Observable<StrictHttpResponse<ItemEntity>> {
+
+    const rb = new RequestBuilder(this.rootUrl, ItemsService.ItemsControllerGetLastItemPath, 'get');
+    if (params) {
+    }
+
+    return this.http.request(rb.build({
+      responseType: 'json',
+      accept: 'application/json',
+      context: context
+    })).pipe(
+      filter((r: any) => r instanceof HttpResponse),
+      map((r: HttpResponse<any>) => {
+        return r as StrictHttpResponse<ItemEntity>;
+      })
+    );
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `itemsControllerGetLastItem$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  itemsControllerGetLastItem(params?: {
+  },
+  context?: HttpContext
+
+): Observable<ItemEntity> {
+
+    return this.itemsControllerGetLastItem$Response(params,context).pipe(
+      map((r: StrictHttpResponse<ItemEntity>) => r.body as ItemEntity)
+    );
+  }
+
+  /**
+   * Path part for operation itemsControllerGetBestPair
+   */
+  static readonly ItemsControllerGetBestPairPath = '/items/{id}/bestpair';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `itemsControllerGetBestPair()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  itemsControllerGetBestPair$Response(params: {
+    id: number;
+    exclude?: Array<number>;
+  },
+  context?: HttpContext
+
+): Observable<StrictHttpResponse<ItemPair>> {
+
+    const rb = new RequestBuilder(this.rootUrl, ItemsService.ItemsControllerGetBestPairPath, 'get');
+    if (params) {
+      rb.path('id', params.id, {});
+      rb.query('exclude', params.exclude, {});
+    }
+
+    return this.http.request(rb.build({
+      responseType: 'json',
+      accept: 'application/json',
+      context: context
+    })).pipe(
+      filter((r: any) => r instanceof HttpResponse),
+      map((r: HttpResponse<any>) => {
+        return r as StrictHttpResponse<ItemPair>;
+      })
+    );
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `itemsControllerGetBestPair$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  itemsControllerGetBestPair(params: {
+    id: number;
+    exclude?: Array<number>;
+  },
+  context?: HttpContext
+
+): Observable<ItemPair> {
+
+    return this.itemsControllerGetBestPair$Response(params,context).pipe(
+      map((r: StrictHttpResponse<ItemPair>) => r.body as ItemPair)
     );
   }
 

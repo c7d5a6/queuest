@@ -1,1 +1,135 @@
+//  Initialize a global variables at root level.
+//    Dark
+$color-dark: #203C56;
+$color-darker: #0D2B45;
+//    Light
+$color-light: #FFECD6;
+$color-light-darker: #FFD4A3;
+//    Primary
+$color-primary: #FFAA5E;
+$color-primary-lighter: #FFCB9A;
+$color-primary-lightest: #FFD5AC;
+$color-primary-dark: #D08159;
+$color-primary-darker: #966753;
+$color-primary-darkest: #6D554F;
+//    Accent
+$color-accent: #8D697A;
+$color-accent-lighter: #D7BFB6;
+$color-accent-lightest: #C6ABA8;
+$color-accent-dark: #544E68;
+$color-accent-darker: #3F445E;
+$color-accent-darkest: #303D57;
+//    Light Accent
+$color-lightaccent: #929895;
+$color-lightaccent-lighter: #D9CFC0;
+$color-lightaccent-lightest: #C9C2B6;
+$color-lightaccent-dark: #50626D;
+$color-lightaccent-darker: #3C5261;
+$color-lightaccent-darkest: #2E4659;
+//    Warning
+$color-warning: #FC9F1C;
+$color-warning-lighter: #FEC679;
+$color-warning-lightest: #FED195;
+$color-warning-darker: #856531;
+$color-warning-darkest: #615437;
+//    Danger
+$color-danger: #F44336;
+$color-danger-lighter: #FA9886;
+$color-danger-lightest: #FCB19E;
+$color-danger-darker: #81373E;
+$color-danger-darkest: #5E3340;
+//    Info
+$color-info: #142130;
+$color-info-lighter: #8A8783;
+$color-info-lightest: #ADA59C;
+$color-info-darker: #11263B;
+$color-info-darkest: #10283E;
+//    Success
+$color-success: #7FAF54;
+$color-success-lighter: #BFCE95;
+$color-success-lightest: #D2D7A9;
+$color-success-darker: #466D4D;
+$color-success-darkest: #35594B;
+
+@import url('https://fonts.googleapis.com/css2?family=PT+Mono&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+
 /* You can add global styles to this file, and also import other style files */
+*, *:before, *:after {
+  box-sizing: border-box;
+}
+*:focus {outline:none !important}
+::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+  color: #8D697A;
+  opacity: 1; /* Firefox */
+}
+
+input, button {
+  padding: 5px 10px 5px 10px;
+  margin: 5px 0;
+  border: none;
+  border-radius: 0.25rem;
+}
+
+button{
+  color: $color-primary;
+}
+
+button:disabled{
+  color: $color-primary-dark;
+  border-color: $color-primary-dark;
+}
+
+button:hover:not(:disabled){
+  color: $color-darker;
+  background-color: $color-primary;
+  border-color: $color-primary;
+}
+
+button:active:not(:disabled) {
+  background-color: $color-primary-lighter;
+  border-color: $color-primary-lighter;
+}
+
+input {
+  border:1px solid #544E68; // add only bottom border
+  background-color: #0D2B45;
+  color: $color-light;
+}
+
+input:hover,input:focus {
+  border:1px solid #8D697A; // add only bottom border
+}
+
+input[type=text] {
+  // input elements with type="text" attribute
+}
+input[type=password] {
+  // input elements with type="password" attribute
+}
+
+html {
+  background-color: $color-darker;
+  color: #FFECD6;
+  font-family: 'PT Serif', serif;
+  padding: 5px;
+}
+
+button, input {
+  font-family: 'PT Serif', serif;
+}
+
+button {
+  background-color: transparent;
+  color: #FFAA5E;
+  border:1px solid #FFAA5E;
+}
+
+h2 {
+  color: #544E68;
+}
+
+body{
+  padding: 0;
+  margin: 0;
+}

@@ -1,11 +1,8 @@
-export class Item {
-    id: number;
-    name: string;
-    weight: number;
+import { IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
-    constructor(id: number, name: string, weight: number) {
-        this.id = id;
-        this.name = name;
-        this.weight = weight;
-    }
+export class Item {
+    @IsString()
+    @ApiProperty({ required: true })
+    name: string;
 }

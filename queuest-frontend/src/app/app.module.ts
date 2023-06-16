@@ -11,6 +11,7 @@ import { PairsComponent } from './components/pairs/pairs.component';
 import { AddItemComponent } from './components/add-item/add-item.component';
 import { PairComponent } from './components/pairs/pair/pair.component';
 import {ReactiveFormsModule} from "@angular/forms";
+import { CalibrateItemComponent } from './components/calibrate-item/calibrate-item.component';
 
 @NgModule({
   declarations: [
@@ -18,7 +19,8 @@ import {ReactiveFormsModule} from "@angular/forms";
     ListComponent,
     PairsComponent,
     AddItemComponent,
-    PairComponent
+    PairComponent,
+    CalibrateItemComponent
   ],
   imports: [
     BrowserModule,

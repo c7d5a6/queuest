@@ -1,4 +1,19 @@
-<app-add-item (changes)="getItems()"></app-add-item>
-<app-list [items]="items"></app-list>
-<hr/>
-<app-pairs (changes)="getItems()"></app-pairs>
+<div class="topbar">
+  <span class="login-block"><a class="login"></a></span>
+</div>
+<div class="card">
+  <div class="card-content">
+    <app-add-item (changes)="reloadItems()"></app-add-item>
+    <app-list [items]="items"></app-list>
+  </div>
+</div>
+<div class="card">
+  <div class="card-content">
+    <app-calibrate-item (changes)="reloadItems()" *ngIf="!!lastItem" [lastItem]="lastItem"></app-calibrate-item>
+  </div>
+</div>
+<div class="card">
+  <div class="card-content">
+    <app-pairs (changes)="reloadItems()"></app-pairs>
+  </div>
+</div>

@@ -24,7 +24,7 @@ export class AddItemComponent {
       event.target.blur();
       return;
     }
-    const itemEntity: ItemEntity = this.form.value;
+    const itemEntity  = this.form.value;
     this.itemService.itemsControllerAddItem({body: itemEntity}).subscribe(() => {
       this.form.reset();
       this.changes.emit()
