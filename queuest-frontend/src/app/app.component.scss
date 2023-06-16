@@ -27,14 +27,14 @@
 
 .login{
   display: block;
-  width: 24px;
-  height: 24px;
-  background: url(./profile.webp);
+  width: 32px;
+  height: 32px;
+  background: url(./profile.png);
 }
 
 .login:hover{
-  background: url(./profile-focused.webp);
+  background: url(./profile-rised.png);
 }
 .login:active{
-  background: url(./profile-clicked.webp);
+  background: url(./profile-pressed.png);
 }
