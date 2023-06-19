@@ -1,6 +1,6 @@
 {
   "name": "queuest-frontend",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "scripts": {
     "ng": "ng",
     "api-gen": "ng-openapi-gen",
