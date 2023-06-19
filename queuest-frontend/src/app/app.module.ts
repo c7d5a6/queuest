@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { environment } from '../environments/environment';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -14,12 +14,16 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { CalibrateItemComponent } from './components/calibrate-item/calibrate-item.component';
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import {
-    provideAnalytics,
     getAnalytics,
+    provideAnalytics,
     ScreenTrackingService,
     UserTrackingService,
 } from '@angular/fire/analytics';
-import { provideAuth, getAuth } from '@angular/fire/auth';
+import { getAuth, provideAuth } from '@angular/fire/auth';
+import { FireAuthService } from './services/fire-auth.service';
+import { FirebaseAuthInterceptor } from './interceptors/firebase-auth.interceptor';
+import { AngularFireModule } from '@angular/fire/compat';
+import { LoginComponent } from './components/login/login.component';
 
 @NgModule({
     declarations: [
@@ -29,6 +33,7 @@ import { provideAuth, getAuth } from '@angular/fire/auth';
         AddItemComponent,
         PairComponent,
         CalibrateItemComponent,
+        LoginComponent,
     ],
     imports: [
         BrowserModule,
@@ -38,11 +43,24 @@ import { provideAuth, getAuth } from '@angular/fire/auth';
         }),
         ApiModule.forRoot({ rootUrl: environment.application.apiUrl }),
         AppRoutingModule,
-        provideFirebaseApp(() => initializeApp(environment.firebase)),
+        AngularFireModule.initializeApp(environment.firebase),
+        provideFirebaseApp(() => {
+            console.log('*********MODULE*********', environment.firebase);
+            return initializeApp(environment.firebase);
+        }),
         provideAnalytics(() => getAnalytics()),
         provideAuth(() => getAuth()),
     ],
-    providers: [ScreenTrackingService, UserTrackingService],
+    providers: [
+        FireAuthService,
+        {
+            provide: HTTP_INTERCEPTORS,
+            useClass: FirebaseAuthInterceptor,
+            multi: true,
+        },
+        ScreenTrackingService,
+        UserTrackingService,
+    ],
     bootstrap: [AppComponent],
 })
 export class AppModule {}

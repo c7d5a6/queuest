@@ -1,6 +1,7 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { ItemsService } from './api/services/items.service';
 import { ItemEntity } from './api/models/item-entity';
+import { Auth } from '@angular/fire/auth';
 
 @Component({
     selector: 'app-root',
@@ -10,6 +11,7 @@ import { ItemEntity } from './api/models/item-entity';
 export class AppComponent implements OnInit {
     items: ItemEntity[] = [];
     lastItem?: ItemEntity;
+    private auth: Auth = inject(Auth);
 
     constructor(private itemsService: ItemsService) {}
 
