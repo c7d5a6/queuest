@@ -87,6 +87,9 @@ Apache-2.0
 @firebase/webchannel-wrapper
 Apache-2.0
 
+@ngneat/dialog
+MIT
+
 firebase/analytics
 
 firebase/app
