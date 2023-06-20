@@ -24,6 +24,7 @@ import { FireAuthService } from './services/fire-auth.service';
 import { FirebaseAuthInterceptor } from './interceptors/firebase-auth.interceptor';
 import { AngularFireModule } from '@angular/fire/compat';
 import { LoginComponent } from './components/login/login.component';
+import { ProfileComponent } from './components/profile/profile.component';
 
 @NgModule({
     declarations: [

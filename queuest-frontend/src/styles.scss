@@ -133,3 +133,21 @@ body{
   padding: 0;
   margin: 0;
 }
+
+ngneat-dialog {
+  .ngneat-dialog-backdrop {
+    background: var($color-darker, 0.50)!important;
+    .ngneat-dialog-content {
+      background: $color-dark!important;
+      border: 12px solid;
+      border-image: url(./app/border.png) 30%/1 stretch;
+      .ngneat-drag-marker {
+        // draggable marker
+      }
+      .ngneat-close-dialog {
+        // 'X' icon for closing the dialog
+      }
+    }
+  }
+}
+

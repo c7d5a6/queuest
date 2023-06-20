@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FireAuthService } from '../../services/fire-auth.service';
+import { DialogService, DialogRef } from '@ngneat/dialog';
+import { ProfileComponent } from '../profile/profile.component';
 
 @Component({
     selector: 'app-login',
@@ -7,7 +9,10 @@ import { FireAuthService } from '../../services/fire-auth.service';
     styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent {
-    constructor(private fireAuthService: FireAuthService) {}
+    constructor(
+        private fireAuthService: FireAuthService,
+        private dialogService: DialogService,
+    ) {}
 
     get loggedIn(): boolean {
         return this.fireAuthService.isLoggedIn;
@@ -26,7 +31,12 @@ export class LoginComponent {
         this.fireAuthService.GoogleAuth();
     }
 
-    logOut(): void {
-        this.fireAuthService.SignOut();
+    profile(): void {
+        this.dialogService.open(ProfileComponent, {
+            // data is typed based on the passed generic
+            data: {
+                title: 'asdasdsad',
+            },
+        });
     }
 }
