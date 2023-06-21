@@ -5,11 +5,25 @@
   height: fit-content;
   margin-top: 32px;
 }
+.profileImageContainer{
+  position: relative;
+  top: 0;
+  left: 0;
+}
 .profilePhoto{
   width: 32px;
   height: 32px;
+  border: 5px solid transparent;
   border-radius: 16px;
-  border: 1px solid;
-  border-color: #FFAA5E;
-  //border-image: url(./picture.svg) 30% / 1 stretch;
+  position: relative;
+  top: 0;
+  left: 0;
+}
+.profilePhotoBorder{
+  width: 32px;
+  height: 32px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-image: url("picture.svg");
 }
