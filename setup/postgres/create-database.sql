@@ -1,0 +1,14 @@
+CREATE ROLE queuest LOGIN
+  NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;
+
+ALTER ROLE queuest PASSWORD 'queuest';
+
+CREATE DATABASE queuest
+  WITH OWNER = master
+       TEMPLATE = template0
+       ENCODING = 'UTF8'
+       LC_COLLATE = 'en_US.UTF-8'
+       LC_CTYPE = 'en_US.UTF-8'
+       CONNECTION LIMIT = -1;
+
+ALTER DATABASE queuest OWNER TO queuest;

@@ -1,0 +1,27 @@
+version: "3.3"
+networks:
+  queuest-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.19.7.0/24
+
+services:
+    postgres:
+      container_name: "queuest-postgres"
+      image: queuest/postgres
+      build: setup/postgres
+      volumes:
+        - pgdata:/var/lib/postgresql/data
+      environment:
+        - POSTGRES_USER=master # user with superuser power
+        - POSTGRES_PASSWORD=postgres # password for user 'master'
+      expose:
+        - "5432"
+      ports:
+        - "5432:5432"
+      networks:
+        queuest-network:
+          ipv4_address: 172.19.7.103
+volumes:
+  pgdata:
