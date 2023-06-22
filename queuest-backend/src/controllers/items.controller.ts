@@ -3,6 +3,7 @@ import {
     Controller,
     Delete,
     Get,
+    Logger,
     Param,
     ParseArrayPipe,
     Post,
@@ -18,6 +19,7 @@ import { Item } from '../models/item';
 @ApiTags('Items')
 @Controller('items')
 export class ItemsController {
+    private readonly logger = new Logger(ItemsController.name);
     constructor(private readonly itemsService: ItemsService) {}
 
     @Get()
@@ -69,19 +71,19 @@ export class ItemsController {
 
     @Post()
     addItem(@Body() item: Item) {
-        console.log(JSON.stringify(item));
+        this.logger.log(JSON.stringify(item));
         this.itemsService.addItem(item);
     }
 
     @Post('relation')
     addRelation(@Body() relation: ItemRelation) {
-        console.log(JSON.stringify(relation));
+        this.logger.log(JSON.stringify(relation));
         this.itemsService.addRelation(relation);
     }
 
     @Delete('relation')
     deleteRelation(@Body() relation: ItemRelation) {
-        console.log(JSON.stringify(relation));
+        this.logger.log(JSON.stringify(relation));
         this.itemsService.deleteRelation(relation);
     }
 }

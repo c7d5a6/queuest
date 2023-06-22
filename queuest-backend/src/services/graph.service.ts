@@ -1,16 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Logger, Injectable } from '@nestjs/common';
 import { Graph } from '../models/graph';
 import cloneDeep from 'lodash.clonedeep';
 
 @Injectable()
 export class GraphService {
+
+    private readonly logger = new Logger(GraphService.name);
+
     isGraphCylicx(g: Graph): number[] {
         const q: number[] = [];
         const map = new Map<number, number>();
         const stack = new Set<number>();
         const visited = new Set<number>();
         let k = 0;
-        console.log('start bfs', JSON.stringify(g));
+        this.logger.log('start bfs', JSON.stringify(g));
         while (visited.size < g.size) {
             if (!visited.has(k)) {
                 q.push(k);
@@ -22,12 +25,12 @@ export class GraphService {
                 q.shift();
                 visited.add(u);
                 stack.delete(u);
-                console.log('step', u);
+                this.logger.log('step', u);
                 for (let i = 0; i < g.adj[u].length; i++) {
                     const next = g.adj[u][i];
-                    console.log('next', next);
+                    this.logger.log('next', next);
                     if (visited.has(next)) {
-                        console.log('visited', next);
+                        this.logger.log('visited', next);
                         const result: number[] = [];
                         result.push(next);
                         result.push(u);

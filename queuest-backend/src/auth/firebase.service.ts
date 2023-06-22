@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { app, ServiceAccount } from 'firebase-admin';
 import * as firebase from 'firebase-admin';
 import * as serviceAccount from '../firebase-adminsdk.json';
@@ -11,6 +11,8 @@ const firebaseParams: ServiceAccount = {
 
 @Injectable()
 export class FirebaseService {
+    private readonly logger = new Logger(FirebaseService.name);
+
     private defaultApp: app.App;
 
     constructor() {
@@ -24,7 +26,7 @@ export class FirebaseService {
             .auth()
             .verifyIdToken(token)
             .then(async (decodedToken) => {
-                console.log('Decoded token', decodedToken);
+                this.logger.log('Decoded token', decodedToken);
                 const user: any = {
                     email: decodedToken.email ?? '',
                     displayName: decodedToken.uid ?? '',

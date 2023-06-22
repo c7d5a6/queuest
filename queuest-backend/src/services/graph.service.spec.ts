@@ -107,7 +107,6 @@ describe('GraphService', () => {
             const start = JSON.stringify(g);
 
             const arcSet = service.feedbackArkSet(g);
-            console.log(JSON.stringify(arcSet));
             const arcs = arcSet.adj.flat();
             expect(arcs.length).toStrictEqual(2);
             const end = JSON.stringify(g);

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Logger, Injectable } from '@nestjs/common';
 import { ItemEntity } from '../persistence/entities/item.entity';
 import { Graph } from '../models/graph';
 import { GraphService } from './graph.service';
@@ -10,34 +10,15 @@ import { Item } from '../models/item';
 
 @Injectable()
 export class ItemsService {
+
+    private readonly logger = new Logger(ItemsService.name);
+
     items: ItemEntity[] = [];
     relations: Map<number, number[]> = new Map<number, number[]>();
     relationsInverted: Map<number, number[]> = new Map<number, number[]>();
-    // D
-    // C
-    // A
-    // B
-    // E
-    // F
-    // G
+
     constructor(private readonly graphService: GraphService) {
-        // this.items.push(new ItemEntity(0, 'A'));
-        // this.items.push(new ItemEntity(1, 'B'));
-        // this.items.push(new ItemEntity(2, 'C'));
-        // this.items.push(new ItemEntity(3, 'D'));
-        // this.items.push(new ItemEntity(4, 'E'));
-        // this.items.push(new ItemEntity(5, 'F'));
-        // this.items.push(new ItemEntity(5, 'The Lord of the Rings'));
-        // this.items.push(new ItemEntity(6, 'The Matrix'));
-        // this.items.push(new ItemEntity(7, 'Titanic'));
-        // this.items.push(new ItemEntity(8, 'Taking a warm bath'));
-        // this.items.push(new ItemEntity(9, 'Getting a massage'));
-        // this.items.push(new ItemEntity(10, 'Taking a walk in nature'));
-        // this.items.push(new ItemEntity(11, 'Taking a nap'));
-        // this.items.push(new ItemEntity(12, 'Harry Potter'));
-        // this.items.push(new ItemEntity(13, 'Bohemian Rhapsody'));
-        // this.items.push(new ItemEntity(14, 'Stairway to Heaven'));
-        // this.items.push(new ItemEntity(15, 'Chocolate'));
+
     }
 
     getItemsSorted(): ItemEntity[] {
@@ -156,7 +137,7 @@ export class ItemsService {
         const exclude = new Set<number>();
         while (result.length < size && i < fromArray.length) {
             const item = fromArray[i];
-            console.log(`item ${JSON.stringify(item)}`);
+            this.logger.log(`item ${JSON.stringify(item)}`);
             const bestPairForItem = this.getBestPairForItem(
                 item.id,
                 itemsSorted,
