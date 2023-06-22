@@ -10,16 +10,13 @@ import { Item } from '../models/item';
 
 @Injectable()
 export class ItemsService {
-
     private readonly logger = new Logger(ItemsService.name);
 
     items: ItemEntity[] = [];
     relations: Map<number, number[]> = new Map<number, number[]>();
     relationsInverted: Map<number, number[]> = new Map<number, number[]>();
 
-    constructor(private readonly graphService: GraphService) {
-
-    }
+    constructor(private readonly graphService: GraphService) {}
 
     getItemsSorted(): ItemEntity[] {
         const graph: Graph = new Graph(this.items.length);

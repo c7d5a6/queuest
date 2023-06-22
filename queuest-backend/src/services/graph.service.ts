@@ -4,7 +4,6 @@ import cloneDeep from 'lodash.clonedeep';
 
 @Injectable()
 export class GraphService {
-
     private readonly logger = new Logger(GraphService.name);
 
     isGraphCylicx(g: Graph): number[] {
