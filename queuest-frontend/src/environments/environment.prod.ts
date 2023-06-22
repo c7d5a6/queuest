@@ -12,6 +12,6 @@ export const environment: ApplicationEnvironment = {
     },
     production: true,
     application: {
-        apiUrl: 'https://api.language.owlbeardm.com',
+        apiUrl: 'https://api.queuest.c7d5a6.com',
     },
 };
