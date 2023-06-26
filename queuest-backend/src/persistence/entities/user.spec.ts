@@ -1,7 +1,7 @@
-import { User } from './user';
+import { UserEntity } from './user-entity';
 
 describe('User', () => {
-  it('should be defined', () => {
-    expect(new User()).toBeDefined();
-  });
+    it('should be defined', () => {
+        expect(new UserEntity()).toBeDefined();
+    });
 });

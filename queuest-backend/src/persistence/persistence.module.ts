@@ -1,19 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './entities/user';
+import { UserEntity } from './entities/user-entity';
+import { UserService } from '../services/user.service';
 
 @Module({
-    imports: [
-        TypeOrmModule.forRoot({
-            type: 'postgres',
-            host: 'localhost',
-            port: 5432,
-            username: 'queuest',
-            password: 'queuest',
-            database: 'queuest',
-            entities: [User],
-            synchronize: false,
-        }),
-    ],
+    imports: [TypeOrmModule.forFeature([UserEntity])],
+    exports: [TypeOrmModule],
 })
 export class PersistenceModule {}
