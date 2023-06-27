@@ -1,4 +1,5 @@
-@import '../styles.scss';
+@import '../styles/colors';
+@import '../styles/variables';
 
 .card {
   border: 12px solid;
@@ -15,12 +16,16 @@
   width: available;
 }
 
-.topbar{
+.topbar {
   display: flex;
+  border-bottom: 2px solid $color-accent-darkest;
+  min-height: $top-bar-height;
 }
 
-.login-block{
+.login-block {
+  margin-top: auto;
+  margin-bottom: auto;
   margin-left: auto;
-  padding: 5px;
+  padding: 10px;
   width: fit-content;
 }
