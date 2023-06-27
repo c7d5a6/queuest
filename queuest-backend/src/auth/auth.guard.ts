@@ -6,10 +6,14 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { FirebaseService } from './firebase.service';
+import { UserService } from '../services/user.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-    constructor(private firebaseService: FirebaseService) {}
+    constructor(
+        private firebaseService: FirebaseService,
+        private userService: UserService,
+    ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
@@ -18,10 +22,11 @@ export class AuthGuard implements CanActivate {
             throw new UnauthorizedException();
         }
         try {
-            const payload = await this.firebaseService.verifyAsync(token);
-            // 💡 We're assigning the payload to the request object here
+            const user = await this.firebaseService.verifyAsync(token);
+            await this.userService.syncFirebaseUser(user);
+            // 💡 We're assigning the user to the request object here
             // so that we can access it in our route handlers
-            request['user'] = payload;
+            request['user'] = user;
         } catch {
             throw new UnauthorizedException();
         }

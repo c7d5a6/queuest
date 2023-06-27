@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { app, ServiceAccount } from 'firebase-admin';
 import * as firebase from 'firebase-admin';
+import { app, ServiceAccount } from 'firebase-admin';
 import * as serviceAccount from '../firebase-adminsdk.json';
+import { FirebaseUser } from './firebase-user';
 
 const firebaseParams: ServiceAccount = {
     projectId: serviceAccount.project_id,
@@ -21,13 +22,12 @@ export class FirebaseService {
         });
     }
 
-    verifyAsync(token: string): Promise<any> {
+    verifyAsync(token: string): Promise<FirebaseUser> {
         return this.defaultApp
             .auth()
             .verifyIdToken(token)
             .then(async (decodedToken) => {
-                this.logger.log('Decoded token', decodedToken);
-                const user: any = {
+                const user: FirebaseUser = {
                     email: decodedToken.email ?? '',
                     displayName: decodedToken.uid ?? '',
                     uid: decodedToken.uid ?? '',

@@ -4,6 +4,7 @@ import { AuthGuard } from './auth/auth.guard';
 import { ItemsService } from './services/items.service';
 import { UserService } from './services/user.service';
 import { UserEntity } from './persistence/entities/user-entity';
+import { FirebaseUser } from './auth/firebase-user';
 
 @Controller()
 export class AppController {
@@ -19,7 +20,7 @@ export class AppController {
     @Get('/user')
     @UseGuards(AuthGuard)
     getHU(@Req() request: any): string {
-        const requestElement: any = request.user;
+        const requestElement: FirebaseUser = request.user;
         this.logger.log('request ', request.user);
         return `hello ${requestElement?.uid}!`;
     }
