@@ -2,6 +2,7 @@ import {
     CanActivate,
     ExecutionContext,
     Injectable,
+    Logger,
     UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
@@ -10,6 +11,8 @@ import { UserService } from '../services/user.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+    private readonly logger = new Logger(AuthGuard.name);
+
     constructor(
         private firebaseService: FirebaseService,
         private userService: UserService,
@@ -27,7 +30,8 @@ export class AuthGuard implements CanActivate {
             // 💡 We're assigning the user to the request object here
             // so that we can access it in our route handlers
             request['user'] = user;
-        } catch {
+        } catch (ex) {
+            this.logger.error(ex);
             throw new UnauthorizedException();
         }
         return true;

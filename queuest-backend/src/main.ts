@@ -14,6 +14,7 @@ async function bootstrap() {
         .setTitle('Queuest api')
         .setDescription('The queuest API description')
         .setVersion('1.0')
+        .addBearerAuth()
         .build();
     const document = SwaggerModule.createDocument(app, config);
     fs.writeFileSync('../api/swagger-spec.json', JSON.stringify(document));

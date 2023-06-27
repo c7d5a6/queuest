@@ -1,5 +1,6 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { UserEntity } from './persistence/entities/user-entity';
+import { CollectionEntity } from './persistence/entities/collection-entity';
 
 export const typeOrmConfig: TypeOrmModuleOptions = {
     type: 'postgres',
@@ -8,7 +9,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     username: 'queuest',
     password: 'queuest',
     database: 'queuest',
-    entities: [UserEntity],
+    entities: [UserEntity, CollectionEntity],
     synchronize: false,
 };
 

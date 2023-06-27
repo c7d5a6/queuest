@@ -9,19 +9,22 @@ import { UserService } from './services/user.service';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import * as typeOrmConfig from './orm.config';
 import { PersistenceModule } from './persistence/persistence.module';
+import { CollectionController } from './controllers/collection.controller';
+import { CollectionService } from './services/collection.service';
 
 @Module({
     imports: [
         TypeOrmModule.forRoot(typeOrmConfig as TypeOrmModuleOptions),
         PersistenceModule,
     ],
-    controllers: [AppController, ItemsController],
+    controllers: [AppController, ItemsController, CollectionController],
     providers: [
         AppService,
         GraphService,
         ItemsService,
         FirebaseService,
         UserService,
+        CollectionService,
     ],
 })
 export class AppModule {}
