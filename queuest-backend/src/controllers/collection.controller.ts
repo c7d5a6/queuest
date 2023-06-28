@@ -1,10 +1,17 @@
-import { Controller, Get, Logger, Req, UseGuards } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Get,
+    Logger,
+    Post,
+    Req,
+    UseGuards,
+} from '@nestjs/common';
 import { CollectionService } from '../services/collection.service';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { ItemEntity } from '../persistence/entities/item.entity';
 import { AuthGuard } from '../auth/auth.guard';
-import { CollectionEntity } from '../persistence/entities/collection-entity';
 import { FirebaseUser } from '../auth/firebase-user';
+import { Collection } from '../models/collection';
 
 @ApiTags('Collections')
 @ApiBearerAuth()
@@ -17,26 +24,23 @@ export class CollectionController {
     @Get()
     @ApiOkResponse({
         description: 'User current user collections',
-        type: [CollectionEntity],
+        type: [Collection],
     })
     @UseGuards(AuthGuard)
     async getCurrentUserCollections(
         @Req() request: any,
-    ): Promise<CollectionEntity[]> {
+    ): Promise<Collection[]> {
         const user: FirebaseUser = request.user;
         return await this.collectionService.getCurrentUserCollections(user.uid);
     }
 
-    // @Post()
-    // @ApiOkResponse({
-    //     description: 'User current user collections',
-    //     type: [CollectionEntity],
-    // })
-    // @UseGuards(AuthGuard)
-    // async getCurrentUserCollections(
-    //     @Req() request: any,
-    // ): Promise<CollectionEntity[]> {
-    //     const user: FirebaseUser = request.user;
-    //     return await this.collectionService.getCurrentUserCollections(user.uid);
-    // }
+    @Post()
+    @UseGuards(AuthGuard)
+    async addCollection(@Req() request: any, @Body() collection: Collection) {
+        const user: FirebaseUser = request.user;
+        this.logger.log(
+            `Add new collection ${JSON.stringify(collection)} for ${user.uid}`,
+        );
+        await this.collectionService.addCollection(user.uid, collection);
+    }
 }

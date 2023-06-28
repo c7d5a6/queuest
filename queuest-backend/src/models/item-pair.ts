@@ -1,4 +1,4 @@
-import { ItemEntity } from '../persistence/entities/item.entity';
+import { ItemEntity } from '../persistence/entities/item-entity';
 import { ItemRelation } from './item-relation';
 import { ApiProperty } from '@nestjs/swagger';
 

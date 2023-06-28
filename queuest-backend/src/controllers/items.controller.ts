@@ -11,7 +11,7 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { ItemsService } from '../services/items.service';
-import { ItemEntity } from '../persistence/entities/item.entity';
+import { ItemEntity } from '../persistence/entities/item-entity';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ItemRelation } from '../models/item-relation';
 import { ItemPair } from '../models/item-pair';

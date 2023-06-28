@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '../persistence/entities/user-entity';
 import { Repository } from 'typeorm';
 import { CollectionEntity } from '../persistence/entities/collection-entity';
 import { AccessDeniedError } from 'sequelize';
+import { Collection } from '../models/collection';
 
 @Injectable()
 export class CollectionService {
@@ -16,9 +17,11 @@ export class CollectionService {
         private collectionRepository: Repository<CollectionEntity>,
     ) {}
 
-    async getCurrentUserCollections(
-        userUid: string,
-    ): Promise<CollectionEntity[]> {
+    private static mapToCollection(ce: CollectionEntity): Collection {
+        return { name: ce.name, id: ce.id };
+    }
+
+    async getCurrentUserCollections(userUid: string): Promise<Collection[]> {
         const user = await this.userRepository.findOneBy({ uid: userUid });
         if (!user) {
             const error = new Error(`There is no user with ${userUid}`);
@@ -27,21 +30,31 @@ export class CollectionService {
         const collections = await this.collectionRepository.findBy({
             user: { id: user.id },
         });
-        return collections;
+        return collections.map(CollectionService.mapToCollection);
     }
 
-    async addCurrentUserCollection(
+    async addCollection(
         userUid: string,
-        collectionName: string,
-    ): Promise<CollectionEntity> {
+        collection: Collection,
+    ): Promise<Collection> {
+        if (collection.id != null) {
+            const error = new Error(`Can't create collection with existing ID`);
+            throw new BadRequestException(error);
+        }
+        const user = await this.getUser(userUid);
+        const collectionEntity: CollectionEntity = new CollectionEntity();
+        collectionEntity.user = user;
+        collectionEntity.name = collection.name;
+        const result = await this.collectionRepository.save(collectionEntity);
+        return CollectionService.mapToCollection(result);
+    }
+
+    private async getUser(userUid: string) {
         const user = await this.userRepository.findOneBy({ uid: userUid });
         if (!user) {
             const error = new Error(`There is no user with ${userUid}`);
             throw new AccessDeniedError(error);
         }
-        const collection: CollectionEntity = new CollectionEntity();
-        collection.user = user;
-        collection.name = collectionName;
-        return await this.collectionRepository.save(collection);
+        return user;
     }
 }

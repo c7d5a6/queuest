@@ -1,5 +1,5 @@
 import { Logger, Injectable } from '@nestjs/common';
-import { ItemEntity } from '../persistence/entities/item.entity';
+import { ItemEntity } from '../persistence/entities/item-entity';
 import { Graph } from '../models/graph';
 import { GraphService } from './graph.service';
 import { ItemRelation } from '../models/item-relation';

@@ -17,7 +17,7 @@ import { CollectionService } from './services/collection.service';
         TypeOrmModule.forRoot(typeOrmConfig as TypeOrmModuleOptions),
         PersistenceModule,
     ],
-    controllers: [AppController, ItemsController, CollectionController],
+    controllers: [ItemsController, CollectionController],
     providers: [
         AppService,
         GraphService,
