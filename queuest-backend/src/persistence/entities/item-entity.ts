@@ -1,17 +1,7 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsString } from 'class-validator';
+import { BaseEntity } from './base-entity';
+import { Column } from 'typeorm';
 
-export class ItemEntity {
-    @ApiProperty({ required: true })
-    @IsNumber()
-    id: number;
-
-    @ApiProperty({ required: true })
-    @IsString()
+export class ItemEntity extends BaseEntity {
+    @Column({ name: 'name' })
     name: string;
-
-    constructor(id: number, name: string) {
-        this.id = id;
-        this.name = name;
-    }
 }
