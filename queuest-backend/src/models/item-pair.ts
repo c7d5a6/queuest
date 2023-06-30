@@ -13,7 +13,7 @@ export class ItemPair {
     @ApiProperty({ required: false })
     relation?: ItemRelation;
 
-    constructor(item1: ItemEntity, item2: ItemEntity, relation?: ItemRelation) {
+    constructor(item1: Item, item2: Item, relation?: ItemRelation) {
         this.item1 = item1;
         this.item2 = item2;
         this.relation = relation;

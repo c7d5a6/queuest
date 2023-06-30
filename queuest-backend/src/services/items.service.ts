@@ -18,10 +18,10 @@ import { CollectionEntity } from '../persistence/entities/collection.entity';
 
 @Injectable()
 export class ItemsService {
-    items: ItemEntity[] = [];
+    private readonly logger = new Logger(ItemsService.name);
+
     relations: Map<number, number[]> = new Map<number, number[]>();
     relationsInverted: Map<number, number[]> = new Map<number, number[]>();
-    private readonly logger = new Logger(ItemsService.name);
 
     constructor(
         private readonly graphService: GraphService,
@@ -30,6 +30,30 @@ export class ItemsService {
         @InjectRepository(CollectionItemEntity)
         private collectionItemRepository: Repository<CollectionItemEntity>,
     ) {}
+
+    private static mapToItem(cie: CollectionItemEntity): Item {
+        const result = new Item();
+        result.id = cie.id;
+        result.type = cie.type;
+        switch (cie.type) {
+            case CollectionItemType.ITEM:
+                console.log(
+                    `We are in the switch ITEM ${JSON.stringify(cie)} ${
+                        cie.item?.name
+                    } ${cie.item?.name ?? ''}`,
+                );
+                result.name = cie.item?.name ?? '';
+                break;
+            case CollectionItemType.COLLECTION:
+                result.name = cie.collection?.name ?? '';
+                break;
+            default:
+                throw new Error(
+                    `No covertion for ${cie.type} type of the item.`,
+                );
+        }
+        return result;
+    }
 
     public async addItem(userUid: string, collectionId: number, item: Item) {
         if (item.id != null) {
@@ -55,18 +79,16 @@ export class ItemsService {
         await this.collectionItemRepository.save(newCollectionItemEntity);
     }
 
-    getItemsSorted(): Item[] {
-        return this.getItemEntitySorted();
-    }
-
-    getItemEntitySorted(): ItemEntity[] {
-        const graph: Graph = new Graph(this.items.length);
-        this.getEdges(graph);
-        const result: ItemEntity[] = [];
-        this.graphService
-            .topologicalSort(graph)
-            .forEach((ind) => result.push(this.items[ind]));
-        return result;
+    async getItemsSorted(
+        userUid: string,
+        collectionId: number,
+    ): Promise<Item[]> {
+        const collection: CollectionEntity =
+            await this.collectionService.getCollection(userUid, collectionId);
+        const itemEntitySorted = (
+            await this.getItemEntitySorted(collection)
+        ).map((item) => ItemsService.mapToItem(item));
+        return itemEntitySorted;
     }
 
     addRelation(relation: ItemRelation) {
@@ -94,15 +116,21 @@ export class ItemsService {
         this.removeRelationFromTo(relation.to, relation.from);
     }
 
-    getLastItem(): Item | undefined {
-        if (this.items.length) {
-            return this.items[this.items.length - 1];
-        }
-    }
+    // getLastItem(): CollectionItemEntity | undefined {
+    //     if (this.items.length) {
+    //         return this.items[this.items.length - 1];
+    //     }
+    // }
 
-    getBestPairs(size: number): ItemPair[] {
-        const itemsSorted = this.getItemsSorted();
-        const fromArray = cloneDeep(this.items).sort(
+    async getBestPairs(
+        userUid: string,
+        collectionId: number,
+        size: number,
+    ): Promise<ItemPair[]> {
+        const collection: CollectionEntity =
+            await this.collectionService.getCollection(userUid, collectionId);
+        const itemsSorted = await this.getItemEntitySorted(collection);
+        const fromArray = cloneDeep(itemsSorted).sort(
             (i1, i2) =>
                 (this.relations.get(i1.id)?.length ?? 0) +
                 (this.relationsInverted.get(i1.id)?.length ?? 0) +
@@ -113,12 +141,20 @@ export class ItemsService {
         return [];
     }
 
-    getBestPair(id: number, exclude?: number[]) {
-        const item = this.items.find((item) => item.id == id);
-        if (!item || this.items.length === 1) {
+    async getBestPair(
+        collection: CollectionEntity,
+        id: number,
+        exclude?: number[],
+    ) {
+        //TODO:
+        const itemOptional = await this.collectionItemRepository.findOneBy({
+            id: id,
+        });
+        if (itemOptional === null) {
             return undefined;
         }
-        const itemsSorted = this.getItemEntitySorted();
+        const item: CollectionItemEntity = itemOptional;
+        const itemsSorted = await this.getItemEntitySorted(collection);
         const itemPosition = itemsSorted.findIndex((item) => item.id == id);
         if (
             itemPosition === 0 &&
@@ -162,10 +198,25 @@ export class ItemsService {
         return itemPair;
     }
 
+    private async getItemEntitySorted(
+        collection: CollectionEntity,
+    ): Promise<CollectionItemEntity[]> {
+        const items = await this.collectionItemRepository.findBy({
+            collection: { id: collection.id },
+        });
+        const graph: Graph = new Graph(items.length);
+        this.getEdges(items, graph);
+        const result: CollectionItemEntity[] = [];
+        this.graphService
+            .topologicalSort(graph)
+            .forEach((ind) => result.push(items[ind]));
+        return result;
+    }
+
     private getBestConnectedPairs(
         size: number,
-        fromArray: ItemEntity[],
-        itemsSorted: ItemEntity[],
+        fromArray: CollectionItemEntity[],
+        itemsSorted: CollectionItemEntity[],
     ) {
         const result = [];
         let i = 0;
@@ -189,21 +240,28 @@ export class ItemsService {
         return result;
     }
 
-    private itemPairFromItems(item: ItemEntity, bestPairForItem: ItemEntity) {
+    private itemPairFromItems(
+        item: CollectionItemEntity,
+        bestPairForItem: CollectionItemEntity,
+    ) {
         let itemRelation = undefined;
         if (this.isThereRelationFromTo(item.id, bestPairForItem.id)) {
             itemRelation = new ItemRelation(item.id, bestPairForItem.id);
         } else if (this.isThereRelationFromTo(bestPairForItem.id, item.id)) {
             itemRelation = new ItemRelation(bestPairForItem.id, item.id);
         }
-        return new ItemPair(item, bestPairForItem, itemRelation);
+        return new ItemPair(
+            ItemsService.mapToItem(item),
+            ItemsService.mapToItem(bestPairForItem),
+            itemRelation,
+        );
     }
 
     private getBestPairForItem(
         itemId: number,
-        itemsList: ItemEntity[],
+        itemsList: CollectionItemEntity[],
         exclude: Set<number>,
-    ): ItemEntity | undefined {
+    ): CollectionItemEntity | undefined {
         const itemPosition = itemsList.findIndex((item) => item.id == itemId);
         if (itemPosition < 0)
             throw new Error(`There is no item with ${itemId}`);
@@ -286,13 +344,13 @@ export class ItemsService {
         }
     }
 
-    private getEdges(graph: Graph) {
-        for (let i = 0; i < this.items.length; i++) {
-            const itemEntity = this.items[i];
+    private getEdges(items: CollectionItemEntity[], graph: Graph) {
+        for (let i = 0; i < items.length; i++) {
+            const itemEntity = items[i];
             const relations = this.relations.get(itemEntity.id);
             if (relations && relations.length > 0) {
                 relations.forEach((value) => {
-                    const j = this.items.findIndex((v) => value === v.id);
+                    const j = items.findIndex((v) => value === v.id);
                     graph.addEdge(i, j);
                 });
             }

@@ -1,5 +1,6 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { CollectionItemType } from '../persistence/entities/collection-item.entity';
 
 export class Item {
     @IsNumber()
@@ -10,4 +11,9 @@ export class Item {
     @IsString()
     @ApiProperty({ required: true })
     name: string;
+
+    @IsEnum(CollectionItemType)
+    @ApiProperty({ required: false })
+    @IsOptional()
+    type: CollectionItemType;
 }

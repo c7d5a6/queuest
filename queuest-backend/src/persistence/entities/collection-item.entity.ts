@@ -25,7 +25,8 @@ export class CollectionItemEntity extends BaseEntity {
 
     @ManyToOne(() => ItemEntity, {
         nullable: true,
-        lazy: true,
+        lazy: false,
+        eager: true,
     })
     @JoinColumn({ name: 'item_id', referencedColumnName: 'id' })
     item?: ItemEntity;
