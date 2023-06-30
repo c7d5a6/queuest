@@ -1,24 +1,65 @@
-import { Logger, Injectable } from '@nestjs/common';
-import { ItemEntity } from '../persistence/entities/item-entity';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { ItemEntity } from '../persistence/entities/item.entity';
 import { Graph } from '../models/graph';
 import { GraphService } from './graph.service';
 import { ItemRelation } from '../models/item-relation';
 import { ItemPair } from '../models/item-pair';
-import { ItemPairFilter } from '../controllers/filter/item-pair-filter';
 import cloneDeep from 'lodash.clonedeep';
 import { Item } from '../models/item';
+import { CollectionService } from './collection.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import {
+    CollectionItemEntity,
+    CollectionItemType,
+} from '../persistence/entities/collection-item.entity';
+import { ItemRepository } from '../persistence/repositories/item.repository';
+import { CollectionEntity } from '../persistence/entities/collection.entity';
 
 @Injectable()
 export class ItemsService {
-    private readonly logger = new Logger(ItemsService.name);
-
     items: ItemEntity[] = [];
     relations: Map<number, number[]> = new Map<number, number[]>();
     relationsInverted: Map<number, number[]> = new Map<number, number[]>();
+    private readonly logger = new Logger(ItemsService.name);
 
-    constructor(private readonly graphService: GraphService) {}
+    constructor(
+        private readonly graphService: GraphService,
+        private readonly collectionService: CollectionService,
+        private itemRepository: ItemRepository,
+        @InjectRepository(CollectionItemEntity)
+        private collectionItemRepository: Repository<CollectionItemEntity>,
+    ) {}
 
-    getItemsSorted(): ItemEntity[] {
+    public async addItem(userUid: string, collectionId: number, item: Item) {
+        if (item.id != null) {
+            throw new HttpException(
+                `Can't create item with existing ID`,
+                HttpStatus.BAD_REQUEST,
+            );
+        }
+        const collection: CollectionEntity =
+            await this.collectionService.getCollection(userUid, collectionId);
+        const newItemEntity: ItemEntity = new ItemEntity();
+        newItemEntity.name = item.name;
+        const itemEntity: ItemEntity = await this.itemRepository.save(
+            newItemEntity,
+            { reload: true },
+        );
+        const newCollectionItemEntity: CollectionItemEntity =
+            new CollectionItemEntity();
+        this.logger.log('item entity ', JSON.stringify(itemEntity));
+        newCollectionItemEntity.item = itemEntity;
+        newCollectionItemEntity.collection = collection;
+        newCollectionItemEntity.type = CollectionItemType.ITEM;
+        await this.collectionItemRepository.save(newCollectionItemEntity);
+    }
+
+    getItemsSorted(): Item[] {
+        return this.getItemEntitySorted();
+    }
+
+    getItemEntitySorted(): ItemEntity[] {
         const graph: Graph = new Graph(this.items.length);
         this.getEdges(graph);
         const result: ItemEntity[] = [];
@@ -26,10 +67,6 @@ export class ItemsService {
             .topologicalSort(graph)
             .forEach((ind) => result.push(this.items[ind]));
         return result;
-    }
-
-    addItem(item: Item) {
-        this.items.push({ name: item.name, id: this.items.length });
     }
 
     addRelation(relation: ItemRelation) {
@@ -57,7 +94,7 @@ export class ItemsService {
         this.removeRelationFromTo(relation.to, relation.from);
     }
 
-    getLastItem(): ItemEntity | undefined {
+    getLastItem(): Item | undefined {
         if (this.items.length) {
             return this.items[this.items.length - 1];
         }
@@ -72,7 +109,8 @@ export class ItemsService {
                 -(this.relations.get(i2.id)?.length ?? 0) +
                 -(this.relationsInverted.get(i2.id)?.length ?? 0),
         );
-        return this.getBestConnectedPairs(size, fromArray, itemsSorted);
+        // return this.getBestConnectedPairs(size, fromArray, itemsSorted);
+        return [];
     }
 
     getBestPair(id: number, exclude?: number[]) {
@@ -80,7 +118,7 @@ export class ItemsService {
         if (!item || this.items.length === 1) {
             return undefined;
         }
-        const itemsSorted = this.getItemsSorted();
+        const itemsSorted = this.getItemEntitySorted();
         const itemPosition = itemsSorted.findIndex((item) => item.id == id);
         if (
             itemPosition === 0 &&

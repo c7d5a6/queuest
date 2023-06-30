@@ -6,6 +6,5 @@ CREATE TABLE item_tbl
 
     name        VARCHAR(512)             NOT NULL,
 
-    CONSTRAINT pk_item PRIMARY KEY (id),
-    CONSTRAINT unq_item_name UNIQUE (name)
+    CONSTRAINT pk_item PRIMARY KEY (id)
 );

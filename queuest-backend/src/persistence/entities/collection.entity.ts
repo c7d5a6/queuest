@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
-import { BaseEntity } from './base-entity';
-import { UserEntity } from './user-entity';
+import { BaseEntity } from './base.entity';
+import { UserEntity } from './user.entity';
 
 @Entity({ name: 'collection_tbl' })
 export class CollectionEntity extends BaseEntity {

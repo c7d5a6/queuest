@@ -1,13 +1,15 @@
-import { BaseEntity } from './base-entity';
-import { Column, JoinColumn, ManyToOne } from 'typeorm';
-import { CollectionEntity } from './collection-entity';
+import { BaseEntity } from './base.entity';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { CollectionEntity } from './collection.entity';
+import { ItemEntity } from './item.entity';
 
 export enum CollectionItemType {
     ITEM = 'ITEM',
     COLLECTION = 'COLLECTION',
 }
 
-export class ItemEntity extends BaseEntity {
+@Entity({ name: 'collection_item_tbl' })
+export class CollectionItemEntity extends BaseEntity {
     @ManyToOne(() => CollectionEntity, {
         nullable: false,
         lazy: true,

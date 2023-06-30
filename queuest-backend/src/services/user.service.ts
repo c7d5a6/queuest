@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserEntity } from '../persistence/entities/user-entity';
+import { UserEntity } from '../persistence/entities/user.entity';
 import { Repository } from 'typeorm';
 import { FirebaseUser } from '../auth/firebase-user';
 

@@ -1,13 +1,14 @@
-import { ItemEntity } from '../persistence/entities/item-entity';
+import { ItemEntity } from '../persistence/entities/item.entity';
 import { ItemRelation } from './item-relation';
 import { ApiProperty } from '@nestjs/swagger';
+import { Item } from './item';
 
 export class ItemPair {
     @ApiProperty()
-    item1: ItemEntity;
+    item1: Item;
 
     @ApiProperty()
-    item2: ItemEntity;
+    item2: Item;
 
     @ApiProperty({ required: false })
     relation?: ItemRelation;

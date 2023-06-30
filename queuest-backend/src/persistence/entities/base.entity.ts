@@ -1,7 +1,7 @@
 import { CreateDateColumn, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 export class BaseEntity {
-    @PrimaryColumn()
+    @PrimaryColumn({ generated: true })
     id: number;
 
     @CreateDateColumn({

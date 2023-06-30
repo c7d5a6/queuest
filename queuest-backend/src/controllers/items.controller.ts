@@ -8,26 +8,50 @@ import {
     ParseArrayPipe,
     Post,
     Query,
+    Req,
     UseGuards,
 } from '@nestjs/common';
 import { ItemsService } from '../services/items.service';
-import { ItemEntity } from '../persistence/entities/item-entity';
-import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+    ApiBearerAuth,
+    ApiOkResponse,
+    ApiQuery,
+    ApiTags,
+} from '@nestjs/swagger';
 import { ItemRelation } from '../models/item-relation';
 import { ItemPair } from '../models/item-pair';
 import { Item } from '../models/item';
 import { AuthGuard } from '../auth/auth.guard';
+import { FirebaseUser } from '../auth/firebase-user';
 
 @ApiTags('Items')
-@Controller('items')
+@ApiBearerAuth()
+@Controller('collections/:collectionId/items')
 export class ItemsController {
     private readonly logger = new Logger(ItemsController.name);
+
     constructor(private readonly itemsService: ItemsService) {}
 
-    @Get()
-    @ApiOkResponse({ description: 'Sorted items', type: [ItemEntity] })
+    @Post()
     @UseGuards(AuthGuard)
-    getItems(): ItemEntity[] {
+    addItem(
+        @Req() request: any,
+        @Param('collectionId') collectionId: number,
+        @Body() item: Item,
+    ) {
+        try {
+            const user: FirebaseUser = request.user;
+            this.logger.log(JSON.stringify(item));
+            this.itemsService.addItem(user.uid, collectionId, item);
+        } catch (ex) {
+            console.log(ex);
+        }
+    }
+
+    @Get()
+    @ApiOkResponse({ description: 'Sorted items', type: [Item] })
+    @UseGuards(AuthGuard)
+    getItems(@Param('collectionId') collectionId: number): Item[] {
         const result = this.itemsService.getItemsSorted();
         return result;
     }
@@ -39,19 +63,22 @@ export class ItemsController {
         description: 'Get best pairs to compare',
         type: [ItemPair],
     })
-    getBestPairs(@Query('size') size: number): ItemPair[] {
+    getBestPairs(
+        @Param('collectionId') collectionId: number,
+        @Query('size') size: number,
+    ): ItemPair[] {
         return this.itemsService.getBestPairs(size);
     }
 
-    @Get('last')
-    @UseGuards(AuthGuard)
-    @ApiOkResponse({
-        description: 'Get last item',
-        type: ItemEntity,
-    })
-    getLastItem(): ItemEntity | undefined {
-        return this.itemsService.getLastItem();
-    }
+    // @Get('last')
+    // @UseGuards(AuthGuard)
+    // @ApiOkResponse({
+    //     description: 'Get last item',
+    //     type: Item,
+    // })
+    // getLastItem(@Param('collectionId') collectionId: number,): Item | undefined {
+    //     return this.itemsService.getLastItem();
+    // }
 
     @Get(':id/bestpair')
     @ApiQuery({ name: 'exclude', type: [Number], required: false })
@@ -73,13 +100,6 @@ export class ItemsController {
         exclude: number[] | undefined,
     ): ItemPair | undefined {
         return this.itemsService.getBestPair(itemId, exclude);
-    }
-
-    @Post()
-    @UseGuards(AuthGuard)
-    addItem(@Body() item: Item) {
-        this.logger.log(JSON.stringify(item));
-        this.itemsService.addItem(item);
     }
 
     @Post('relation')
