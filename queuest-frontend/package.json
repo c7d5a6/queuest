@@ -5,7 +5,7 @@
     "ng": "ng",
     "api-gen": "ng-openapi-gen",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -24,12 +24,12 @@
     "@angular/platform-browser-dynamic": "^16.0.0",
     "@angular/router": "^16.0.0",
     "@ngneat/dialog": "^4.0.0",
-    "ng-openapi-gen": "^0.24.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.13.0"
   },
   "devDependencies": {
+    "ng-openapi-gen": "^0.24.1",
     "@angular-devkit/build-angular": "^16.0.3",
     "@angular/cli": "~16.0.3",
     "@angular/compiler-cli": "^16.0.0",
