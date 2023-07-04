@@ -1,1 +1,44 @@
+// Breakpoints
+
+// Small tablets and large smartphones (landscape view)
+//$screen-xs-min: 0-600px;
+// Small tablets and large smartphones (landscape view)
+$screen-sm-min: 600px;
+// Small tablets (portrait view)
+$screen-md-min: 905px;
+// Tablets and small desktops
+$screen-lg-min: 1240px;
+// Large tablets and desktops
+$screen-xl-min: 1440px;
+
+// Small devices
+@mixin sm {
+  @media (min-width: #{$screen-sm-min}) {
+    @content;
+  }
+}
+
+// Medium devices
+@mixin md {
+  @media (min-width: #{$screen-md-min}) {
+    @content;
+  }
+}
+
+// Large devices
+@mixin lg {
+  @media (min-width: #{$screen-lg-min}) {
+    @content;
+  }
+}
+
+// Extra large devices
+@mixin xl {
+  @media (min-width: #{$screen-xl-min}) {
+    @content;
+  }
+}
+
+
+// Variables
 $top-bar-height: 55px;

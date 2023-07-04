@@ -1,6 +1,41 @@
 @import '../styles/colors';
 @import '../styles/variables';
 
+.full-body {
+  padding: 0 16px;
+  @include sm {
+    padding: 0 32px;
+  }
+  @include md {
+    padding: unset;
+  }
+  @include lg {
+    padding: 0 200px;
+  }
+  @include xl {
+    padding: unset;
+  }
+}
+
+.responsive-container {
+  width: 100%;
+  max-width: none;
+  margin-left: auto;
+  margin-right: auto;
+  @include sm {
+    max-width: none;
+  }
+  @include md {
+    max-width: 840px;
+  }
+  @include lg {
+    max-width: none;
+  }
+  @include xl {
+    max-width: 1040px;
+  }
+}
+
 .card {
   border: 12px solid;
   margin: 10px;
@@ -18,14 +53,11 @@
 
 .topbar {
   display: flex;
-  border-bottom: 2px solid $color-accent-darkest;
-  min-height: $top-bar-height;
+  //border-bottom: 2px solid $color-accent-darkest;
 }
 
 .login-block {
-  margin-top: auto;
-  margin-bottom: auto;
-  margin-left: auto;
-  padding: 10px;
-  width: fit-content;
+  margin: 8px 8px 8px auto;
+  //padding: 10px;
+  //width: fit-content;
 }
