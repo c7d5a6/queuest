@@ -1,2 +1,2 @@
-export { ApiService } from './services/api.service';
 export { ItemsService } from './services/items.service';
+export { CollectionsService } from './services/collections.service';

@@ -34,6 +34,19 @@ export class CollectionController {
         return await this.collectionService.getCurrentUserCollections(user.uid);
     }
 
+    @Get('fav')
+    @ApiOkResponse({
+        description: 'User current user favorite collections',
+        type: [Collection],
+    })
+    @UseGuards(AuthGuard)
+    async getCurrentUserFavoriteCollections(
+        @Req() request: any,
+    ): Promise<Collection[]> {
+        const user: FirebaseUser = request.user;
+        return await this.collectionService.getCurrentUserCollections(user.uid);
+    }
+
     @Post()
     @UseGuards(AuthGuard)
     async addCollection(@Req() request: any, @Body() collection: Collection) {

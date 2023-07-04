@@ -1,0 +1,11 @@
+@import "src/styles/module";
+
+.side-heading{
+  margin-bottom: 16px;
+}
+
+.side-collections{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

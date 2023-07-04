@@ -1,7 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-export interface Item {
+export interface Collection {
   id?: number;
   name: string;
-  type?: string;
 }

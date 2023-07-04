@@ -7,7 +7,6 @@ import {
     Validators,
 } from '@angular/forms';
 import { ItemsService } from '../../api/services/items.service';
-import { ItemEntity } from '../../api/models/item-entity';
 
 @Component({
     selector: 'app-add-item',
@@ -33,12 +32,12 @@ export class AddItemComponent {
             return;
         }
         const itemEntity = this.form.value;
-        this.itemService
-            .itemsControllerAddItem({ body: itemEntity })
-            .subscribe(() => {
-                this.form.reset();
-                this.changes.emit();
-            });
+        // this.itemService
+        //     .itemsControllerAddItem({ body: itemEntity })
+        //     .subscribe(() => {
+        //         this.form.reset();
+        //         this.changes.emit();
+        //     });
     }
 
     updateFormValidity(form: UntypedFormGroup): void {

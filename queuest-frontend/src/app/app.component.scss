@@ -1,5 +1,4 @@
-@import '../styles/colors';
-@import '../styles/variables';
+@import '../styles/module';
 
 .full-body {
   padding: 0 16px;
@@ -17,55 +16,28 @@
   }
 }
 
-.col-2 {
-  background: red;
-  width: columns_width(2, $grid_columns-xs, $grid_gutter-xs);
-  @include sm {
-    width: columns_width(2, $grid_columns-sm, $grid_gutter-sm);
-  }
-  @include md {
-    width: columns_width(2, $grid_columns-md, $grid_gutter-md);
-  }
-  @include lg {
-    width: columns_width(2, $grid_columns-lg, $grid_gutter-lg);
-  }
-  @include xl {
-    width: columns_width(2, $grid_columns-xl, $grid_gutter-xl);
-  }
-}
-
 .responsive-container {
   width: 100%;
   max-width: none;
   margin-left: auto;
   margin-right: auto;
+  padding-top: 16px;
   @include sm {
+    padding-top: 32px;
     max-width: none;
   }
   @include md {
+    padding-top: 64px;
     max-width: 840px;
   }
   @include lg {
+    padding-top: 64px;
     max-width: none;
   }
   @include xl {
+    padding-top: 64px;
     max-width: 1040px;
   }
-}
-
-.card {
-  border: 12px solid;
-  margin: 10px;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
-  border-image: url(./border.png) 30% / 1 stretch;
-}
-
-.card-content {
-  background-color: $color-dark;
-  padding: 5px;
-  width: available;
 }
 
 .topbar {

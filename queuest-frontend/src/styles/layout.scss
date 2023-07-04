@@ -1,0 +1,42 @@
+@import "variables";
+
+$columns: 12;
+
+@mixin col-x-list {
+  @for $i from 1 through $columns {
+    .col-#{$i} {
+      width: columns_width($i, $grid_columns-xs, $grid_gutter-xs);
+      @include sm {
+        width: columns_width($i, $grid_columns-sm, $grid_gutter-sm);
+      }
+      @include md {
+        width: columns_width($i, $grid_columns-md, $grid_gutter-md);
+      }
+      @include lg {
+        width: columns_width($i, $grid_columns-lg, $grid_gutter-lg);
+      }
+      @include xl {
+        width: columns_width($i, $grid_columns-xl, $grid_gutter-xl);
+      }
+    }
+  }
+}
+
+@include col-x-list;
+
+.row {
+  display: flex;
+  gap: $grid_gutter-xs;
+  @include sm {
+    gap: $grid_gutter-sm;
+  }
+  @include md {
+    gap: $grid_gutter-md;
+  }
+  @include lg {
+    gap: $grid_gutter-lg;
+  }
+  @include xl {
+    gap: $grid_gutter-xl;
+  }
+}

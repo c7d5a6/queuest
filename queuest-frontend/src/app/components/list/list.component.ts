@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { ItemEntity } from '../../api/models/item-entity';
+import {Item} from "../../api/models/item";
 
 @Component({
     selector: 'app-list',
@@ -7,5 +7,5 @@ import { ItemEntity } from '../../api/models/item-entity';
     styleUrls: ['./list.component.scss'],
 })
 export class ListComponent {
-    @Input() items!: ItemEntity[];
+    @Input() items!: Item[];
 }

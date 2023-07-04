@@ -6,9 +6,8 @@ import {
     Output,
     SimpleChanges,
 } from '@angular/core';
-import { ItemEntity } from '../../api/models/item-entity';
-import { ItemPair } from '../../api/models/item-pair';
 import { ItemsService } from '../../api/services/items.service';
+import {Item} from "../../api/models/item";
 
 @Component({
     selector: 'app-calibrate-item',
@@ -17,8 +16,8 @@ import { ItemsService } from '../../api/services/items.service';
 })
 export class CalibrateItemComponent implements OnChanges {
     @Output() changes = new EventEmitter<void>();
-    @Input() lastItem!: ItemEntity;
-    items: ItemPair[] = [];
+    @Input() lastItem!: Item;
+    // items: ItemPair[] = [];
     calibrated = false;
     changed = false;
 
@@ -41,34 +40,34 @@ export class CalibrateItemComponent implements OnChanges {
     itemPressed(id: number) {
         this.changed = true;
         this.changes.emit();
-        if (id === this.items.length - 1) {
-            this.getNextBestPair();
-        }
+        // if (id === this.items.length - 1) {
+        //     this.getNextBestPair();
+        // }
     }
 
     private reloadCalibration() {
         this.calibrated = false;
         this.changed = false;
-        this.items = [];
+        // this.items = [];
         this.getNextBestPair();
     }
 
     private getNextBestPair() {
         const ids = [];
         ids.push(this.lastItem.id);
-        this.items.forEach((item) => ids.push(item.item2.id));
-        this.itemsService
-            .itemsControllerGetBestPair({
-                id: this.lastItem.id,
-                exclude: ids,
-            })
-            .subscribe((pair) => {
-                if (!!pair) {
-                    this.changed = false;
-                    this.items.push(pair);
-                } else {
-                    this.calibrated = true;
-                }
-            });
+        // this.items.forEach((item) => ids.push(item.item2.id));
+        // this.itemsService
+        //     .itemsControllerGetBestPair({
+        //         id: this.lastItem.id,
+        //         exclude: ids,
+        //     })
+        //     .subscribe((pair) => {
+        //         if (!!pair) {
+        //             this.changed = false;
+        //             this.items.push(pair);
+        //         } else {
+        //             this.calibrated = true;
+        //         }
+        //     });
     }
 }

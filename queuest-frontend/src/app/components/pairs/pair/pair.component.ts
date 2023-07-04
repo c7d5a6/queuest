@@ -1,5 +1,4 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { ItemPair } from '../../../api/models/item-pair';
 import { ItemsService } from '../../../api/services/items.service';
 
 @Component({
@@ -8,7 +7,7 @@ import { ItemsService } from '../../../api/services/items.service';
     styleUrls: ['./pair.component.scss'],
 })
 export class PairComponent {
-    @Input() pair!: ItemPair;
+    // @Input() pair!: ItemPair;
     @Output() pressed = new EventEmitter<void>();
 
     constructor(private itemsService: ItemsService) {}
@@ -20,14 +19,14 @@ export class PairComponent {
                 from: from,
                 to: to,
             };
-            this.itemsService
-                .itemsControllerAddRelation({
-                    body: relation,
-                })
-                .subscribe(() => {
-                    this.pair.relation = relation;
-                    this.pressed.emit();
-                });
+            // this.itemsService
+            //     .itemsControllerAddRelation({
+            //         body: relation,
+            //     })
+            //     .subscribe(() => {
+            //         this.pair.relation = relation;
+            //         this.pressed.emit();
+            //     });
         }
     }
 
@@ -37,13 +36,13 @@ export class PairComponent {
             from: from,
             to: to,
         };
-        this.itemsService
-            .itemsControllerDeleteRelation({
-                body: relation,
-            })
-            .subscribe(() => {
-                this.pair.relation = undefined;
-                this.pressed.emit();
-            });
+        // this.itemsService
+        //     .itemsControllerDeleteRelation({
+        //         body: relation,
+        //     })
+        //     .subscribe(() => {
+        //         this.pair.relation = undefined;
+        //         this.pressed.emit();
+        //     });
     }
 }

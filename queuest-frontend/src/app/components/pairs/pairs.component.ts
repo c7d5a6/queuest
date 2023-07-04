@@ -1,6 +1,5 @@
 import { Component, EventEmitter, Output } from '@angular/core';
 import { ItemsService } from '../../api/services/items.service';
-import { ItemPair } from '../../api/models/item-pair';
 
 @Component({
     selector: 'app-pairs',
@@ -8,7 +7,7 @@ import { ItemPair } from '../../api/models/item-pair';
     styleUrls: ['./pairs.component.scss'],
 })
 export class PairsComponent {
-    public items: ItemPair[] = [];
+    // public items: ItemPair[] = [];
     @Output() changes = new EventEmitter<void>();
 
     constructor(private itemsService: ItemsService) {}
@@ -18,9 +17,9 @@ export class PairsComponent {
     }
 
     getPairs() {
-        this.itemsService
-            .itemsControllerGetBestPairs({ size: 5 })
-            .subscribe((value) => (this.items = value));
+        // this.itemsService
+        //     .itemsControllerGetBestPairs({ size: 5 })
+        //     .subscribe((value) => (this.items = value));
     }
 
     itemPressed() {

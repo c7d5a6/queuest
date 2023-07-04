@@ -1,7 +1,7 @@
 <h2>Sort list</h2>
 <div>
   <ul>
-    <li *ngFor="let pair of items"><app-pair (pressed)="itemPressed()" [pair]="pair"></app-pair></li>
+    <li><app-pair (pressed)="itemPressed()"></app-pair></li>
   </ul>
 </div>
 <span style="padding-left: 20px;"><button (click)="getPairs()">NEXT</button></span>
