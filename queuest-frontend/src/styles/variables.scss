@@ -11,6 +11,61 @@ $screen-lg-min: 1240px;
 // Large tablets and desktops
 $screen-xl-min: 1440px;
 
+//Gutter values
+$grid_gutter-xs: 16px;
+$grid_gutter-sm: 16px;
+$grid_gutter-md: 24px;
+$grid_gutter-lg: 24px;
+$grid_gutter-xl: 24px;
+
+//Column values
+$grid_columns-xs: 4;
+$grid_columns-sm: 8;
+$grid_columns-md: 12;
+$grid_columns-lg: 12;
+$grid_columns-xl: 12;
+
+@function columns_width ($i, $grid-columns, $gutter) {
+  $g_val: calc($gutter / 1px);
+  $width: calc(
+    #{calc(100 * $i / $grid-columns)}% -
+    #{calc($g_val * (calc($grid-columns / $i) - 1) / calc($grid-columns / $i))}px
+  );
+
+  @return $width;
+}
+
+@for $i from 1 through $grid_columns-xs {
+  .col_xs-#{$i} {
+    flex-basis: columns_width($i, $grid_columns-xs, $grid_gutter-xs);
+    max-width: columns_width($i, $grid_columns-xs, $grid_gutter-xs);
+  }
+}
+@for $i from 1 through $grid_columns-sm {
+  .col_sm-#{$i} {
+    flex-basis: columns_width($i, $grid_columns-sm, $grid_gutter-sm);
+    max-width: columns_width($i, $grid_columns-sm, $grid_gutter-sm);
+  }
+}
+@for $i from 1 through $grid_columns-md {
+  .col_md-#{$i} {
+    flex-basis: columns_width($i, $grid_columns-md, $grid_gutter-md);
+    max-width: columns_width($i, $grid_columns-md, $grid_gutter-md);
+  }
+}
+@for $i from 1 through $grid_columns-lg {
+  .col_lg-#{$i} {
+    flex-basis: columns_width($i, $grid_columns-lg, $grid_gutter-lg);
+    max-width: columns_width($i, $grid_columns-lg, $grid_gutter-lg);
+  }
+}
+@for $i from 1 through $grid_columns-xl {
+  .col_xl-#{$i} {
+    flex-basis: columns_width($i, $grid_columns-xl, $grid_gutter-xl);
+    max-width: columns_width($i, $grid_columns-xl, $grid_gutter-xl);
+  }
+}
+
 // Small devices
 @mixin sm {
   @media (min-width: #{$screen-sm-min}) {

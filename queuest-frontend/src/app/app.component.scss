@@ -17,6 +17,23 @@
   }
 }
 
+.col-2 {
+  background: red;
+  width: columns_width(2, $grid_columns-xs, $grid_gutter-xs);
+  @include sm {
+    width: columns_width(2, $grid_columns-sm, $grid_gutter-sm);
+  }
+  @include md {
+    width: columns_width(2, $grid_columns-md, $grid_gutter-md);
+  }
+  @include lg {
+    width: columns_width(2, $grid_columns-lg, $grid_gutter-lg);
+  }
+  @include xl {
+    width: columns_width(2, $grid_columns-xl, $grid_gutter-xl);
+  }
+}
+
 .responsive-container {
   width: 100%;
   max-width: none;
