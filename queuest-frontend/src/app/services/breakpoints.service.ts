@@ -38,32 +38,4 @@ export class BreakpointsService {
     });
   }
 
-// {
-
-// this.responsive.observe(Breakpoints.Small)
-//   .subscribe(result => {
-//     if (result.matches) {
-//       this.breakpont = `Small`
-//     }
-//   });
-// this.responsive.observe(Breakpoints.Medium)
-//   .subscribe(result => {
-//     if (result.matches) {
-//       this.breakpont = `Medium`
-//     }
-//   });
-// this.responsive.observe(Breakpoints.Large)
-//   .subscribe(result => {
-//     if (result.matches) {
-//       this.breakpont = `Large`
-//     }
-//   });
-// this.responsive.observe(Breakpoints.XLarge)
-//   .subscribe(result => {
-//     if (result.matches) {
-//       this.breakpont = `XLarge`
-//     }
-//   });
-//
-// }
 }

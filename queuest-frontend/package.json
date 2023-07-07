@@ -4,12 +4,13 @@
   "scripts": {
     "ng": "ng",
     "api-gen": "ng-openapi-gen",
-    "start": "ng serve",
-    "build": "ng build --configuration production",
+    "start": "ng serve --configuration development",
+    "build": "ng build --configuration production --stats-json",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "bundle-report": "webpack-bundle-analyzer dist/queuest-frontend/stats.json"
   },
   "private": true,
   "dependencies": {
@@ -29,7 +30,6 @@
     "zone.js": "~0.13.0"
   },
   "devDependencies": {
-    "ng-openapi-gen": "^0.24.1",
     "@angular-devkit/build-angular": "^16.0.3",
     "@angular/cli": "~16.0.3",
     "@angular/compiler-cli": "^16.0.0",
@@ -44,7 +44,9 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.0.0",
+    "ng-openapi-gen": "^0.24.1",
     "prettier": "^2.8.8",
-    "typescript": "~5.0.2"
+    "typescript": "~5.0.2",
+    "webpack-bundle-analyzer": "^4.9.0"
   }
 }
