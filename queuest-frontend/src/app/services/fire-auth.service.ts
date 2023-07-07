@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {GoogleAuthProvider} from '@angular/fire/auth';
+import { GoogleAuthProvider } from '@firebase/auth';
 import {AngularFireAuth} from "@angular/fire/compat/auth";
 
 @Injectable({
