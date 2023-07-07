@@ -17,7 +17,7 @@ import {Item} from "../../api/models/item";
 export class CalibrateItemComponent implements OnChanges {
     @Output() changes = new EventEmitter<void>();
     @Input() lastItem!: Item;
-    // items: ItemPair[] = [];
+    items = [];
     calibrated = false;
     changed = false;
 

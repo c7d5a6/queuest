@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { DialogRef } from '@ngneat/dialog';
 import { FireAuthService } from '../../services/fire-auth.service';
-import { firebaseApp$ } from '@angular/fire/app';
 
 interface Data {
     userName: string;
@@ -15,6 +14,7 @@ interface Data {
     styleUrls: ['./profile.component.scss'],
 })
 export class ProfileComponent {
+  
     constructor(
         private ref: DialogRef<Data>,
         private fireAuthService: FireAuthService,

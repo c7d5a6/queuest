@@ -6,6 +6,7 @@
     "api-gen": "ng-openapi-gen",
     "start": "ng serve --configuration development",
     "build": "ng build --configuration production --stats-json",
+    "build-dev": "ng build --configuration development",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

@@ -24,11 +24,11 @@ import {FireAuthService} from './services/fire-auth.service';
 import {FirebaseAuthInterceptor} from './interceptors/firebase-auth.interceptor';
 import {AngularFireModule} from '@angular/fire/compat';
 import {LoginComponent} from './components/login/login.component';
-import {ProfileComponent} from './components/profile/profile.component';
 import {CollectionsComponent} from './components/collections/collections/collections.component';
 import {CollectionsPageComponent} from './pages/collections/collections-page.component';
 import {CollectionsSidepanelComponent} from './components/collections/collections-sidepanel/collections-sidepanel.component';
 import { CollectionCardComponent } from './components/collections/collection-card/collection-card.component';
+import {AngularFireAuthModule} from "@angular/fire/compat/auth";
 
 @NgModule({
   declarations: [

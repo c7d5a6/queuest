@@ -1,6 +1,5 @@
-import {Component, inject, OnInit} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {ItemsService} from './api/services/items.service';
-import {Auth} from '@angular/fire/auth';
 import {Item} from "./api/models/item";
 
 @Component({
@@ -11,7 +10,6 @@ import {Item} from "./api/models/item";
 export class AppComponent implements OnInit {
   items: Item[] = [];
   lastItem?: Item;
-  private auth: Auth = inject(Auth);
 
   constructor(private itemsService: ItemsService) {
   }

@@ -7,9 +7,9 @@ import {BreakPoints, BreakpointsService} from "../../services/breakpoints.servic
   styleUrls: ['./collections-page.component.scss']
 })
 export class CollectionsPageComponent implements OnInit {
-  showSidePanel: boolean;
-  sidePanelColumns: number;
-  collectionsPanelColumns: number;
+  showSidePanel: boolean = false;
+  sidePanelColumns: number = 0;
+  collectionsPanelColumns: number = 0;
 
   constructor(private breakpointsService: BreakpointsService) {
   }
