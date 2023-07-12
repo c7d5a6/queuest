@@ -20,6 +20,6 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, config);
     fs.writeFileSync('../api/swagger-spec.json', JSON.stringify(document));
     SwaggerModule.setup('api', app, document);
-    await app.listen(3001);
+    await app.listen(3002);
 }
 bootstrap();
