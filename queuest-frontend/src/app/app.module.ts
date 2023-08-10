@@ -28,7 +28,7 @@ import {CollectionsComponent} from './components/collections/collections/collect
 import {CollectionsPageComponent} from './pages/collections/collections-page.component';
 import {CollectionsSidepanelComponent} from './components/collections/collections-sidepanel/collections-sidepanel.component';
 import { CollectionCardComponent } from './components/collections/collection-card/collection-card.component';
-import {AngularFireAuthModule} from "@angular/fire/compat/auth";
+import { AddCollectionComponent } from './components/add-collection/add-collection.component';
 
 @NgModule({
   declarations: [
@@ -43,6 +43,7 @@ import {AngularFireAuthModule} from "@angular/fire/compat/auth";
     CollectionsPageComponent,
     CollectionsSidepanelComponent,
     CollectionCardComponent,
+    AddCollectionComponent,
   ],
   imports: [
     BrowserModule,

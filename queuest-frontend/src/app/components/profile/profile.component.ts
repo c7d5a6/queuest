@@ -8,13 +8,11 @@ interface Data {
 
 @Component({
     selector: 'app-profile',
-    standalone: true,
-    changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './profile.component.html',
     styleUrls: ['./profile.component.scss'],
 })
 export class ProfileComponent {
-  
+
     constructor(
         private ref: DialogRef<Data>,
         private fireAuthService: FireAuthService,

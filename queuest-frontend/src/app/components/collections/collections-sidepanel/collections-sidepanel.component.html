@@ -1,6 +1,4 @@
 <div class="side-heading"><span class="text-heading">Favorite</span></div>
-<div class="side-collections">
-  <div class="card"><div class="card-content">Collection name 1</div></div>
-  <div class="card"><div class="card-content">Collection name 2</div></div>
-  <div class="card"><div class="card-content">Collection name 3</div></div>
+<div class="side-collections" *ngIf="favCollections">
+  <div class="card" *ngFor="let collection of favCollections;"><div class="card-content">{{collection.name}}</div></div>
 </div>

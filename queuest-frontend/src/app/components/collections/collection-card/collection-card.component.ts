@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import {Component, Input} from '@angular/core';
+import {Collection} from "../../../api/models/collection";
 
 @Component({
   selector: 'app-collection-card',
@@ -6,5 +7,6 @@ import { Component } from '@angular/core';
   styleUrls: ['./collection-card.component.scss']
 })
 export class CollectionCardComponent {
+  @Input() collection!: Collection;
 
 }
