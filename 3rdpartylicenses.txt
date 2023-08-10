@@ -88,12 +88,6 @@ Apache-2.0
 @firebase/component
 Apache-2.0
 
-@firebase/firestore
-Apache-2.0
-
-@firebase/firestore-compat
-Apache-2.0
-
 @firebase/installations
 Apache-2.0
 
@@ -107,9 +101,6 @@ Apache-2.0
 Apache-2.0
 
 @firebase/util
-Apache-2.0
-
-@firebase/webchannel-wrapper
 Apache-2.0
 
 @ngneat/dialog
@@ -126,8 +117,6 @@ firebase/auth
 firebase/compat/app
 
 firebase/compat/auth
-
-firebase/compat/firestore
 
 firebase/messaging
 
