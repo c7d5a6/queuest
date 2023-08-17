@@ -9,6 +9,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     database: 'queuest',
     entities: [__dirname + '/entities/*.entity{.ts,.js}'],
     synchronize: false,
+    ssl:true
 };
 
 module.exports = typeOrmConfig;
