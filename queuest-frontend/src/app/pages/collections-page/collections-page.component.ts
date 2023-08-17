@@ -1,5 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {BreakPoints, BreakpointsService} from "../../services/breakpoints.service";
+import {ActivatedRoute, Data} from "@angular/router";
+import {Collection} from "../../api/models/collection";
 
 @Component({
   selector: 'app-collections-page',
@@ -7,14 +9,17 @@ import {BreakPoints, BreakpointsService} from "../../services/breakpoints.servic
   styleUrls: ['./collections-page.component.scss']
 })
 export class CollectionsPageComponent implements OnInit {
+  collections: Array<Collection> = [];
   showSidePanel: boolean = false;
   sidePanelColumns: number = 0;
   collectionsPanelColumns: number = 0;
 
-  constructor(private breakpointsService: BreakpointsService) {
+  constructor(private breakpointsService: BreakpointsService,
+              private activatedRoute: ActivatedRoute) {
   }
 
   ngOnInit(): void {
+    console.log("CollectionsPageComponent")
     this.breakpointsService.observe().subscribe(value => {
       this.showSidePanel = false;
       this.sidePanelColumns = 3;
@@ -40,6 +45,12 @@ export class CollectionsPageComponent implements OnInit {
           break;
         default:
           break;
+      }
+    });
+    this.activatedRoute.data.subscribe((routeData: Data) => {
+      const data = routeData as { collections: Array<Collection> };
+      if (data && data.collections) {
+        this.collections = data.collections;
       }
     });
 

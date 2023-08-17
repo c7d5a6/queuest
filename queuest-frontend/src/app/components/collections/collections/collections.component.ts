@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import {BreakPoints, BreakpointsService} from "../../../services/breakpoints.service";
 import {CollectionsService} from "../../../api/services/collections.service";
 import {Collection} from "../../../api/models/collection";
@@ -12,7 +12,7 @@ import {AddCollectionComponent} from "../../add-collection/add-collection.compon
 })
 export class CollectionsComponent implements OnInit {
 
-  collections: Collection[] = [];
+  @Input() collections!: Collection[];
   favCollections: Collection[] = [];
   showFavourite: boolean = false;
 
@@ -22,6 +22,7 @@ export class CollectionsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    console.log('CollectionsComponent', this.collections)
     this.breakpointsService.observe().subscribe(value => {
       switch (value) {
         case BreakPoints.xs:
@@ -43,7 +44,6 @@ export class CollectionsComponent implements OnInit {
           this.showFavourite = false;
       }
     });
-    this.getCollections();
   }
 
   add(): void {

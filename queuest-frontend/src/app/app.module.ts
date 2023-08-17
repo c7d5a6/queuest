@@ -25,10 +25,11 @@ import {FirebaseAuthInterceptor} from './interceptors/firebase-auth.interceptor'
 import {AngularFireModule} from '@angular/fire/compat';
 import {LoginComponent} from './components/login/login.component';
 import {CollectionsComponent} from './components/collections/collections/collections.component';
-import {CollectionsPageComponent} from './pages/collections/collections-page.component';
+import {CollectionsPageComponent} from './pages/collections-page/collections-page.component';
 import {CollectionsSidepanelComponent} from './components/collections/collections-sidepanel/collections-sidepanel.component';
 import { CollectionCardComponent } from './components/collections/collection-card/collection-card.component';
 import { AddCollectionComponent } from './components/add-collection/add-collection.component';
+import { CollectionPageComponent } from './pages/collection-page/collection-page.component';
 
 @NgModule({
   declarations: [
@@ -44,6 +45,7 @@ import { AddCollectionComponent } from './components/add-collection/add-collecti
     CollectionsSidepanelComponent,
     CollectionCardComponent,
     AddCollectionComponent,
+    CollectionPageComponent,
   ],
   imports: [
     BrowserModule,
