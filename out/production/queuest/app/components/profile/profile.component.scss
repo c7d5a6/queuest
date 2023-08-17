@@ -1,0 +1,29 @@
+.profileContainer{
+  margin-left: auto;
+  margin-right: auto;
+  width: fit-content;
+  height: fit-content;
+  margin-top: 32px;
+}
+.profileImageContainer{
+  position: relative;
+  top: 0;
+  left: 0;
+}
+.profilePhoto{
+  width: 32px;
+  height: 32px;
+  border: 5px solid transparent;
+  border-radius: 16px;
+  position: relative;
+  top: 0;
+  left: 0;
+}
+.profilePhotoBorder{
+  width: 32px;
+  height: 32px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-image: url("picture.svg");
+}

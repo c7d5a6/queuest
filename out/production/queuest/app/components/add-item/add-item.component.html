@@ -1,0 +1,5 @@
+<form [formGroup]="form">
+  <!--  <small>Name</small>-->
+  <input formControlName="name" id="name" placeholder="Item" class="input-item">
+  <button (click)="addNewItem($event)" [disabled]="form.invalid">Add</button>
+</form>

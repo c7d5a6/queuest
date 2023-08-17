@@ -1,0 +1,17 @@
+@import "colors";
+
+.card {
+  border: 12px solid;
+  border-image: url(border.png) 30% / 1 stretch;
+}
+
+.card-content {
+  background-color: $color-dark;
+  padding: 4px;
+  width: available;
+}
+
+.text-heading {
+  font-size: 32px;
+  line-height: 40px;
+}

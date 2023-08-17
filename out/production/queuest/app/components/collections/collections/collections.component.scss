@@ -1,0 +1,75 @@
+@import "src/styles/module.scss";
+
+.collection-bar {
+  display: flex;
+}
+
+.search {
+  margin-right: 24px;
+  width: 100%;
+}
+
+.collections-with-header {
+  margin-top: 16px;
+  @include sm {
+    margin-top: 32px;
+  }
+  @include md {
+    margin-top: 32px;
+  }
+  @include lg {
+    margin-top: 32px;
+  }
+  @include xl {
+    margin-top: 32px;
+  }
+}
+
+.heading {
+  margin-bottom: 8px;
+  @include sm {
+    margin-top: 16px;
+  }
+  @include md {
+    display: none;
+  }
+  @include lg {
+    display: none;
+  }
+  @include xl {
+    display: none;
+  }
+}
+
+.collections-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $grid_gutter-xs;
+  @include sm {
+    gap: $grid_gutter-sm;
+  }
+  @include md {
+    gap: $grid_gutter-md;
+  }
+  @include lg {
+    gap: $grid_gutter-lg;
+  }
+  @include xl {
+    gap: $grid_gutter-xl;
+  }
+}
+.collection-card{
+  width: columns_width(4, $grid_columns-xs, $grid_gutter-xs);
+  @include sm {
+    width: columns_width(4, $grid_columns-sm, $grid_gutter-sm);
+  }
+  @include md {
+    width: columns_width(4, $grid_columns-md, $grid_gutter-md);
+  }
+  @include lg {
+    width: columns_width(4, $grid_columns-lg, $grid_gutter-lg);
+  }
+  @include xl {
+    width: columns_width(3, $grid_columns-xl, $grid_gutter-xl);
+  }
+}

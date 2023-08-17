@@ -1,0 +1,52 @@
+@import '../styles/module';
+
+.full-body {
+  padding: 0 16px;
+  @include sm {
+    padding: 0 32px;
+  }
+  @include md {
+    padding: unset;
+  }
+  @include lg {
+    padding: 0 200px;
+  }
+  @include xl {
+    padding: unset;
+  }
+}
+
+.responsive-container {
+  width: 100%;
+  max-width: none;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: 16px;
+  @include sm {
+    padding-top: 32px;
+    max-width: none;
+  }
+  @include md {
+    padding-top: 64px;
+    max-width: 840px;
+  }
+  @include lg {
+    padding-top: 64px;
+    max-width: none;
+  }
+  @include xl {
+    padding-top: 64px;
+    max-width: 1040px;
+  }
+}
+
+.topbar {
+  display: flex;
+  //border-bottom: 2px solid $color-accent-darkest;
+}
+
+.login-block {
+  margin: 8px 8px 8px auto;
+  //padding: 10px;
+  //width: fit-content;
+}

@@ -1,0 +1,24 @@
+<div class="card">
+  <div class="card-content">
+    <div class="collection-bar">
+      <input class="search" placeholder="Search">
+      <button (click)="add()">+</button>
+    </div>
+  </div>
+</div>
+<div *ngIf="showFavourite && favCollections" class="collections-with-header">
+  <div class="heading"><span class="text-heading">Favorites</span></div>
+  <div class="collections-container">
+    <div *ngFor="let collection of favCollections;" class="collection-card">
+      <app-collection-card [collection]="collection"></app-collection-card>
+    </div>
+  </div>
+</div>
+<div class="collections-with-header">
+  <div class="heading"><span class="text-heading">Collections</span></div>
+  <div class="collections-container">
+    <div *ngFor="let collection of collections;"  class="collection-card">
+      <app-collection-card [collection]="collection"></app-collection-card>
+    </div>
+  </div>
+</div>
