@@ -1,17 +1,9 @@
-import {
-    Body,
-    Controller,
-    Get,
-    Logger,
-    Post,
-    Req,
-    UseGuards,
-} from '@nestjs/common';
-import { CollectionService } from '../services/collection.service';
-import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { AuthGuard } from '../auth/auth.guard';
-import { FirebaseUser } from '../auth/firebase-user';
-import { Collection } from '../models/collection';
+import {Body, Controller, Get, Logger, Param, Post, Req, UseGuards,} from '@nestjs/common';
+import {CollectionService} from '../services/collection.service';
+import {ApiBearerAuth, ApiOkResponse, ApiTags} from '@nestjs/swagger';
+import {AuthGuard} from '../auth/auth.guard';
+import {FirebaseUser} from '../auth/firebase-user';
+import {Collection} from '../models/collection';
 
 @ApiTags('Collections')
 @ApiBearerAuth()
@@ -19,7 +11,8 @@ import { Collection } from '../models/collection';
 export class CollectionController {
     private readonly logger = new Logger(CollectionController.name);
 
-    constructor(private readonly collectionService: CollectionService) {}
+    constructor(private readonly collectionService: CollectionService) {
+    }
 
     @Get()
     @ApiOkResponse({
@@ -32,6 +25,20 @@ export class CollectionController {
     ): Promise<Collection[]> {
         const user: FirebaseUser = request.user;
         return await this.collectionService.getCurrentUserCollections(user.uid);
+    }
+
+    @Get(':collectionId')
+    @ApiOkResponse({
+        description: 'Get collection',
+        type: Collection,
+    })
+    @UseGuards(AuthGuard)
+    async getCollection(
+        @Req() request: any,
+        @Param('collectionId') collectionId: number,
+    ): Promise<Collection> {
+        const user: FirebaseUser = request.user;
+        return await this.collectionService.getUserCollection(user.uid, collectionId);
     }
 
     @Get('fav')

@@ -126,6 +126,59 @@ export class CollectionsService extends BaseService {
   }
 
   /**
+   * Path part for operation collectionControllerGetCollection
+   */
+  static readonly CollectionControllerGetCollectionPath = '/collections/{collectionId}';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `collectionControllerGetCollection()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  collectionControllerGetCollection$Response(params: {
+    collectionId: number;
+  },
+  context?: HttpContext
+
+): Observable<StrictHttpResponse<Collection>> {
+
+    const rb = new RequestBuilder(this.rootUrl, CollectionsService.CollectionControllerGetCollectionPath, 'get');
+    if (params) {
+      rb.path('collectionId', params.collectionId, {});
+    }
+
+    return this.http.request(rb.build({
+      responseType: 'json',
+      accept: 'application/json',
+      context: context
+    })).pipe(
+      filter((r: any) => r instanceof HttpResponse),
+      map((r: HttpResponse<any>) => {
+        return r as StrictHttpResponse<Collection>;
+      })
+    );
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `collectionControllerGetCollection$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  collectionControllerGetCollection(params: {
+    collectionId: number;
+  },
+  context?: HttpContext
+
+): Observable<Collection> {
+
+    return this.collectionControllerGetCollection$Response(params,context).pipe(
+      map((r: StrictHttpResponse<Collection>) => r.body as Collection)
+    );
+  }
+
+  /**
    * Path part for operation collectionControllerGetCurrentUserFavoriteCollections
    */
   static readonly CollectionControllerGetCurrentUserFavoriteCollectionsPath = '/collections/fav';

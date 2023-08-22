@@ -3,6 +3,8 @@ import {RouterModule, Routes} from '@angular/router';
 import {collectionsResolver} from "./resolvers/collections.resolver";
 import {CollectionsPageComponent} from "./pages/collections-page/collections-page.component";
 import {CollectionPageComponent} from "./pages/collection-page/collection-page.component";
+import {collectionItemsResolver} from "./resolvers/collection-items.resolver";
+import {collectionResolver} from "./resolvers/collection.resolver";
 
 const routes: Routes = [
   {
@@ -12,7 +14,11 @@ const routes: Routes = [
   },
   {
     path: 'collection/:collectionId',
-    component: CollectionPageComponent
+    component: CollectionPageComponent,
+    resolve: {
+      items: collectionItemsResolver,
+      collection: collectionResolver
+    }
   }
 ];
 

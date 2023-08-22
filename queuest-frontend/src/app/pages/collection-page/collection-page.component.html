@@ -1,1 +1,6 @@
-<p>collection-page works!</p>
+<div class="heading"><span class="text-heading">{{collection.name}}</span></div>
+<div>
+  <ol>
+    <li *ngFor="let item of items">{{item.name}}</li>
+  </ol>
+</div>
