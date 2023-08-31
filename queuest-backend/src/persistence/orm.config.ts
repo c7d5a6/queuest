@@ -12,12 +12,12 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     database: 'queuest',
     entities: [__dirname + '/entities/*.entity{.ts,.js}'],
     synchronize: false,
-    ssl: true,
-    extra: {
-        ssl: {
-            rejectUnauthorized: false,
-        },
-    },
+    ssl: false,
+    // extra: {
+    //     ssl: {
+    //         rejectUnauthorized: false,
+    //     },
+    // },
 };
 
 module.exports = typeOrmConfig;
