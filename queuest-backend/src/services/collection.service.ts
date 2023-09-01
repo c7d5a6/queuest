@@ -1,10 +1,10 @@
-import {BadRequestException, Injectable, Logger} from '@nestjs/common';
-import {InjectRepository} from '@nestjs/typeorm';
-import {UserEntity} from '../persistence/entities/user.entity';
-import {Repository} from 'typeorm';
-import {CollectionEntity} from '../persistence/entities/collection.entity';
-import {AccessDeniedError} from 'sequelize';
-import {Collection} from '../models/collection';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UserEntity } from '../persistence/entities/user.entity';
+import { Repository } from 'typeorm';
+import { CollectionEntity } from '../persistence/entities/collection.entity';
+import { AccessDeniedError } from 'sequelize';
+import { Collection } from '../models/collection';
 
 @Injectable()
 export class CollectionService {
@@ -15,42 +15,33 @@ export class CollectionService {
         private userRepository: Repository<UserEntity>,
         @InjectRepository(CollectionEntity)
         private collectionRepository: Repository<CollectionEntity>,
-    ) {
-    }
+    ) {}
 
     private static mapToCollection(ce: CollectionEntity): Collection {
-        return {name: ce.name, id: ce.id};
+        return { name: ce.name, id: ce.id };
     }
 
-    private static checkUserAccess(
-        collection: CollectionEntity | null,
-        userUid: string,
-    ) {
+    private static checkUserAccess(collection: CollectionEntity | null, userUid: string) {
         if (collection?.user.uid && collection?.user.uid !== userUid) {
-            const error = new Error(
-                `User ${userUid} can't access collection ${collection.id}`,
-            );
+            const error = new Error(`User ${userUid} can't access collection ${collection.id}`);
             throw new AccessDeniedError(error);
         }
     }
 
     async getCurrentUserCollections(userUid: string): Promise<Collection[]> {
-        const user = await this.userRepository.findOneBy({uid: userUid});
+        const user = await this.userRepository.findOneBy({ uid: userUid });
         if (!user) {
             const error = new Error(`There is no user with ${userUid}`);
             throw new AccessDeniedError(error);
         }
         const collections = await this.collectionRepository.findBy({
-            user: {id: user.id},
+            user: { id: user.id },
         });
         return collections.map(CollectionService.mapToCollection);
     }
 
-    public async getCollection(
-        userUid: string,
-        collectionId: number,
-    ): Promise<CollectionEntity> {
-        const user = await this.userRepository.findOneBy({uid: userUid});
+    public async getCollection(userUid: string, collectionId: number): Promise<CollectionEntity> {
+        const user = await this.userRepository.findOneBy({ uid: userUid });
         if (!user) {
             const error = new Error(`There is no user with ${userUid}`);
             throw new AccessDeniedError(error);
@@ -66,10 +57,7 @@ export class CollectionService {
         return collection;
     }
 
-    async addCollection(
-        userUid: string,
-        collection: Collection,
-    ): Promise<Collection> {
+    async addCollection(userUid: string, collection: Collection): Promise<Collection> {
         if (collection.id != null) {
             const error = new Error(`Can't create collection with existing ID`);
             throw new BadRequestException(error);
@@ -82,15 +70,13 @@ export class CollectionService {
         return CollectionService.mapToCollection(result);
     }
 
-    public async getUserCollection(userUid: string,
-                                   collectionId: number,
-    ): Promise<Collection> {
-        let collectionEntity = await this.getCollection(userUid, collectionId);
+    public async getUserCollection(userUid: string, collectionId: number): Promise<Collection> {
+        const collectionEntity = await this.getCollection(userUid, collectionId);
         return CollectionService.mapToCollection(collectionEntity);
     }
 
     private async getUser(userUid: string) {
-        const user = await this.userRepository.findOneBy({uid: userUid});
+        const user = await this.userRepository.findOneBy({ uid: userUid });
         if (!user) {
             const error = new Error(`There is no user with ${userUid}`);
             throw new AccessDeniedError(error);

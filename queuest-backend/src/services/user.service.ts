@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '../persistence/entities/user.entity';
 import { Repository } from 'typeorm';
 import { FirebaseUser } from '../auth/firebase-user';
+import { AccessDeniedError } from 'sequelize';
 
 @Injectable()
 export class UserService {
@@ -35,12 +36,17 @@ export class UserService {
         if (find !== null) {
             return find;
         }
-        this.logger.log(
-            `User ${user.email} is not found. Saving with uid ${user.uid}.`,
-        );
+        this.logger.log(`User ${user.email} is not found. Saving with uid ${user.uid}.`);
         const userEntity = new UserEntity();
         userEntity.email = user.email;
         userEntity.uid = user.uid;
         return await this.userRepository.save(userEntity);
+    }
+
+    checkUserAccess(uid: string, user: UserEntity | undefined) {
+        if (user?.uid !== uid) {
+            const error = new Error(`User ${uid} can't access this`);
+            throw new AccessDeniedError(error);
+        }
     }
 }

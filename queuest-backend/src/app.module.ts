@@ -10,17 +10,16 @@ import * as typeOrmConfig from './persistence/orm.config';
 import { PersistenceModule } from './persistence/persistence.module';
 import { CollectionController } from './controllers/collection.controller';
 import { CollectionService } from './services/collection.service';
+import { ItemsRelationService } from './services/items-relation.service';
 
 @Module({
-    imports: [
-        TypeOrmModule.forRoot(typeOrmConfig as TypeOrmModuleOptions),
-        PersistenceModule,
-    ],
+    imports: [TypeOrmModule.forRoot(typeOrmConfig as TypeOrmModuleOptions), PersistenceModule],
     controllers: [ItemsController, CollectionController],
     providers: [
         AppService,
         GraphService,
         ItemsService,
+        ItemsRelationService,
         FirebaseService,
         UserService,
         CollectionService,

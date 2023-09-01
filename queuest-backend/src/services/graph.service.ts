@@ -111,8 +111,7 @@ export class GraphService {
     }
 
     topologicalSortAcyclicGraph(g: Graph): number[] {
-        if (this.isGraphCylic(g).length > 0)
-            throw new Error("Can't do topological sort for graph with cycles");
+        if (this.isGraphCylic(g).length > 0) throw new Error("Can't do topological sort for graph with cycles");
         const inDegree: number[] = new Array(g.size).fill(0);
         for (let u = 0; u < g.size; u++) {
             for (let i = 0; i < g.adj[u].length; i++) {
@@ -152,12 +151,7 @@ export class GraphService {
         return this.topologicalSortAcyclicGraph(g);
     }
 
-    private isGraphCylicUtill(
-        g: Graph,
-        i: number,
-        visited: boolean[],
-        recStack: boolean[],
-    ): number[] {
+    private isGraphCylicUtill(g: Graph, i: number, visited: boolean[], recStack: boolean[]): number[] {
         if (!visited[i]) {
             visited[i] = true;
             recStack[i] = true;
@@ -168,15 +162,9 @@ export class GraphService {
                         return [children[c], i];
                     }
                     if (!visited[children[c]]) {
-                        const result = this.isGraphCylicUtill(
-                            g,
-                            children[c],
-                            visited,
-                            recStack,
-                        );
+                        const result = this.isGraphCylicUtill(g, children[c], visited, recStack);
                         if (result.length > 0) {
-                            if (result[result.length - 1] === result[0])
-                                return result;
+                            if (result[result.length - 1] === result[0]) return result;
                             else return result.concat([i]);
                         }
                     }

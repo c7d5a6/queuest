@@ -1,13 +1,4 @@
-import {
-    Body,
-    Controller,
-    Get,
-    Logger,
-    Param,
-    Post,
-    Req,
-    UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Logger, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { ItemsService } from '../services/items.service';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Item } from '../models/item';
@@ -24,11 +15,7 @@ export class ItemsController {
 
     @Post()
     @UseGuards(AuthGuard)
-    addItem(
-        @Req() request: any,
-        @Param('collectionId') collectionId: number,
-        @Body() item: Item,
-    ) {
+    addItem(@Req() request: any, @Param('collectionId') collectionId: number, @Body() item: Item) {
         const user: FirebaseUser = request.user;
         this.logger.log(JSON.stringify(item));
         this.itemsService.addItem(user.uid, collectionId, item);
@@ -37,10 +24,7 @@ export class ItemsController {
     @Get()
     @ApiOkResponse({ description: 'Sorted items', type: [Item] })
     @UseGuards(AuthGuard)
-    async getItems(
-        @Req() request: any,
-        @Param('collectionId') collectionId: number,
-    ): Promise<Item[]> {
+    async getItems(@Req() request: any, @Param('collectionId') collectionId: number): Promise<Item[]> {
         const user: FirebaseUser = request.user;
         return await this.itemsService.getItemsSorted(user.uid, collectionId);
     }

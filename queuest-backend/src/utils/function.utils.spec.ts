@@ -24,8 +24,6 @@ describe('FunctionUtils', () => {
             return x + 'asd';
         };
 
-        expect(FunctionUtils.compose(addASD, get2Letter)('bas')).toEqual(
-            'aasd',
-        );
+        expect(FunctionUtils.compose(addASD, get2Letter)('bas')).toEqual('aasd');
     });
 });

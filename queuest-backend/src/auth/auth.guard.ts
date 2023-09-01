@@ -1,10 +1,4 @@
-import {
-    CanActivate,
-    ExecutionContext,
-    Injectable,
-    Logger,
-    UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
 import { FirebaseService } from './firebase.service';
 import { UserService } from '../services/user.service';
@@ -13,10 +7,7 @@ import { UserService } from '../services/user.service';
 export class AuthGuard implements CanActivate {
     private readonly logger = new Logger(AuthGuard.name);
 
-    constructor(
-        private firebaseService: FirebaseService,
-        private userService: UserService,
-    ) {}
+    constructor(private firebaseService: FirebaseService, private userService: UserService) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
