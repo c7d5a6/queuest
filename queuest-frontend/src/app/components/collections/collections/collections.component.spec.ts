@@ -3,19 +3,19 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CollectionsComponent } from './collections.component';
 
 describe('CollectionsComponent', () => {
-  let component: CollectionsComponent;
-  let fixture: ComponentFixture<CollectionsComponent>;
+    let component: CollectionsComponent;
+    let fixture: ComponentFixture<CollectionsComponent>;
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      declarations: [CollectionsComponent]
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            declarations: [CollectionsComponent],
+        });
+        fixture = TestBed.createComponent(CollectionsComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
     });
-    fixture = TestBed.createComponent(CollectionsComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+    it('should create', () => {
+        expect(component).toBeTruthy();
+    });
 });

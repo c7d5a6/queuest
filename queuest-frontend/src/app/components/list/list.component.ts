@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import {Item} from "../../api/models/item";
+import { Item } from '../../api/models/item';
 
 @Component({
     selector: 'app-list',

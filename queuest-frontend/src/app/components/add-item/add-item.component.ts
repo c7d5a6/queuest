@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import {
     AbstractControl,
     FormBuilder,
@@ -7,6 +7,7 @@ import {
     Validators,
 } from '@angular/forms';
 import { ItemsService } from '../../api/services/items.service';
+import { Collection } from '../../api/models/collection';
 
 @Component({
     selector: 'app-add-item',
@@ -14,6 +15,7 @@ import { ItemsService } from '../../api/services/items.service';
     styleUrls: ['./add-item.component.scss'],
 })
 export class AddItemComponent {
+    @Input() collection!: Collection;
     @Output() changes = new EventEmitter<void>();
 
     readonly form: FormGroup = this.formBuilder.group({
@@ -32,12 +34,16 @@ export class AddItemComponent {
             return;
         }
         const itemEntity = this.form.value;
-        // this.itemService
-        //     .itemsControllerAddItem({ body: itemEntity })
-        //     .subscribe(() => {
-        //         this.form.reset();
-        //         this.changes.emit();
-        //     });
+        if (!this.collection.id) return;
+        this.itemService
+            .itemsControllerAddItem({
+                collectionId: this.collection.id,
+                body: itemEntity,
+            })
+            .subscribe(() => {
+                this.form.reset();
+                this.changes.emit();
+            });
     }
 
     updateFormValidity(form: UntypedFormGroup): void {

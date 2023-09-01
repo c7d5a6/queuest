@@ -12,7 +12,6 @@ interface Data {
     styleUrls: ['./profile.component.scss'],
 })
 export class ProfileComponent {
-
     constructor(
         private ref: DialogRef<Data>,
         private fireAuthService: FireAuthService,

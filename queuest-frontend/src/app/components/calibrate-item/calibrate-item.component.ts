@@ -7,7 +7,7 @@ import {
     SimpleChanges,
 } from '@angular/core';
 import { ItemsService } from '../../api/services/items.service';
-import {Item} from "../../api/models/item";
+import { Item } from '../../api/models/item';
 
 @Component({
     selector: 'app-calibrate-item',
