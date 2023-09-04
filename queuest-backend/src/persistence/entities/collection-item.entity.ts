@@ -12,7 +12,8 @@ export enum CollectionItemType {
 export class CollectionItemEntity extends BaseEntity {
     @ManyToOne(() => CollectionEntity, {
         nullable: false,
-        lazy: true,
+        lazy: false,
+        eager: true,
     })
     @JoinColumn({ name: 'collection_id', referencedColumnName: 'id' })
     collection: CollectionEntity;

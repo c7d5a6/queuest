@@ -1,7 +1,5 @@
 import { Controller, Get, Logger, Post, Req, UseGuards } from '@nestjs/common';
-import { Request } from 'express';
 import { AuthGuard } from './auth/auth.guard';
-import { ItemsService } from './services/items.service';
 import { UserService } from './services/user.service';
 import { UserEntity } from './persistence/entities/user.entity';
 import { FirebaseUser } from './auth/firebase-user';

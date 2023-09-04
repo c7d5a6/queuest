@@ -9,7 +9,8 @@ export class CollectionEntity extends BaseEntity {
 
     @ManyToOne(() => UserEntity, {
         nullable: false,
-        lazy: true,
+        lazy: false,
+        eager: true,
     })
     @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
     user: UserEntity;

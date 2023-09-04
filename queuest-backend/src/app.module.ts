@@ -11,10 +11,11 @@ import { PersistenceModule } from './persistence/persistence.module';
 import { CollectionController } from './controllers/collection.controller';
 import { CollectionService } from './services/collection.service';
 import { ItemsRelationService } from './services/items-relation.service';
+import {ItemRelationsController} from "./controllers/item-relations.controller";
 
 @Module({
     imports: [TypeOrmModule.forRoot(typeOrmConfig as TypeOrmModuleOptions), PersistenceModule],
-    controllers: [ItemsController, CollectionController],
+    controllers: [ItemsController, CollectionController, ItemRelationsController],
     providers: [
         AppService,
         GraphService,
