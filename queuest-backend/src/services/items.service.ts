@@ -1,17 +1,15 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { ItemEntity } from '../persistence/entities/item.entity';
-import { Graph } from '../models/graph';
-import { GraphService } from './graph.service';
-import { ItemRelation } from '../models/item-relation';
-import { ItemPair } from '../models/item-pair';
-import cloneDeep from 'lodash.clonedeep';
-import { Item } from '../models/item';
-import { CollectionService } from './collection.service';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CollectionItemEntity, CollectionItemType } from '../persistence/entities/collection-item.entity';
-import { ItemRepository } from '../persistence/repositories/item.repository';
-import { CollectionEntity } from '../persistence/entities/collection.entity';
+import {HttpException, HttpStatus, Injectable, Logger} from '@nestjs/common';
+import {ItemEntity} from '../persistence/entities/item.entity';
+import {Graph} from '../models/graph';
+import {GraphService} from './graph.service';
+import {Item} from '../models/item';
+import {CollectionService} from './collection.service';
+import {InjectRepository} from '@nestjs/typeorm';
+import {Repository} from 'typeorm';
+import {CollectionItemEntity, CollectionItemType} from '../persistence/entities/collection-item.entity';
+import {ItemRepository} from '../persistence/repositories/item.repository';
+import {CollectionEntity} from '../persistence/entities/collection.entity';
+import {Edges, ItemsRelationService} from "./items-relation.service";
 
 @Injectable()
 export class ItemsService {
@@ -23,6 +21,7 @@ export class ItemsService {
     constructor(
         private readonly graphService: GraphService,
         private readonly collectionService: CollectionService,
+        private readonly itemsRelationService: ItemsRelationService,
         private itemRepository: ItemRepository,
         @InjectRepository(CollectionItemEntity)
         private collectionItemRepository: Repository<CollectionItemEntity>,
@@ -66,10 +65,9 @@ export class ItemsService {
 
     async getItemsSorted(userUid: string, collectionId: number): Promise<Item[]> {
         const collection: CollectionEntity = await this.collectionService.getCollection(userUid, collectionId);
-        const itemEntitySorted = (await this.getItemEntitySorted(collection)).map((item) =>
+        return (await this.getItemEntitySorted(collection)).map((item) =>
             ItemsService.mapToItem(item),
         );
-        return itemEntitySorted;
     }
 
     private async getItemEntitySorted(collection: CollectionEntity): Promise<CollectionItemEntity[]> {
@@ -77,10 +75,24 @@ export class ItemsService {
             collection: { id: collection.id },
         });
         const graph: Graph = new Graph(items.length);
-        // this.getEdges(items, graph);
+        await this.setGraphEdges(items, graph);
         const result: CollectionItemEntity[] = [];
         this.graphService.topologicalSort(graph).forEach((ind) => result.push(items[ind]));
         return result;
+    }
+
+    async setGraphEdges(items: CollectionItemEntity[], graph: Graph): Promise<void> {
+        const edge: Edges = await this.itemsRelationService.getRelationsMaps(items);
+        for (let i = 0; i < items.length; i++) {
+            const itemEntity = items[i];
+            const relations = edge.relations.get(itemEntity.id);
+            if (relations && relations.length > 0) {
+                relations.forEach((value) => {
+                    const j = items.findIndex((v) => value === v.id);
+                    graph.addEdge(i, j);
+                });
+            }
+        }
     }
 
     //
@@ -233,18 +245,7 @@ export class ItemsService {
     //     return undefined;
     // }
     //
-    // private getEdges(items: CollectionItemEntity[], graph: Graph, relations: Map<number, number[]>) {
-    //     for (let i = 0; i < items.length; i++) {
-    //         const itemEntity = items[i];
-    //         const relations = relations.get(itemEntity.id);
-    //         if (relations && relations.length > 0) {
-    //             relations.forEach((value) => {
-    //                 const j = items.findIndex((v) => value === v.id);
-    //                 graph.addEdge(i, j);
-    //             });
-    //         }
-    //     }
-    // }
+
     //
     // private isThereRelation(itemAId: number, itemBId: number) {
     //     return this.isThereRelationFromTo(itemAId, itemBId) || this.isThereRelationFromTo(itemBId, itemAId);
