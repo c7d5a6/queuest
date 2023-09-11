@@ -16,7 +16,7 @@ import { Collection } from '../../api/models/collection';
 })
 export class AddItemComponent {
     @Input() collection!: Collection;
-    @Output() changes = new EventEmitter<void>();
+    @Output() changes = new EventEmitter<number>();
 
     readonly form: FormGroup = this.formBuilder.group({
         name: [null, Validators.required],
@@ -40,9 +40,9 @@ export class AddItemComponent {
                 collectionId: this.collection.id,
                 body: itemEntity,
             })
-            .subscribe(() => {
+            .subscribe((id) => {
                 this.form.reset();
-                this.changes.emit();
+                this.changes.emit(id);
             });
     }
 

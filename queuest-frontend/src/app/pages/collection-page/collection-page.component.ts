@@ -4,7 +4,6 @@ import {BreakpointsService} from '../../services/breakpoints.service';
 import {Item} from '../../api/models/item';
 import {Collection} from '../../api/models/collection';
 import {ItemsService} from '../../api/services/items.service';
-import {AddCollectionComponent} from "../../components/add-collection/add-collection.component";
 import {DialogService} from "@ngneat/dialog";
 import {CalibrateItemComponent} from "../../components/calibrate-item/calibrate-item.component";
 
@@ -42,17 +41,19 @@ export class CollectionPageComponent implements OnInit {
     });
   }
 
-  itemAdded() {
+  itemAdded(id: number) {
     this.dialogService
       .open(CalibrateItemComponent, {
         // data is typed based on the passed generic
         data: {
-          title: 'Calibrate item',
+          title: `Calibrate item ${id}`,
+          itemId: id,
         },
       })
       .afterClosed$.subscribe(() =>
       this.itemService.itemsControllerGetItems({
         collectionId: this.collection.id!,
       }).subscribe((items) => (this.items = items)));
+
   }
 }

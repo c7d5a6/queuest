@@ -1,40 +1,33 @@
 import {
-  ChangeDetectionStrategy,
-  Component,
-  Input,
-  OnChanges,
-  SimpleChanges,
+  Component, OnInit,
 } from '@angular/core';
 import {ItemsService} from '../../api/services/items.service';
-import {Item} from '../../api/models/item';
 import {DialogRef} from "@ngneat/dialog";
 import {Data} from "@angular/router";
+import {ItemPair} from "../../api/models/item-pair";
 
 @Component({
   selector: 'app-calibrate-item',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './calibrate-item.component.html',
   styleUrls: ['./calibrate-item.component.scss'],
 })
-export class CalibrateItemComponent implements OnChanges {
-  @Input() lastItem!: Item;
-  items = [];
+export class CalibrateItemComponent implements OnInit {
+
+  itemId: number | undefined;
+  title: string = '';
+  items: ItemPair[] = [];
   calibrated = false;
-  changed = false;
 
   constructor(
     private ref: DialogRef<Data>,
     private itemsService: ItemsService,
   ) {
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (
-      changes['lastItem']?.currentValue?.id !==
-      changes['lastItem']?.previousValue?.id
-    ) {
-      console.log(changes['lastItem']?.currentValue);
-      this.reloadCalibration();
+    console.log(ref.data);
+    if(ref.data['title']){
+      this.title = ref.data['title']
+    }
+    if(ref.data['itemId']){
+      this.itemId = ref.data['itemId']
     }
   }
 
@@ -43,35 +36,35 @@ export class CalibrateItemComponent implements OnChanges {
   }
 
   itemPressed(id: number) {
-    this.changed = true;
-    // if (id === this.items.length - 1) {
-    //     this.getNextBestPair();
-    // }
+    if (id === this.items.length - 1) {
+        this.getNextBestPair();
+    }
   }
 
-  private reloadCalibration() {
-    this.calibrated = false;
-    this.changed = false;
-    // this.items = [];
+  getNextBestPair() {
+    const ids: number[] = [];
+    ids.push(this.itemId!);
+    this.items.forEach((item) => ids.push(item.item2.id!));
+    this.itemsService
+        .itemsControllerGetBestPair({
+            id: this.itemId!,
+            exclude: ids,
+        })
+        .subscribe((pair) => {
+            if (!!pair) {
+                this.items.push(pair);
+            } else {
+                this.calibrated = true;
+            }
+            console.log(pair,this.items.length)
+        });
+  }
+
+  ngOnInit(): void {
     this.getNextBestPair();
   }
 
-  private getNextBestPair() {
-    const ids = [];
-    ids.push(this.lastItem.id);
-    // this.items.forEach((item) => ids.push(item.item2.id));
-    // this.itemsService
-    //     .itemsControllerGetBestPair({
-    //         id: this.lastItem.id,
-    //         exclude: ids,
-    //     })
-    //     .subscribe((pair) => {
-    //         if (!!pair) {
-    //             this.changed = false;
-    //             this.items.push(pair);
-    //         } else {
-    //             this.calibrated = true;
-    //         }
-    //     });
+  close() {
+    this.ref.close();
   }
 }

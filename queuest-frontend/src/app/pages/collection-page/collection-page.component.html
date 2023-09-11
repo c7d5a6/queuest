@@ -1,5 +1,5 @@
 <div class="heading"><span class="text-heading">{{collection.name}}</span></div>
-<app-add-item [collection]="collection" (changes)="itemAdded()"></app-add-item>
+<app-add-item [collection]="collection" (changes)="itemAdded($event)"></app-add-item>
 <div>
   <ol>
     <li *ngFor="let item of items">{{item.name}}</li>

@@ -28,31 +28,6 @@ export class ItemRelationsController {
         return await this.itemsRelationService.removeRelationBetween(user.uid, itemAId, itemBId);
     }
 
-    //
-    // @Get('pairs')
-    // @ApiQuery({ name: 'size', type: Number, required: true })
-    // @UseGuards(AuthGuard)
-    // @ApiOkResponse({
-    //     description: 'Get best pairs to compare',
-    //     type: [ItemPair],
-    // })
-    // getBestPairs(
-    //     @Param('collectionId') collectionId: number,
-    //     @Query('size') size: number,
-    // ): ItemPair[] {
-    //     return this.itemsService.getBestPairs(size);
-    // }
-    //
-    // // @Get('last')
-    // // @UseGuards(AuthGuard)
-    // // @ApiOkResponse({
-    // //     description: 'Get last item',
-    // //     type: Item,
-    // // })
-    // // getLastItem(@Param('collectionId') collectionId: number,): Item | undefined {
-    // //     return this.itemsService.getLastItem();
-    // // }
-    //
     // @Get(':id/bestpair')
     // @ApiQuery({ name: 'exclude', type: [Number], required: false })
     // @UseGuards(AuthGuard)
@@ -73,19 +48,5 @@ export class ItemRelationsController {
     //     exclude: number[] | undefined,
     // ): ItemPair | undefined {
     //     return this.itemsService.getBestPair(itemId, exclude);
-    // }
-    //
-    // @Post('relation')
-    // @UseGuards(AuthGuard)
-    // addRelation(@Body() relation: ItemRelation) {
-    //     this.logger.log(JSON.stringify(relation));
-    //     this.itemsService.addRelation(relation);
-    // }
-    //
-    // @Delete('relation')
-    // @UseGuards(AuthGuard)
-    // deleteRelation(@Body() relation: ItemRelation) {
-    //     this.logger.log(JSON.stringify(relation));
-    //     this.itemsService.deleteRelation(relation);
     // }
 }

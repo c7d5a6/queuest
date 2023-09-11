@@ -1,8 +1,9 @@
-<h2>Calibrate <span class="item">{{lastItem.name}}</span></h2>
-<div *ngIf="!calibrated || !changed">
+<h2>{{title}}</h2>
+<div *ngIf="!calibrated">
   <ul>
-    <li *ngFor="let pair of items; let i = index"><app-pair (pressed)="itemPressed(i)"></app-pair></li>
+    <li *ngFor="let p of items; let i = index"><app-pair (pressed)="itemPressed(i)" [pair]="p"></app-pair></li>
   </ul>
 </div>
-<span *ngIf="!calibrated" style="padding-left: 20px;"><button (click)="getPairs()">MORE</button></span>
-<h3 *ngIf="calibrated && changed">Calibrated!</h3>
+<span *ngIf="!calibrated" style="padding-left: 20px;"><button (click)="getNextBestPair()">Next</button></span>
+<h3 *ngIf="calibrated">Calibrated!</h3>
+<button *ngIf="calibrated" (click)="close()">Close</button>
