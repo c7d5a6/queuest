@@ -23,11 +23,14 @@ export class ItemsRelationService {
     ) {
     }
 
-    async removeRelationFromTo(userUid: string, fromId: number, toId: number): Promise<void> {
-        const relationOptional = await this.itemRelationRepository.findOneBy({
-            itemFrom: {id: fromId},
-            itemTo: {id: toId},
-        });
+    async removeRelationBetween(userUid: string, itemAId: number, itemBId: number): Promise<void> {
+        const relationOptional = await this.itemRelationRepository.findOneBy([{
+            itemFrom: {id: itemAId},
+            itemTo: {id: itemBId},
+        }, {
+            itemFrom: {id: itemBId},
+            itemTo: {id: itemAId},
+        }]);
         if (relationOptional) {
             this.userService.checkUserAccess(userUid, relationOptional.itemFrom.collection.user);
             this.userService.checkUserAccess(userUid, relationOptional.itemTo.collection.user);

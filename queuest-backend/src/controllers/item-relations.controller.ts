@@ -1,9 +1,7 @@
-import { Body, Controller, Delete, Logger, Param, Post, Req, UseGuards } from '@nestjs/common';
-import { ItemsService } from '../services/items.service';
-import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Item } from '../models/item';
-import { AuthGuard } from '../auth/auth.guard';
-import { FirebaseUser } from '../auth/firebase-user';
+import {Controller, Delete, Logger, Param, Post, Req, UseGuards} from '@nestjs/common';
+import {ApiBearerAuth, ApiTags} from '@nestjs/swagger';
+import {AuthGuard} from '../auth/auth.guard';
+import {FirebaseUser} from '../auth/firebase-user';
 import {ItemsRelationService} from "../services/items-relation.service";
 
 @ApiTags('ItemsRelation')
@@ -12,22 +10,24 @@ import {ItemsRelationService} from "../services/items-relation.service";
 export class ItemRelationsController {
     private readonly logger = new Logger(ItemRelationsController.name);
 
-    constructor(private readonly itemsRelationService: ItemsRelationService) {}
+    constructor(private readonly itemsRelationService: ItemsRelationService) {
+    }
 
     @Post(':fromId/:toId')
     @UseGuards(AuthGuard)
     async addItem(@Req() request: any, @Param('fromId') fromId: number, @Param('toId') toId: number) {
         const user: FirebaseUser = request.user;
         this.logger.log(`Adding relations from ${fromId} to ${toId}`);
-        return await this.itemsRelationService.addRelationFromTo(user.uid,fromId,toId);
+        return await this.itemsRelationService.addRelationFromTo(user.uid, fromId, toId);
     }
 
-    @Delete(':fromId/:toId')
+    @Delete(':itemAId/:itemBId')
     @UseGuards(AuthGuard)
-    async getItems(@Req() request: any, @Param('fromId') fromId: number, @Param('toId') toId: number) {
+    async getItems(@Req() request: any, @Param('itemAId') itemAId: number, @Param('itemBId') itemBId: number) {
         const user: FirebaseUser = request.user;
-        return await this.itemsRelationService.removeRelationFromTo(user.uid,fromId,toId);
+        return await this.itemsRelationService.removeRelationBetween(user.uid, itemAId, itemBId);
     }
+
     //
     // @Get('pairs')
     // @ApiQuery({ name: 'size', type: Number, required: true })
