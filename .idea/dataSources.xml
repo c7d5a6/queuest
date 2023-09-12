@@ -8,5 +8,12 @@
       <jdbc-url>jdbc:postgresql://localhost:5432/queuest</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="queuest@lp-prod-do-user-302181-0.b.db.ondigitalocean.com" uuid="9de71780-f62e-4b7b-9a21-0b4eb87786e2">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://lp-prod-do-user-302181-0.b.db.ondigitalocean.com:25060/queuest</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>
