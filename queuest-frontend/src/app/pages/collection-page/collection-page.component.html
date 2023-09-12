@@ -1,4 +1,7 @@
-<div class="heading"><span class="text-heading">{{collection.name}}</span></div>
+<div class="heading">
+  <span class="text-heading"><a [routerLink]="['']" class="nav-button"><</a></span>
+  <span class="text-heading">{{collection.name}}</span>
+</div>
 <app-add-item [collection]="collection" (changes)="itemAdded($event)"></app-add-item>
 <div>
   <ol>

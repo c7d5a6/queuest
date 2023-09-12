@@ -16,7 +16,7 @@ export class CalibrateItemComponent implements OnInit {
   itemId: number | undefined;
   title: string = '';
   items: ItemPair[] = [];
-  calibrated = false;
+  calibrated = true;
 
   constructor(
     private ref: DialogRef<Data>,
@@ -53,6 +53,7 @@ export class CalibrateItemComponent implements OnInit {
         .subscribe((pair) => {
             if (!!pair) {
                 this.items.push(pair);
+              this.calibrated = false;
             } else {
                 this.calibrated = true;
             }

@@ -46,7 +46,7 @@ export class CollectionPageComponent implements OnInit {
       .open(CalibrateItemComponent, {
         // data is typed based on the passed generic
         data: {
-          title: `Calibrate item ${id}`,
+          title: `Calibrate`,
           itemId: id,
         },
       })

@@ -9,3 +9,25 @@ a {
   color: inherit;
   text-decoration: inherit;
 }
+
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.content {
+  width:100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: $color-lightaccent;
+}
+
+a:hover li.content {
+  color: $color-lightaccent-lighter;
+}
+
+a:active li.content {
+  color: $color-lightaccent-lightest;
+}
