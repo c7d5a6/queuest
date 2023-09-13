@@ -1,6 +1,6 @@
 @import "src/styles/module.scss";
 
-.heading{
+.heading {
   margin-bottom: 32px;
 }
 
@@ -11,4 +11,17 @@ ol li {
 .nav-button {
   margin-right: 8px;
 
+}
+
+.delete-btn {
+  color: $color-danger-darker;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  color: $color-danger;
+}
+
+.delete-btn:active {
+  color: $color-danger-lighter;
 }

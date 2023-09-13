@@ -133,6 +133,59 @@ export class ItemsService extends BaseService {
   }
 
   /**
+   * Path part for operation itemsControllerDeleteItemFromCollection
+   */
+  static readonly ItemsControllerDeleteItemFromCollectionPath = '/collections/{collectionId}/items/{collectionItemId}';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `itemsControllerDeleteItemFromCollection()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  itemsControllerDeleteItemFromCollection$Response(params: {
+    collectionItemId: number;
+  },
+  context?: HttpContext
+
+): Observable<StrictHttpResponse<void>> {
+
+    const rb = new RequestBuilder(this.rootUrl, ItemsService.ItemsControllerDeleteItemFromCollectionPath, 'delete');
+    if (params) {
+      rb.path('collectionItemId', params.collectionItemId, {});
+    }
+
+    return this.http.request(rb.build({
+      responseType: 'text',
+      accept: '*/*',
+      context: context
+    })).pipe(
+      filter((r: any) => r instanceof HttpResponse),
+      map((r: HttpResponse<any>) => {
+        return (r as HttpResponse<any>).clone({ body: undefined }) as StrictHttpResponse<void>;
+      })
+    );
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `itemsControllerDeleteItemFromCollection$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  itemsControllerDeleteItemFromCollection(params: {
+    collectionItemId: number;
+  },
+  context?: HttpContext
+
+): Observable<void> {
+
+    return this.itemsControllerDeleteItemFromCollection$Response(params,context).pipe(
+      map((r: StrictHttpResponse<void>) => r.body as void)
+    );
+  }
+
+  /**
    * Path part for operation itemsControllerGetBestPair
    */
   static readonly ItemsControllerGetBestPairPath = '/collections/{collectionId}/items/{id}/bestpair';

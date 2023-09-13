@@ -51,9 +51,23 @@ export class CollectionPageComponent implements OnInit {
         },
       })
       .afterClosed$.subscribe(() =>
-      this.itemService.itemsControllerGetItems({
-        collectionId: this.collection.id!,
-      }).subscribe((items) => (this.items = items)));
+      this.reload());
 
+  }
+
+  deleteItem(itemId: number | undefined) {
+    if (!itemId) {
+      return;
+    }
+    this.itemService
+      .itemsControllerDeleteItemFromCollection({collectionItemId: itemId})
+      .subscribe(() => this.reload());
+
+  }
+
+  private reload() {
+    return this.itemService.itemsControllerGetItems({
+      collectionId: this.collection.id!,
+    }).subscribe((items) => (this.items = items));
   }
 }

@@ -5,6 +5,6 @@
 <app-add-item [collection]="collection" (changes)="itemAdded($event)"></app-add-item>
 <div>
   <ol>
-    <li *ngFor="let item of items">{{item.name}}</li>
+    <li *ngFor="let item of items">{{item.name}} {{item.id}} <a class="delete-btn" (click)="deleteItem(item.id)">x</a></li>
   </ol>
 </div>

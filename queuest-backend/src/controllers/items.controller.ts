@@ -1,4 +1,16 @@
-import {Body, Controller, Get, Logger, Param, ParseArrayPipe, Post, Query, Req, UseGuards} from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Logger,
+    Param,
+    ParseArrayPipe,
+    Post,
+    Query,
+    Req,
+    UseGuards
+} from '@nestjs/common';
 import {ItemsService} from '../services/items.service';
 import {ApiBearerAuth, ApiOkResponse, ApiQuery, ApiTags} from '@nestjs/swagger';
 import {Item} from '../models/item';
@@ -25,6 +37,17 @@ export class ItemsController {
         const user: FirebaseUser = request.user;
         this.logger.log(JSON.stringify(item));
         return await this.itemsService.addItem(user.uid, collectionId, item);
+    }
+
+    @Delete(':collectionItemId')
+    @UseGuards(AuthGuard)
+    @ApiOkResponse({
+        description: 'Deleteitem from collection',
+    })
+    async deleteItemFromCollection(@Req() request: any, @Param('collectionItemId') collectionItemId: number): Promise<void> {
+        const user: FirebaseUser = request.user;
+        this.logger.log('Delete item {}', collectionItemId);
+        return await this.itemsService.deleteItem(user.uid, collectionItemId);
     }
 
     @Get()

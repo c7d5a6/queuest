@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import {Column, CreateDateColumn, Entity, JoinColumn, ManyToOne} from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { UserEntity } from './user.entity';
 
@@ -14,4 +14,10 @@ export class CollectionEntity extends BaseEntity {
     })
     @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
     user: UserEntity;
+
+    @Column({ name: 'visited_ts' })
+    visited: Date;
+
+    @Column({ name: 'favourite_yn' })
+    favourite: boolean;
 }

@@ -66,6 +66,17 @@ export class ItemsService {
         return result.id;
     }
 
+    public async deleteItem(userUid: string, collectionItemId: number): Promise<void> {
+        const collectionItem: CollectionItemEntity | null = await this.collectionItemRepository.findOneBy({id: collectionItemId});
+        if (collectionItem === null) {
+            this.logger.error('Can\'t delete, item not found {} ', collectionItemId);
+            return;
+        }
+        this.userService.checkUserAccess(userUid, collectionItem.collection.user);
+        await this.itemsRelationService.removeRelationsForItem(collectionItem);
+        await this.collectionItemRepository.remove(collectionItem);
+    }
+
     async getItemsSorted(userUid: string, collectionId: number): Promise<Item[]> {
         const collection: CollectionEntity = await this.collectionService.getCollection(userUid, collectionId);
         return (await this.getItemEntitySorted(collection)).map((item) =>

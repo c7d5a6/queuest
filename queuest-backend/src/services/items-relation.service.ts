@@ -117,4 +117,8 @@ export class ItemsRelationService {
     //     return { relations, relationsInverted };
     // }
 
+    async removeRelationsForItem(collectionItem: CollectionItemEntity): Promise<void> {
+        await this.itemRelationRepository.delete({itemFrom: {id: collectionItem.id}});
+        await this.itemRelationRepository.delete({itemTo: {id: collectionItem.id}});
+    }
 }
