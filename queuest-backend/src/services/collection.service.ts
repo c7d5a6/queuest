@@ -1,7 +1,7 @@
 import {BadRequestException, Injectable, Logger} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
 import {UserEntity} from '../persistence/entities/user.entity';
-import {Repository} from 'typeorm';
+import {Like, Repository} from 'typeorm';
 import {CollectionEntity} from '../persistence/entities/collection.entity';
 import {AccessDeniedError} from 'sequelize';
 import {Collection} from '../models/collection';
@@ -19,7 +19,7 @@ export class CollectionService {
     }
 
     private static mapToCollection(ce: CollectionEntity): Collection {
-        return {name: ce.name, id: ce.id};
+        return {name: ce.name, id: ce.id, favourite: ce.favourite};
     }
 
     private static checkUserAccess(collection: CollectionEntity | null, userUid: string) {
@@ -29,16 +29,18 @@ export class CollectionService {
         }
     }
 
-    async getCurrentUserCollections(userUid: string): Promise<Collection[]> {
+    async getCurrentUserCollections(userUid: string, nameFilter: string | undefined, getOnlyFav: boolean): Promise<Collection[]> {
         const user = await this.userRepository.findOneBy({uid: userUid});
         if (!user) {
             const error = new Error(`There is no user with ${userUid}`);
             throw new AccessDeniedError(error);
         }
+        const whereQ = Object.assign({user: {id: user.id}},
+            nameFilter ? {name: Like(`%${nameFilter}%`)} : {},
+            getOnlyFav ? {favourite: true} : {},
+        );
         const collections = await this.collectionRepository.find({
-            where: {
-                user: {id: user.id},
-            }, order: {visited: 'DESC', id: 'DESC'}
+            where: whereQ, order: {visited: 'DESC', id: 'DESC'}
         });
         return collections.map(CollectionService.mapToCollection);
     }
