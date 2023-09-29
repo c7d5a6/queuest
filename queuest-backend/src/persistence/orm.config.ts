@@ -8,6 +8,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     password: process.env.DATABASE_PASSWORD || 'queuest',
     database: 'queuest',
     entities: [__dirname + '/entities/*.entity{.ts,.js}'],
+    logging: process.env.DEV_DATABASE,
     synchronize: false,
     ssl: !process.env.DEV_DATABASE,
     extra: !process.env.DEV_DATABASE
