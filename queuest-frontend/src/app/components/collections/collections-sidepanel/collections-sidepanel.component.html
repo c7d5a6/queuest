@@ -1,4 +1,4 @@
 <div class="side-heading"><span class="text-heading">Favorite</span></div>
 <div class="side-collections" *ngIf="favCollections">
-  <div class="card" *ngFor="let collection of favCollections;"><div class="card-content">{{collection.name}}</div></div>
+  <a class="card" *ngFor="let collection of favCollections;" [routerLink]="['collection', collection.id]"><div class="card-content">{{collection.name}}</div></a>
 </div>

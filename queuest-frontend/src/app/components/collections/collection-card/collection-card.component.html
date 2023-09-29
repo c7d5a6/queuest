@@ -1,7 +1,7 @@
 <a [routerLink]="['collection', collection.id]">
   <div class="card">
     <div class="card-content">
-      <div><b>{{collection.name}}</b></div>
+      <div class="truncate"><b>{{collection.name}}</b></div>
       <ul class="items-text">
         <li class="content"><span class="truncate" *ngIf="items[0]">{{items[0].name}}</span></li>
         <li class="content"><span class="truncate" *ngIf="items[1]">{{items[1].name}}</span></li>
@@ -9,9 +9,6 @@
         <li class="content"><span class="truncate" *ngIf="items[3]">{{items[3].name}}</span></li>
         <li class="content"><span class="truncate" *ngIf="items[4]">{{items[4].name}}</span></li>
       </ul>
-<!--      <div class="card-footer">-->
-<!--        <button disabled>X</button>-->
-<!--      </div>-->
     </div>
   </div>
 </a>

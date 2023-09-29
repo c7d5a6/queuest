@@ -1,6 +1,8 @@
 <div class="heading">
   <span class="text-heading"><a [routerLink]="['']" class="nav-button"><</a></span>
   <span class="text-heading">{{collection.name}}</span>
+  <button class="fav-btn" *ngIf="!collection.favourite" (click)="addToFavs()">♡</button>
+  <button class="fav-btn" *ngIf="collection.favourite" (click)="removeFromFavs()">❤</button>
 </div>
 <app-add-item [collection]="collection" (changes)="itemAdded($event)"></app-add-item>
 <div>

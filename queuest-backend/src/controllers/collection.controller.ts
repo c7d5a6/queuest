@@ -1,9 +1,9 @@
 import {Body, Controller, Delete, Get, Logger, Param, Post, Query, Req, UseGuards} from '@nestjs/common';
-import { CollectionService } from '../services/collection.service';
-import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { AuthGuard } from '../auth/auth.guard';
-import { FirebaseUser } from '../auth/firebase-user';
-import { Collection } from '../models/collection';
+import {CollectionService} from '../services/collection.service';
+import {ApiBearerAuth, ApiOkResponse, ApiQuery, ApiTags} from '@nestjs/swagger';
+import {AuthGuard} from '../auth/auth.guard';
+import {FirebaseUser} from '../auth/firebase-user';
+import {Collection} from '../models/collection';
 
 @ApiTags('Collections')
 @ApiBearerAuth()
@@ -11,15 +11,17 @@ import { Collection } from '../models/collection';
 export class CollectionController {
     private readonly logger = new Logger(CollectionController.name);
 
-    constructor(private readonly collectionService: CollectionService) {}
+    constructor(private readonly collectionService: CollectionService) {
+    }
 
     @Get()
+    @ApiQuery({name: 'nameFilter', type: String, required: false})
     @ApiOkResponse({
         description: 'User current user collections',
         type: [Collection],
     })
     @UseGuards(AuthGuard)
-    async getCurrentUserCollections(@Req() request: any, @Query("nameFilter") nameFilter): Promise<Collection[]> {
+    async getCurrentUserCollections(@Req() request: any, @Query("nameFilter") nameFilter: string | undefined): Promise<Collection[]> {
         const user: FirebaseUser = request.user;
         return await this.collectionService.getCurrentUserCollections(user.uid, nameFilter, false);
     }
@@ -54,7 +56,7 @@ export class CollectionController {
     @UseGuards(AuthGuard)
     async getCurrentUserFavoriteCollections(@Req() request: any): Promise<Collection[]> {
         const user: FirebaseUser = request.user;
-        return await this.collectionService.getCurrentUserCollections(user.uid);
+        return await this.collectionService.getCurrentUserCollections(user.uid, undefined, true);
     }
 
     @Post()
@@ -71,6 +73,14 @@ export class CollectionController {
         const user: FirebaseUser = request.user;
         this.logger.log(`Add collection ${collectionId} to Fav for ${user.uid}`);
         await this.collectionService.addCollectionToFav(user.uid, collectionId);
+    }
+
+    @Post('visit/:collectionId')
+    @UseGuards(AuthGuard)
+    async visitCollection(@Req() request: any, @Param('collectionId') collectionId: number) {
+        const user: FirebaseUser = request.user;
+        this.logger.log(`Visit collection ${collectionId} for ${user.uid}`);
+        await this.collectionService.visitCollection(user.uid, collectionId);
     }
 
     @Delete('fav/:collectionId')

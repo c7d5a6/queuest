@@ -80,6 +80,44 @@ export class CollectionService {
         return CollectionService.mapToCollection(collectionEntity);
     }
 
+    async addCollectionToFav(userUid: string, collectionId: number) {
+        const user = this.getUser(userUid)
+        const collection = await this.collectionRepository.findOneBy({
+            id: collectionId,
+        });
+        CollectionService.checkUserAccess(collection, userUid);
+        if (collection) {
+            collection.favourite = true;
+            await this.collectionRepository.save(collection);
+        }
+    }
+
+    async removeCollectionFromFav(userUid: string, collectionId: number) {
+        const user = this.getUser(userUid)
+        const collection = await this.collectionRepository.findOneBy({
+            id: collectionId,
+        });
+        CollectionService.checkUserAccess(collection, userUid);
+        if (collection) {
+            collection.favourite = false;
+            await this.collectionRepository.save(collection);
+        }
+
+    }
+
+    async visitCollection(userUid: string, collectionId: number) {
+        const user = this.getUser(userUid)
+        const collection = await this.collectionRepository.findOneBy({
+            id: collectionId,
+        });
+        CollectionService.checkUserAccess(collection, userUid);
+        if (collection) {
+            collection.visited = new Date();
+            await this.collectionRepository.save(collection);
+        }
+
+    }
+
     private async getUser(userUid: string) {
         const user = await this.userRepository.findOneBy({uid: userUid});
         if (!user) {

@@ -4,6 +4,23 @@
   display: flex;
 }
 
+.collections-lines {
+  display: grid;
+  gap: $grid_gutter-xs;
+  @include sm {
+    gap: $grid_gutter-sm;
+  }
+  @include md {
+    gap: $grid_gutter-md;
+  }
+  @include lg {
+    gap: $grid_gutter-lg;
+  }
+  @include xl {
+    gap: $grid_gutter-xl;
+  }
+}
+
 .search {
   margin-right: 24px;
   width: 100%;

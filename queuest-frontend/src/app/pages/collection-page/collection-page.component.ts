@@ -6,6 +6,7 @@ import {Collection} from '../../api/models/collection';
 import {ItemsService} from '../../api/services/items.service';
 import {DialogService} from "@ngneat/dialog";
 import {CalibrateItemComponent} from "../../components/calibrate-item/calibrate-item.component";
+import {CollectionsService} from "../../api/services/collections.service";
 
 @Component({
   selector: 'app-collection-page',
@@ -21,6 +22,7 @@ export class CollectionPageComponent implements OnInit {
     private activatedRoute: ActivatedRoute,
     private itemService: ItemsService,
     private dialogService: DialogService,
+    private collectionsService: CollectionsService,
   ) {
   }
 
@@ -37,6 +39,7 @@ export class CollectionPageComponent implements OnInit {
       if (data && data.items) {
         this.items = data.items;
         this.collection = data.collection;
+        this.collectionsService.collectionControllerVisitCollection({collectionId:this.collection.id!}).subscribe(()=>console.log("visited"));
       }
     });
   }
@@ -63,6 +66,18 @@ export class CollectionPageComponent implements OnInit {
       .itemsControllerDeleteItemFromCollection({collectionItemId: itemId})
       .subscribe(() => this.reload());
 
+  }
+
+  addToFavs() {
+    this.collectionsService
+      .collectionControllerAddCollectionToFav({collectionId: this.collection.id!})
+      .subscribe(() => this.collection.favourite = true);
+  }
+
+  removeFromFavs() {
+    this.collectionsService
+      .collectionControllerRemoveCollectionFromFav({collectionId: this.collection.id!})
+      .subscribe(() => this.collection.favourite = false);
   }
 
   private reload() {

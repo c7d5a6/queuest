@@ -13,6 +13,7 @@ import { Collection } from '../../api/models/collection';
 })
 export class CollectionsPageComponent implements OnInit {
     collections: Array<Collection> = [];
+    favCollections: Array<Collection> = [];
     showSidePanel = false;
     sidePanelColumns = 0;
     collectionsPanelColumns = 0;
@@ -38,11 +39,11 @@ export class CollectionsPageComponent implements OnInit {
                     this.showSidePanel = true;
                     this.collectionsPanelColumns = 9;
                     break;
-                case BreakPoints.lg:
+              case BreakPoints.lg:
                     this.showSidePanel = true;
                     this.collectionsPanelColumns = 9;
                     break;
-                case BreakPoints.xl:
+              case BreakPoints.xl:
                     this.showSidePanel = true;
                     this.sidePanelColumns = 4;
                     this.collectionsPanelColumns = 8;
@@ -52,9 +53,14 @@ export class CollectionsPageComponent implements OnInit {
             }
         });
         this.activatedRoute.data.subscribe((routeData: Data) => {
-            const data = routeData as { collections: Array<Collection> };
-            if (data && data.collections) {
+            const data = routeData as { collections: Array<Collection>, favCollections: Array<Collection> };
+            if (data) {
+              if (data.collections) {
                 this.collections = data.collections;
+              }
+              if (data.favCollections) {
+                this.favCollections = data.favCollections;
+              }
             }
         });
     }

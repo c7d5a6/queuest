@@ -5,12 +5,13 @@ import { CollectionsPageComponent } from './pages/collections-page/collections-p
 import { CollectionPageComponent } from './pages/collection-page/collection-page.component';
 import { collectionItemsResolver } from './resolvers/collection-items.resolver';
 import { collectionResolver } from './resolvers/collection.resolver';
+import {favCollectionsResolver} from "./resolvers/favCollections.resolver";
 
 const routes: Routes = [
     {
         path: '',
         component: CollectionsPageComponent,
-        resolve: { collections: collectionsResolver },
+        resolve: { collections: collectionsResolver, favCollections: favCollectionsResolver },
     },
     {
         path: 'collection/:collectionId',

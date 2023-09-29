@@ -35,6 +35,7 @@ export class AddCollectionComponent {
             return;
         }
         const newCollection: Collection = this.form.value;
+        newCollection.favourite = false;
         this.collectionsService
             .collectionControllerAddCollection({ body: newCollection })
             .subscribe(() => {

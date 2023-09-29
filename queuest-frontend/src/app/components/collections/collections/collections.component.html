@@ -8,10 +8,10 @@
 </div>
 <div *ngIf="showFavourite && favCollections" class="collections-with-header">
   <div class="heading"><span class="text-heading">Favorites</span></div>
-  <div class="collections-container">
-    <div *ngFor="let collection of favCollections;" class="collection-card">
-      <app-collection-card [collection]="collection"></app-collection-card>
-    </div>
+  <div class="collections-lines">
+    <a *ngFor="let collection of favCollections;" class="card" [routerLink]="['collection', collection.id]">
+      <div class="card-content">{{collection.name}}</div>
+    </a>
   </div>
 </div>
 <div class="collections-with-header">

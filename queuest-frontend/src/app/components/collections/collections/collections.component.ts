@@ -15,7 +15,7 @@ import { AddCollectionComponent } from '../../add-collection/add-collection.comp
 })
 export class CollectionsComponent implements OnInit {
     @Input() collections!: Collection[];
-    favCollections: Collection[] = [];
+    @Input() favCollections!: Collection[];
     showFavourite = false;
 
     constructor(

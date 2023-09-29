@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {Component, Input} from '@angular/core';
 import { Collection } from '../../../api/models/collection';
 
 @Component({
@@ -7,5 +7,5 @@ import { Collection } from '../../../api/models/collection';
     styleUrls: ['./collections-sidepanel.component.scss'],
 })
 export class CollectionsSidepanelComponent {
-    favCollections: Collection[] = [];
+    @Input() favCollections!: Collection[];
 }

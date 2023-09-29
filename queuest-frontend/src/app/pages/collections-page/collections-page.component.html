@@ -1,8 +1,8 @@
 <div class="row">
   <div *ngIf="showSidePanel" ngClass="col-{{sidePanelColumns}}" class="side">
-    <app-collections-sidepanel></app-collections-sidepanel>
+    <app-collections-sidepanel [favCollections]="favCollections"></app-collections-sidepanel>
   </div>
   <div ngClass="col-{{collectionsPanelColumns}}" class="collections">
-    <app-collections [collections]="collections"></app-collections>
+    <app-collections [collections]="collections" [favCollections]="favCollections"></app-collections>
   </div>
 </div>
