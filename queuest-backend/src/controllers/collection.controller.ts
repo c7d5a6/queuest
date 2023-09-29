@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, Param, Post, Req, UseGuards } from '@nestjs/common';
+import {Body, Controller, Delete, Get, Logger, Param, Post, Query, Req, UseGuards} from '@nestjs/common';
 import { CollectionService } from '../services/collection.service';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
@@ -19,9 +19,20 @@ export class CollectionController {
         type: [Collection],
     })
     @UseGuards(AuthGuard)
-    async getCurrentUserCollections(@Req() request: any): Promise<Collection[]> {
+    async getCurrentUserCollections(@Req() request: any, @Query("nameFilter") nameFilter): Promise<Collection[]> {
         const user: FirebaseUser = request.user;
-        return await this.collectionService.getCurrentUserCollections(user.uid);
+        return await this.collectionService.getCurrentUserCollections(user.uid, nameFilter, false);
+    }
+
+    @Get('fav')
+    @ApiOkResponse({
+        description: 'User current user collections',
+        type: [Collection],
+    })
+    @UseGuards(AuthGuard)
+    async getCurrentUserFavCollections(@Req() request: any): Promise<Collection[]> {
+        const user: FirebaseUser = request.user;
+        return await this.collectionService.getCurrentUserCollections(user.uid, undefined, true);
     }
 
     @Get(':collectionId')
@@ -52,5 +63,21 @@ export class CollectionController {
         const user: FirebaseUser = request.user;
         this.logger.log(`Add new collection ${JSON.stringify(collection)} for ${user.uid}`);
         await this.collectionService.addCollection(user.uid, collection);
+    }
+
+    @Post('fav/:collectionId')
+    @UseGuards(AuthGuard)
+    async addCollectionToFav(@Req() request: any, @Param('collectionId') collectionId: number) {
+        const user: FirebaseUser = request.user;
+        this.logger.log(`Add collection ${collectionId} to Fav for ${user.uid}`);
+        await this.collectionService.addCollectionToFav(user.uid, collectionId);
+    }
+
+    @Delete('fav/:collectionId')
+    @UseGuards(AuthGuard)
+    async removeCollectionFromFav(@Req() request: any, @Param('collectionId') collectionId: number) {
+        const user: FirebaseUser = request.user;
+        this.logger.log(`Remove collection ${collectionId} from Fav for ${user.uid}`);
+        await this.collectionService.removeCollectionFromFav(user.uid, collectionId);
     }
 }
