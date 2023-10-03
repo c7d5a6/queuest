@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 import { ItemsService } from '../../api/services/items.service';
 import { Collection } from '../../api/models/collection';
+import { Item } from 'src/app/api/models';
 
 @Component({
     selector: 'app-add-item',
@@ -33,7 +34,8 @@ export class AddItemComponent {
             event.target.blur();
             return;
         }
-        const itemEntity = this.form.value;
+        const itemEntity: Item = this.form.value;
+        itemEntity.calibrated = false;
         if (!this.collection.id) return;
         this.itemService
             .itemsControllerAddItem({
