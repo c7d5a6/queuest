@@ -29,10 +29,11 @@ export class ItemsService {
     ) {
     }
 
-    private static mapToItem(cie: CollectionItemEntity): Item {
+    private static mapToItem(cie: CollectionItemEntity, calibrated: boolean | undefined): Item {
         const result = new Item();
         result.id = cie.id;
         result.type = cie.type;
+        result.calibrated = calibrated;
         switch (cie.type) {
             case CollectionItemType.ITEM:
                 console.log(
@@ -79,8 +80,12 @@ export class ItemsService {
 
     async getItemsSorted(userUid: string, collectionId: number): Promise<Item[]> {
         const collection: CollectionEntity = await this.collectionService.getCollection(userUid, collectionId);
-        return (await this.getItemEntitySorted(collection)).map((item) =>
-            ItemsService.mapToItem(item),
+        const collectionItemEntities = await this.getItemEntitySorted(collection);
+        const edge: Edges = await this.itemsRelationService.getRelationsMaps(collectionItemEntities);
+        return collectionItemEntities.map((item, index, array) => {
+                let calibrated = this.isItemCalibrated(array, edge, item, index);
+                return ItemsService.mapToItem(item, calibrated);
+            }
         );
     }
 
@@ -105,21 +110,8 @@ export class ItemsService {
         await this.setGraphEdgesByEdges(items, edge, graph);
         const itemsSorted = this.getItemEntitySortedByGraph(graph, items);
         const itemPosition = itemsSorted.findIndex((item) => item.id == id);
-        if (itemPosition === 0 && this.isThereRelationFromTo(itemFrom.id, itemsSorted[1].id, edge)) {
+        if (this.isItemCalibrated(itemsSorted, edge, itemFrom, itemPosition))
             return undefined;
-        }
-        if (
-            itemPosition === itemsSorted.length - 1 &&
-            this.isThereRelationFromTo(itemsSorted[itemsSorted.length - 2].id, itemFrom.id, edge)
-        ) {
-            return undefined;
-        }
-        if (
-            this.isThereRelationFromTo(itemsSorted[itemPosition - 1].id, itemFrom.id, edge) &&
-            this.isThereRelationFromTo(itemFrom.id, itemsSorted[itemPosition + 1].id, edge)
-        ) {
-            return undefined;
-        }
         const excludeSet = exclude ? new Set<number>(exclude) : new Set<number>();
         const bestPairForItem = this.getBestPairForItem(id, itemsSorted, excludeSet, edge);
         if (!bestPairForItem) return undefined;
@@ -127,6 +119,23 @@ export class ItemsService {
         const itemPair = this.itemPairFromItems(itemFrom, bestPairForItem, edge);
         if (!!itemPair.relation) return undefined;
         return itemPair;
+    }
+
+    private isItemCalibrated(sortedArray: CollectionItemEntity[], edge: Edges, item: CollectionItemEntity, itemIndex: number) {
+        if (sortedArray.length <= 1)
+            return true;
+        const itemRelationsLength: number = edge.relations.has(item.id) ? edge.relations.get(item.id)?.length! : 0;
+        const itemRelationsInvertedLength: number = edge.relationsInverted.has(item.id) ? edge.relationsInverted.get(item.id)?.length! : 0;
+        if (itemRelationsLength + itemRelationsInvertedLength >= sortedArray.length - 1)
+            return true;
+        if (itemIndex === 0) {
+            return this.isThereRelationFromTo(item.id, sortedArray[1].id, edge);
+        }
+        if (itemIndex === sortedArray.length - 1) {
+            return this.isThereRelationFromTo(sortedArray[sortedArray.length - 2].id, item.id, edge);
+        }
+        return this.isThereRelationFromTo(item.id, sortedArray[itemIndex + 1].id, edge) &&
+            this.isThereRelationFromTo(sortedArray[itemIndex - 1].id, item.id, edge);
     }
 
     private setGraphEdgesByEdges(items: CollectionItemEntity[], edge: Edges, graph: Graph) {
@@ -164,7 +173,7 @@ export class ItemsService {
         } else if (this.isThereRelationFromTo(bestPairForItem.id, item.id, edge)) {
             itemRelation = new ItemRelation(bestPairForItem.id, item.id);
         }
-        return new ItemPair(ItemsService.mapToItem(item), ItemsService.mapToItem(bestPairForItem), itemRelation);
+        return new ItemPair(ItemsService.mapToItem(item, undefined), ItemsService.mapToItem(bestPairForItem, undefined), itemRelation);
     }
 
     private getBestPairForItem(

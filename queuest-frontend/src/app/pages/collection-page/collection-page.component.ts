@@ -44,7 +44,7 @@ export class CollectionPageComponent implements OnInit {
     });
   }
 
-  itemAdded(id: number) {
+  calibrateItem(id: number) {
     this.dialogService
       .open(CalibrateItemComponent, {
         // data is typed based on the passed generic

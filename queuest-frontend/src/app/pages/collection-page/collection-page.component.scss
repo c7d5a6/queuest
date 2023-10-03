@@ -20,6 +20,19 @@ ol li {
 .delete-btn {
   color: $color-danger-darker;
   cursor: pointer;
+  padding: 4px;
+}
+
+.calibrate-btn {
+  color: $color-warning;
+  cursor: pointer;
+  padding: 4px;
+}
+.calibrate-btn:hover {
+  color: $color-warning-lighter;
+}
+.calibrate-btn:active {
+  color: $color-warning-lightest;
 }
 
 .delete-btn:hover {

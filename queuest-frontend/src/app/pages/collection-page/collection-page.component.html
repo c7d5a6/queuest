@@ -4,9 +4,12 @@
   <button class="fav-btn" *ngIf="!collection.favourite" (click)="addToFavs()">♡</button>
   <button class="fav-btn" *ngIf="collection.favourite" (click)="removeFromFavs()">❤</button>
 </div>
-<app-add-item [collection]="collection" (changes)="itemAdded($event)"></app-add-item>
+<app-add-item [collection]="collection" (changes)="calibrateItem($event)"></app-add-item>
 <div>
   <ol>
-    <li *ngFor="let item of items">{{item.name}} <a class="delete-btn" (click)="deleteItem(item.id)">x</a></li>
+    <li *ngFor="let item of items">{{item.name}}
+      <a *ngIf="!item.calibrated" class="calibrate-btn" (click)="calibrateItem(item.id!)">↔</a>
+      <a class="delete-btn" (click)="deleteItem(item.id)">x</a>
+    </li>
   </ol>
 </div>
