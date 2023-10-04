@@ -36,9 +36,6 @@ export class ItemsService {
         result.calibrated = calibrated;
         switch (cie.type) {
             case CollectionItemType.ITEM:
-                console.log(
-                    `We are in the switch ITEM ${JSON.stringify(cie)} ${cie.item?.name} ${cie.item?.name ?? ''}`,
-                );
                 result.name = cie.item?.name ?? '';
                 break;
             case CollectionItemType.COLLECTION:

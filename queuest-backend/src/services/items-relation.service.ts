@@ -84,7 +84,7 @@ export class ItemsRelationService {
                 edges.relations.set(fromId, []);
             }
             if (!edges.relationsInverted.has(toId)) {
-                edges.relations.set(toId, []);
+                edges.relationsInverted.set(toId, []);
             }
             edges.relations.get(fromId)?.push(toId);
             edges.relationsInverted.get(toId)?.push(fromId);
