@@ -9,6 +9,7 @@ import { RequestBuilder } from '../request-builder';
 import { Observable } from 'rxjs';
 import { map, filter } from 'rxjs/operators';
 
+import { CollectionWithItems } from '../models/collection-with-items';
 import { Item } from '../models/item';
 import { ItemPair } from '../models/item-pair';
 
@@ -39,7 +40,7 @@ export class ItemsService extends BaseService {
   },
   context?: HttpContext
 
-): Observable<StrictHttpResponse<Array<Item>>> {
+): Observable<StrictHttpResponse<CollectionWithItems>> {
 
     const rb = new RequestBuilder(this.rootUrl, ItemsService.ItemsControllerGetItemsPath, 'get');
     if (params) {
@@ -53,7 +54,7 @@ export class ItemsService extends BaseService {
     })).pipe(
       filter((r: any) => r instanceof HttpResponse),
       map((r: HttpResponse<any>) => {
-        return r as StrictHttpResponse<Array<Item>>;
+        return r as StrictHttpResponse<CollectionWithItems>;
       })
     );
   }
@@ -69,10 +70,10 @@ export class ItemsService extends BaseService {
   },
   context?: HttpContext
 
-): Observable<Array<Item>> {
+): Observable<CollectionWithItems> {
 
     return this.itemsControllerGetItems$Response(params,context).pipe(
-      map((r: StrictHttpResponse<Array<Item>>) => r.body as Array<Item>)
+      map((r: StrictHttpResponse<CollectionWithItems>) => r.body as CollectionWithItems)
     );
   }
 

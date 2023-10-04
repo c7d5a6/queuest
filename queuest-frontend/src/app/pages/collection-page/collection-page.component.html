@@ -4,6 +4,7 @@
   <button class="fav-btn" *ngIf="!collection.favourite" (click)="addToFavs()">♡</button>
   <button class="fav-btn" *ngIf="collection.favourite" (click)="removeFromFavs()">❤</button>
 </div>
+Calibrated: {{calibrated |  percent:'0.0'}}
 <app-add-item [collection]="collection" (changes)="calibrateItem($event)"></app-add-item>
 <div>
   <ol>

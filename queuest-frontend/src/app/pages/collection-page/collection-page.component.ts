@@ -7,6 +7,7 @@ import {ItemsService} from '../../api/services/items.service';
 import {DialogService} from "@ngneat/dialog";
 import {CalibrateItemComponent} from "../../components/calibrate-item/calibrate-item.component";
 import {CollectionsService} from "../../api/services/collections.service";
+import {CollectionWithItems} from "../../api/models/collection-with-items";
 
 @Component({
   selector: 'app-collection-page',
@@ -15,6 +16,7 @@ import {CollectionsService} from "../../api/services/collections.service";
 })
 export class CollectionPageComponent implements OnInit {
   items: Array<Item> = [];
+  calibrated: number = 0;
   collection!: Collection;
 
   constructor(
@@ -33,13 +35,14 @@ export class CollectionPageComponent implements OnInit {
   ngOnInit(): void {
     this.activatedRoute.data.subscribe((routeData: Data) => {
       const data = routeData as {
-        items: Array<Item>;
+        items: CollectionWithItems;
         collection: Collection;
       };
       if (data && data.items) {
-        this.items = data.items;
+        this.items = data.items.items;
+        this.calibrated = data.items.calibrated!;
         this.collection = data.collection;
-        this.collectionsService.collectionControllerVisitCollection({collectionId:this.collection.id!}).subscribe(()=>console.log("visited"));
+        this.collectionsService.collectionControllerVisitCollection({collectionId: this.collection.id!}).subscribe(() => console.log("visited"));
       }
     });
   }
@@ -83,6 +86,9 @@ export class CollectionPageComponent implements OnInit {
   private reload() {
     return this.itemService.itemsControllerGetItems({
       collectionId: this.collection.id!,
-    }).subscribe((items) => (this.items = items));
+    }).subscribe((items) => {
+      this.items = items.items;
+      this.calibrated = items.calibrated!
+    });
   }
 }

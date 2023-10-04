@@ -21,7 +21,7 @@ export class CollectionCardComponent implements OnInit {
     this.itemsService
       .itemsControllerGetItems({collectionId: this.collection.id!})
       .subscribe(items => {
-        this.items = items.slice(0, 5);
+        this.items = items.items.slice(0, 5);
       })
   }
 }

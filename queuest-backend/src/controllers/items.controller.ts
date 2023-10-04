@@ -17,6 +17,7 @@ import {Item} from '../models/item';
 import {AuthGuard} from '../auth/auth.guard';
 import {FirebaseUser} from '../auth/firebase-user';
 import {ItemPair} from "../models/item-pair";
+import {CollectionWithItems} from "../models/collection-with-items";
 
 @ApiTags('Items')
 @ApiBearerAuth()
@@ -51,9 +52,9 @@ export class ItemsController {
     }
 
     @Get()
-    @ApiOkResponse({description: 'Sorted items', type: [Item]})
+    @ApiOkResponse({description: 'Sorted items', type: CollectionWithItems})
     @UseGuards(AuthGuard)
-    async getItems(@Req() request: any, @Param('collectionId') collectionId: number): Promise<Item[]> {
+    async getItems(@Req() request: any, @Param('collectionId') collectionId: number): Promise<CollectionWithItems> {
         const user: FirebaseUser = request.user;
         return await this.itemsService.getItemsSorted(user.uid, collectionId);
     }

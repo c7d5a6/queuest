@@ -13,6 +13,7 @@ import {Edges, ItemsRelationService} from "./items-relation.service";
 import {UserService} from "./user.service";
 import {ItemRelation} from "../models/item-relation";
 import {ItemPair} from "../models/item-pair";
+import {CollectionWithItems} from "../models/collection-with-items";
 
 @Injectable()
 export class ItemsService {
@@ -47,6 +48,15 @@ export class ItemsService {
         return result;
     }
 
+    private static calcCollectionCalibration(length: number, edge: Edges): number {
+        if (length < 2)
+            return 1;
+        const desiredNumber = (length - 2) * 2 + 1;
+        const outEdges = Array.from(edge.relations.values()).map(a => a.length).reduce((previousValue, currentValue) => previousValue + currentValue);
+        const inEdges = Array.from(edge.relationsInverted.values()).map(a => a.length).reduce((previousValue, currentValue) => previousValue + currentValue);
+        return (outEdges + inEdges) / 2.0 / desiredNumber ;
+    }
+
     public async addItem(userUid: string, collectionId: number, item: Item): Promise<Number> {
         if (item.id != null) {
             throw new HttpException(`Can't create item with existing ID`, HttpStatus.BAD_REQUEST);
@@ -75,15 +85,21 @@ export class ItemsService {
         await this.collectionItemRepository.remove(collectionItem);
     }
 
-    async getItemsSorted(userUid: string, collectionId: number): Promise<Item[]> {
+    async getItemsSorted(userUid: string, collectionId: number): Promise<CollectionWithItems> {
         const collection: CollectionEntity = await this.collectionService.getCollection(userUid, collectionId);
         const collectionItemEntities = await this.getItemEntitySorted(collection);
         const edge: Edges = await this.itemsRelationService.getRelationsMaps(collectionItemEntities);
-        return collectionItemEntities.map((item, index, array) => {
+        const items = collectionItemEntities.map((item, index, array) => {
                 let calibrated = this.isItemCalibrated(array, edge, item, index);
                 return ItemsService.mapToItem(item, calibrated);
             }
         );
+        const calibrated = ItemsService.calcCollectionCalibration(items.length, edge);
+        return {
+            id: collectionId,
+            items: items,
+            calibrated: calibrated,
+        };
     }
 
     async setGraphEdges(items: CollectionItemEntity[], graph: Graph): Promise<void> {
@@ -226,7 +242,6 @@ export class ItemsService {
         if (!!resortItem) return resortItem;
         return undefined;
     }
-
 
     private isThereRelation(itemAId: number, itemBId: number, edge: Edges) {
         return this.isThereRelationFromTo(itemAId, itemBId, edge) || this.isThereRelationFromTo(itemBId, itemAId, edge);

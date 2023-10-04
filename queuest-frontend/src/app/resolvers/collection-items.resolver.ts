@@ -2,11 +2,11 @@ import { ActivatedRouteSnapshot, ResolveFn } from '@angular/router';
 import { EMPTY, Observable } from 'rxjs';
 import { inject } from '@angular/core';
 import { ItemsService } from '../api/services';
-import { Item } from '../api/models/item';
+import {CollectionWithItems} from "../api/models/collection-with-items";
 
-export const collectionItemsResolver: ResolveFn<Array<Item>> = (
+export const collectionItemsResolver: ResolveFn<CollectionWithItems> = (
     route: ActivatedRouteSnapshot,
-): Observable<Array<Item>> => {
+): Observable<CollectionWithItems> => {
     const collectionIdParam: string | null = findParam(
         ROUTER_PARAM_COLLECTION_ID,
         route,
