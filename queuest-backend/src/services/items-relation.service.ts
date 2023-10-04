@@ -40,7 +40,6 @@ export class ItemsRelationService {
 
     async addRelationFromTo(userUid: string, fromId: number, toId: number): Promise<void> {
         const itemFrom = await this.collectionItemRepository.findOneBy({id: fromId});
-        console.log("addRelationFromTo", userUid, JSON.stringify(itemFrom));
         this.userService.checkUserAccess(userUid, itemFrom?.collection.user);
         const itemTo = await this.collectionItemRepository.findOneBy({id: toId});
         this.userService.checkUserAccess(userUid, itemTo?.collection.user);
