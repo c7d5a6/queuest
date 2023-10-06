@@ -6,6 +6,7 @@
 
 .fav-btn {
   margin-left: 8px;
+  margin-right: 8px;
 }
 
 ol li {
@@ -28,9 +29,11 @@ ol li {
   cursor: pointer;
   padding: 4px;
 }
+
 .calibrate-btn:hover {
   color: $color-warning-lighter;
 }
+
 .calibrate-btn:active {
   color: $color-warning-lightest;
 }
@@ -41,4 +44,33 @@ ol li {
 
 .delete-btn:active {
   color: $color-danger-lighter;
+}
+
+.not-calibrated {
+  border-color: $color-danger;
+  color: $color-danger;
+}
+.calibrated {
+  border-color: $color-warning;
+  color: $color-warning;
+}
+.exactly-calibrated {
+  border-color: $color-success;
+  color: $color-success;
+}
+
+.list {
+  margin-top: 4px;
+  @include sm {
+    margin-top: 8px;
+  }
+  @include md {
+    margin-top: 8px;
+  }
+  @include lg {
+    margin-top: 16px;
+  }
+  @include xl {
+    margin-top: 16px;
+  }
 }

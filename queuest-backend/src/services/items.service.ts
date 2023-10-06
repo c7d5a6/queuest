@@ -52,9 +52,14 @@ export class ItemsService {
         if (length < 2)
             return 1;
         const desiredNumber = (length - 2) * 2 + 1;
-        const outEdges = Array.from(edge.relations.values()).map(a => a.length).reduce((previousValue, currentValue) => previousValue + currentValue);
-        const inEdges = Array.from(edge.relationsInverted.values()).map(a => a.length).reduce((previousValue, currentValue) => previousValue + currentValue);
-        return (outEdges + inEdges) / 2.0 / desiredNumber ;
+        const reduceFn = (previousValue: number, currentValue: number) => previousValue + Math.sqrt(currentValue);
+        const outEdges = Array.from(edge.relations.values())
+            .map(a => a.length)
+            .reduce(reduceFn);
+        const inEdges = Array.from(edge.relationsInverted.values())
+            .map(a => a.length)
+            .reduce(reduceFn);
+        return (outEdges + inEdges) / 2.0 / desiredNumber;
     }
 
     public async addItem(userUid: string, collectionId: number, item: Item): Promise<Number> {

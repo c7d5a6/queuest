@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
 import {
     AbstractControl,
     FormBuilder,
@@ -18,6 +18,7 @@ import { Data } from '@angular/router';
     styleUrls: ['./add-collection.component.scss'],
 })
 export class AddCollectionComponent {
+
     readonly form: FormGroup = this.formBuilder.group({
         name: [null, Validators.required],
     });

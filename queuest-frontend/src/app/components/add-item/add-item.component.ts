@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
 import {
     AbstractControl,
     FormBuilder,
@@ -9,24 +9,31 @@ import {
 import { ItemsService } from '../../api/services/items.service';
 import { Collection } from '../../api/models/collection';
 import { Item } from 'src/app/api/models';
+import {DialogRef} from "@ngneat/dialog";
+import {Data} from "@angular/router";
 
 @Component({
     selector: 'app-add-item',
+    changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './add-item.component.html',
     styleUrls: ['./add-item.component.scss'],
 })
 export class AddItemComponent {
-    @Input() collection!: Collection;
-    @Output() changes = new EventEmitter<number>();
+    collectionId: number | undefined;
 
     readonly form: FormGroup = this.formBuilder.group({
         name: [null, Validators.required],
     });
 
     constructor(
+        private ref: DialogRef<Data>,
         private formBuilder: FormBuilder,
         private itemService: ItemsService,
-    ) {}
+    ) {
+      if(ref.data['collectionId']){
+        this.collectionId = ref.data['collectionId']
+      }
+    }
 
     addNewItem(event: any): void {
         this.updateFormValidity(this.form);
@@ -36,15 +43,15 @@ export class AddItemComponent {
         }
         const itemEntity: Item = this.form.value;
         itemEntity.calibrated = false;
-        if (!this.collection.id) return;
+        if (!this.collectionId) return;
         this.itemService
             .itemsControllerAddItem({
-                collectionId: this.collection.id,
+                collectionId: this.collectionId,
                 body: itemEntity,
             })
             .subscribe((id) => {
                 this.form.reset();
-                this.changes.emit(id);
+                this.ref.close(id);
             });
     }
 

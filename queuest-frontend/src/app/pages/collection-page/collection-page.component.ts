@@ -8,6 +8,8 @@ import {DialogService} from "@ngneat/dialog";
 import {CalibrateItemComponent} from "../../components/calibrate-item/calibrate-item.component";
 import {CollectionsService} from "../../api/services/collections.service";
 import {CollectionWithItems} from "../../api/models/collection-with-items";
+import {AddCollectionComponent} from "../../components/add-collection/add-collection.component";
+import {AddItemComponent} from "../../components/add-item/add-item.component";
 
 @Component({
   selector: 'app-collection-page',
@@ -75,6 +77,18 @@ export class CollectionPageComponent implements OnInit {
     this.collectionsService
       .collectionControllerAddCollectionToFav({collectionId: this.collection.id!})
       .subscribe(() => this.collection.favourite = true);
+  }
+
+  addItem(): void {
+    this.dialogService
+      .open(AddItemComponent, {
+        // data is typed based on the passed generic
+        data: {
+          title: 'Add Item',
+          collectionId: this.collection.id!,
+        },
+      })
+      .afterClosed$.subscribe((id: number|undefined) => {if(id) this.calibrateItem(id)});
   }
 
   removeFromFavs() {
