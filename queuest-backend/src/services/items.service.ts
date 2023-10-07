@@ -107,8 +107,9 @@ export class ItemsService {
         };
     }
 
-    private isItemCalibrated(item: CollectionItemEntity, index: number, array: CollectionItemEntity[]):boolean {
-       return true;
+    async setGraphEdges(items: CollectionItemEntity[], graph: Graph): Promise<void> {
+        const edge: Edges = await this.itemsRelationService.getRelationsMaps(items);
+        this.setGraphEdgesByEdges(items, edge, graph);
     }
 
     async getBestPair(userUid: string, id: number, exclude?: number[]) {
@@ -173,10 +174,8 @@ export class ItemsService {
             collection: {id: collection.id},
         });
         const graph: Graph = new Graph(items.length);
-        const edge: Edges = await this.itemsRelationService.getRelationsMaps(items);
-        this.setGraphEdgesByEdges(items, edge, graph);
-        const sorted = this.getItemEntitySortedByGraph(graph, items);
-        this.isItemCalibrated(item,index,sorted,edge)
+        await this.setGraphEdges(items, graph);
+        return this.getItemEntitySortedByGraph(graph, items);
     }
 
     private getItemEntitySortedByGraph(graph: Graph, items: CollectionItemEntity[]) {
