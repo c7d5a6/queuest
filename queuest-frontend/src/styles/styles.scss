@@ -2,7 +2,7 @@
 
 .card {
   border: 12px solid;
-  border-image: url(border.png) 30% / 1 stretch;
+  border-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 20 20" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23544e68" d="M0 0h4M5 0h15M0 1h1M3 1h1M5 1h1M19 1h1M0 2h1M3 2h1M5 2h1M19 2h1M0 3h6M19 3h1M3 4h1M19 4h1M0 5h4M19 5h1M0 6h1M19 6h1M0 7h1M19 7h1M0 8h1M19 8h1M0 9h1M19 9h1M0 10h1M19 10h1M0 11h1M19 11h1M0 12h1M19 12h1M0 13h1M19 13h1M0 14h1M16 14h4M0 15h1M16 15h1M0 16h1M14 16h6M0 17h1M14 17h1M16 17h1M19 17h1M0 18h1M14 18h1M16 18h1M19 18h1M0 19h15M16 19h4" /><path stroke="rgba(32,60,86,0.9921568627450981)" d="M1 1h1" /><path stroke="%23203c56" d="M2 1h1M6 1h13M1 2h2M6 2h13M6 3h13M4 4h15M4 5h15M1 6h18M1 7h18M1 8h18M1 9h18M1 10h18M1 11h18M1 12h18M1 13h18M1 14h15M1 15h15M1 16h13M1 17h13M17 17h2M1 18h13M17 18h2" /></svg>') 40% / 1.4 stretch;
 }
 
 .card-content {
