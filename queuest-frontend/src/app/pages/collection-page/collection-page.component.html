@@ -6,12 +6,12 @@
 <div class="card">
   <div class="card-content">
     <div class="collection-items">
-      <button (click)="addItem()">+</button>
+      <a (click)="addItem()" class="rnd-btn add-item" title="Add new item"></a>
       <a [className]="calibrated<0.5?'rnd-btn not-calibrated':calibrated<0.90?'rnd-btn calibrated':'rnd-btn exactly-calibrated'"
          [title]="calibrated |  percent:'0.0'" >
       </a>
-      <a (click)="addToFavs()" *ngIf="!collection.favourite" class="rnd-btn fav-btn"></a>
-      <a (click)="removeFromFavs()" *ngIf="collection.favourite" class="rnd-btn unfav-btn"></a>
+      <a (click)="addToFavs()" *ngIf="!collection.favourite" class="rnd-btn fav-btn" title="Add collection to favourites"></a>
+      <a (click)="removeFromFavs()" *ngIf="collection.favourite" class="rnd-btn unfav-btn" title="Remove collection from favourites"></a>
     </div>
   </div>
 </div>
