@@ -55,10 +55,10 @@ export class ItemsService {
         const reduceFn = (previousValue: number, currentValue: number) => previousValue + Math.sqrt(currentValue);
         const outEdges = Array.from(edge.relations.values())
             .map(a => a.length)
-            .reduce(reduceFn);
+            .reduce(reduceFn, 0);
         const inEdges = Array.from(edge.relationsInverted.values())
             .map(a => a.length)
-            .reduce(reduceFn);
+            .reduce(reduceFn, 0);
         return (outEdges + inEdges) / 2.0 / desiredNumber;
     }
 

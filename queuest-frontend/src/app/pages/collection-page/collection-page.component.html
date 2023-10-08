@@ -5,23 +5,25 @@
 </div>
 <div class="card">
   <div class="card-content">
-  <button class="fav-btn" (click)="addItem()">+</button>
-  <button class="fav-btn"
-          [className]="calibrated<0.5?'not-calibrated':calibrated<0.90?'calibrated':'exactly-calibrated'"
-          [title]="calibrated |  percent:'0.0'">↔</button>
-  <button class="fav-btn" *ngIf="!collection.favourite" (click)="addToFavs()">♡</button>
-  <button class="fav-btn" *ngIf="collection.favourite" (click)="removeFromFavs()">❤</button>
+    <div class="collection-items">
+      <button (click)="addItem()">+</button>
+      <a [className]="calibrated<0.5?'rnd-btn not-calibrated':calibrated<0.90?'rnd-btn calibrated':'rnd-btn exactly-calibrated'"
+         [title]="calibrated |  percent:'0.0'" >
+      </a>
+      <a (click)="addToFavs()" *ngIf="!collection.favourite" class="rnd-btn fav-btn"></a>
+      <a (click)="removeFromFavs()" *ngIf="collection.favourite" class="rnd-btn unfav-btn"></a>
+    </div>
   </div>
 </div>
 <!--Calibrated: {{calibrated |  percent:'0.0'}}-->
 <!--<app-add-item [collection]="collection" (changes)="calibrateItem($event)"></app-add-item>-->
 <div class="card list">
   <div class="card-content">
-  <ol>
-    <li *ngFor="let item of items">{{item.name}}
-      <a *ngIf="!item.calibrated" class="calibrate-btn" (click)="calibrateItem(item.id!)">↔</a>
-      <a class="delete-btn" (click)="deleteItem(item.id)">x</a>
-    </li>
-  </ol>
-</div>
+    <ol>
+      <li *ngFor="let item of items">{{item.name}}
+        <a (click)="calibrateItem(item.id!)" *ngIf="!item.calibrated" class="calibrate-btn">↔</a>
+        <a (click)="deleteItem(item.id)" class="delete-btn">x</a>
+      </li>
+    </ol>
+  </div>
 </div>
