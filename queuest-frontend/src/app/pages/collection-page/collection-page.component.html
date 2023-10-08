@@ -1,5 +1,5 @@
 <div class="heading">
-  <span class="text-heading"><a [routerLink]="['']" class="nav-button"><</a></span>
+  <span class="text-heading"><a [routerLink]="['']" class="nav-back"></a></span>
   <span class="text-heading">{{collection.name}}</span>
 
 </div>
@@ -21,8 +21,8 @@
   <div class="card-content">
     <ol>
       <li *ngFor="let item of items">{{item.name}}
-        <a (click)="calibrateItem(item.id!)" *ngIf="!item.calibrated" class="calibrate-btn">↔</a>
-        <a (click)="deleteItem(item.id)" class="delete-btn">x</a>
+        <a (click)="calibrateItem(item.id!)" *ngIf="!item.calibrated" class="calibrate-item-btn"></a>
+        <a (click)="deleteItem(item.id)" class="delete-btn"></a>
       </li>
     </ol>
   </div>
