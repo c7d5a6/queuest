@@ -1,27 +1,80 @@
 @import "src/styles/module.scss";
 
+.collection-items {
+  display: flex;
+  gap: 8px;
+}
+
 .heading {
   margin-bottom: 32px;
 }
 
-.fav-btn {
-  margin-left: 8px;
-  margin-right: 8px;
+.fav-btn::before {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23f44336" d="M11 9h2M19 9h2M11 10h2M19 10h2M9 11h6M17 11h6M9 12h6M17 12h6M7 13h18M7 14h18M7 15h18M7 16h18M9 17h14M9 18h14M11 19h10M11 20h10M13 21h6M13 22h6M15 23h2M15 24h2" /><path stroke="%2381373E" d="M7 17h2M23 17h2M9 19h2M21 19h2M11 21h2M19 21h2M13 23h2M17 23h2M15 25h2" /></svg>');
+}
+.fav-btn:hover::before {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23F44336" d="M11 8h2M19 8h2M11 9h2M19 9h2M9 10h6M17 10h6M9 11h6M17 11h6M7 12h18M7 13h18M7 14h18M7 15h18M9 16h14M9 17h14M11 18h10M11 19h10M13 20h6M13 21h6M15 22h2M15 23h2" /><path stroke="%2381373E" d="M7 16h2M23 16h2M7 17h2M23 17h2M9 18h2M21 18h2M9 19h2M21 19h2M11 20h2M19 20h2M11 21h2M19 21h2M13 22h2M17 22h2M13 23h2M17 23h2M15 24h2M15 25h2" /></svg>');
+}
+.fav-btn:active::before {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%2381373E" d="M11 9h2M19 9h2M11 10h2M19 10h2M9 11h6M17 11h6M9 12h6M17 12h6M7 13h18M7 14h18M7 15h18M7 16h18M7 17h18M9 18h14M9 19h14M11 20h10M11 21h10M13 22h6M13 23h6M15 24h2M15 25h2" /></svg>');
+}
+
+.unfav-btn::before {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23203C56" d="M11 9h2M19 9h2M11 10h2M19 10h2M9 11h6M17 11h6M9 12h6M17 12h6M7 13h18M7 14h18M7 15h18M7 16h18M9 17h14M9 18h14M11 19h10M11 20h10M13 21h6M13 22h6M15 23h2M15 24h2" /><path stroke="%230D2B45" d="M7 17h2M23 17h2M9 19h2M21 19h2M11 21h2M19 21h2M13 23h2M17 23h2M15 25h2" /></svg>');
+}
+.unfav-btn:hover::before {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23203C56" d="M11 8h2M19 8h2M11 9h2M19 9h2M9 10h6M17 10h6M9 11h6M17 11h6M7 12h18M7 13h18M7 14h18M7 15h18M9 16h14M9 17h14M11 18h10M11 19h10M13 20h6M13 21h6M15 22h2M15 23h2" /><path stroke="%230D2B45" d="M7 16h2M23 16h2M7 17h2M23 17h2M9 18h2M21 18h2M9 19h2M21 19h2M11 20h2M19 20h2M11 21h2M19 21h2M13 22h2M17 22h2M13 23h2M17 23h2M15 24h2M15 25h2" /></svg>');
+}
+.unfav-btn:active::before {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%230D2B45" d="M11 9h2M19 9h2M11 10h2M19 10h2M9 11h6M17 11h6M9 12h6M17 12h6M7 13h18M7 14h18M7 15h18M7 16h18M7 17h18M9 18h14M9 19h14M11 20h10M11 21h10M13 22h6M13 23h6M15 24h2M15 25h2" /></svg>');
 }
 
 ol li {
   padding: 0 0 0 4px;
 }
 
-.nav-button {
+.nav-back {
   margin-right: 8px;
-
+  margin-bottom: -4px;
+  width: 32px;
+  height: 32px;
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23ffaa5e" d="M18 2h4M18 3h4M18 4h4M18 5h4M14 6h4M14 7h4M14 8h4M14 9h4M10 10h4M10 11h4M10 12h4M10 13h4M6 14h4M6 15h4M6 16h4M6 17h4M10 18h4M10 19h4M10 20h4M10 21h4M14 22h4M14 23h4M14 24h4M14 25h4M18 26h4M18 27h4M18 28h4M18 29h4" /><path stroke="%23d08159" d="M18 6h4M18 7h4M14 10h4M14 11h4M10 14h4M10 15h4M6 18h4M6 19h4M10 22h4M10 23h4M14 26h4M14 27h4M18 30h4M18 31h4" /></svg>');
+}
+.nav-back:hover {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23ffd4a3" d="M18 1h4M18 2h4M18 3h4M18 4h4M14 5h4M14 6h4M14 7h4M14 8h4M10 9h4M10 10h4M10 11h4M10 12h4M6 13h4M6 14h4M6 15h4M6 16h4M10 17h4M10 18h4M10 19h4M10 20h4M14 21h4M14 22h4M14 23h4M14 24h4M18 25h4M18 26h4M18 27h4M18 28h4" /><path stroke="%23d08159" d="M18 5h4M18 6h4M18 7h4M14 9h4M14 10h4M14 11h4M10 13h4M10 14h4M10 15h4M6 17h4M6 18h4M6 19h4M10 21h4M10 22h4M10 23h4M14 25h4M14 26h4M14 27h4M18 29h4M18 30h4M18 31h4" /></svg>');
+}
+.nav-back:active {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23d08159" d="M18 2h4M18 3h4M18 4h4M18 5h4M14 6h8M14 7h8M14 8h4M14 9h4M10 10h8M10 11h8M10 12h4M10 13h4M6 14h8M6 15h8M6 16h4M6 17h4M6 18h8M6 19h8M10 20h4M10 21h4M10 22h8M10 23h8M14 24h4M14 25h4M14 26h8M14 27h8M18 28h4M18 29h4M18 30h4M18 31h4" /></svg>');
 }
 
 .delete-btn {
-  color: $color-danger-darker;
+  margin-left: 4px;
+  margin-bottom: -2px;
   cursor: pointer;
-  padding: 4px;
+  width: 16px;
+  height: 16px;
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 16 16" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%2381373E" d="M4 1h8M4 2h8M0 3h16M0 4h16M2 6h2M5 6h2M9 6h2M12 6h2M2 7h2M5 7h2M9 7h2M12 7h2M2 8h2M5 8h2M9 8h2M12 8h2M2 9h2M5 9h2M9 9h2M12 9h2M2 10h2M5 10h2M9 10h2M12 10h2M2 11h2M5 11h2M9 11h2M12 11h2M2 12h2M5 12h2M9 12h2M12 12h2M2 13h12M3 14h10" /><path stroke="%235E3340" d="M0 5h16M2 14h1M13 14h1M3 15h10" /></svg>');
+}
+.delete-btn:hover {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 16 16" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23F44336" d="M4 0h8M4 1h8M0 2h16M0 3h16M2 5h2M5 5h2M9 5h2M12 5h2M2 6h2M5 6h2M9 6h2M12 6h2M2 7h2M5 7h2M9 7h2M12 7h2M2 8h2M5 8h2M9 8h2M12 8h2M2 9h2M5 9h2M9 9h2M12 9h2M2 10h2M5 10h2M9 10h2M12 10h2M2 11h2M5 11h2M9 11h2M12 11h2M2 12h12M3 13h10" /><path stroke="%235E3340" d="M0 4h16M0 5h2M4 5h1M7 5h2M11 5h1M14 5h2M2 13h1M13 13h1M2 14h12M3 15h10" /></svg>');
+}
+.delete-btn:active {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 16 16" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%235E3340" d="M4 1h8M4 2h8M0 3h16M0 4h16M0 5h16M2 6h2M5 6h2M9 6h2M12 6h2M2 7h2M5 7h2M9 7h2M12 7h2M2 8h2M5 8h2M9 8h2M12 8h2M2 9h2M5 9h2M9 9h2M12 9h2M2 10h2M5 10h2M9 10h2M12 10h2M2 11h2M5 11h2M9 11h2M12 11h2M2 12h2M5 12h2M9 12h2M12 12h2M2 13h12M2 14h12M3 15h10" /></svg>');
+}
+
+.calibrate-item-btn {
+  margin-left: 4px;
+  margin-bottom: -2px;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 16 16" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23fc9f1c" d="M7 1h2M6 2h4M5 3h6M7 4h2M3 5h1M7 5h2M12 5h1M2 6h2M7 6h2M12 6h2M1 7h14M1 8h14M2 9h2M7 9h2M12 9h2M3 10h1M7 10h2M12 10h1M7 11h2M5 12h6M6 13h4M7 14h2" /><path stroke="%23856531" d="M5 4h2M9 4h2M1 9h1M4 9h3M9 9h3M14 9h1M2 10h1M13 10h1M3 11h1M12 11h1M5 13h1M10 13h1M6 14h1M9 14h1M7 15h2" /></svg>');
+}
+.calibrate-item-btn:hover {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 16 16" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23fec679" d="M7 0h2M6 1h4M5 2h6M7 3h2M3 4h1M7 4h2M12 4h1M2 5h2M7 5h2M12 5h2M1 6h14M1 7h14M2 8h2M7 8h2M12 8h2M3 9h1M7 9h2M12 9h1M7 10h2M5 11h6M6 12h4M7 13h2" /><path stroke="%23856531" d="M5 3h2M9 3h2M5 4h2M9 4h2M1 8h1M4 8h3M9 8h3M14 8h1M1 9h2M4 9h3M9 9h3M13 9h2M2 10h2M12 10h2M3 11h1M12 11h1M5 12h1M10 12h1M5 13h2M9 13h2M6 14h4M7 15h2" /></svg>');
+}
+.calibrate-item-btn:active {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 16 16" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23856531" d="M7 1h2M6 2h4M5 3h6M5 4h6M3 5h1M7 5h2M12 5h1M2 6h2M7 6h2M12 6h2M1 7h14M1 8h14M1 9h14M2 10h2M7 10h2M12 10h2M3 11h1M7 11h2M12 11h1M5 12h6M5 13h6M6 14h4M7 15h2" /></svg>');
 }
 
 .calibrate-btn {
@@ -38,25 +91,45 @@ ol li {
   color: $color-warning-lightest;
 }
 
-.delete-btn:hover {
-  color: $color-danger;
+.exactly-calibrated {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%237faf54" d="M15 8h2M14 9h4M13 10h6M12 11h8M11 12h1M15 12h2M20 12h1M10 13h2M15 13h2M20 13h2M9 14h3M15 14h2M20 14h3M8 15h16M8 16h16M9 17h3M15 17h2M20 17h3M10 18h2M15 18h2M20 18h2M11 19h1M15 19h2M20 19h1M12 20h8M13 21h6M14 22h4M15 23h2" /><path stroke="%23466D4D" d="M12 12h3M17 12h3M8 17h1M12 17h3M17 17h3M23 17h1M9 18h1M22 18h1M10 19h1M21 19h1M11 20h1M20 20h1M12 21h1M19 21h1M13 22h1M18 22h1M14 23h1M17 23h1M15 24h2" /></svg>');
+}
+.exactly-calibrated:hover {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23BFCE95" d="M15 7h2M14 8h4M13 9h6M12 10h8M11 11h1M15 11h2M20 11h1M10 12h2M15 12h2M20 12h2M9 13h3M15 13h2M20 13h3M8 14h16M8 15h16M9 16h3M15 16h2M20 16h3M10 17h2M15 17h2M20 17h2M11 18h1M15 18h2M20 18h1M12 19h8M13 20h6M14 21h4M15 22h2" /><path stroke="%23466D4D" d="M12 11h3M17 11h3M12 12h3M17 12h3M8 16h1M12 16h3M17 16h3M23 16h1M8 17h2M12 17h3M17 17h3M22 17h2M9 18h2M21 18h2M10 19h2M20 19h2M11 20h2M19 20h2M12 21h2M18 21h2M13 22h2M17 22h2M14 23h4M15 24h2" /></svg>');
+}
+.exactly-calibrated:active {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23466D4D" d="M15 8h2M14 9h4M13 10h6M12 11h8M11 12h10M10 13h2M15 13h2M20 13h2M9 14h3M15 14h2M20 14h3M8 15h16M8 16h16M8 17h16M9 18h3M15 18h2M20 18h3M10 19h2M15 19h2M20 19h2M11 20h10M12 21h8M13 22h6M14 23h4M15 24h2" /></svg>');
 }
 
-.delete-btn:active {
-  color: $color-danger-lighter;
+
+.calibrated {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23FC9F1C" d="M15 8h2M14 9h4M13 10h6M12 11h8M11 12h1M15 12h2M20 12h1M10 13h2M15 13h2M20 13h2M9 14h3M15 14h2M20 14h3M8 15h16M8 16h16M9 17h3M15 17h2M20 17h3M10 18h2M15 18h2M20 18h2M11 19h1M15 19h2M20 19h1M12 20h8M13 21h6M14 22h4M15 23h2" /><path stroke="%23856531" d="M12 12h3M17 12h3M8 17h1M12 17h3M17 17h3M23 17h1M9 18h1M22 18h1M10 19h1M21 19h1M11 20h1M20 20h1M12 21h1M19 21h1M13 22h1M18 22h1M14 23h1M17 23h1M15 24h2" /></svg>');
+}
+.calibrated:hover {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23FEC679" d="M15 7h2M14 8h4M13 9h6M12 10h8M11 11h1M15 11h2M20 11h1M10 12h2M15 12h2M20 12h2M9 13h3M15 13h2M20 13h3M8 14h16M8 15h16M9 16h3M15 16h2M20 16h3M10 17h2M15 17h2M20 17h2M11 18h1M15 18h2M20 18h1M12 19h8M13 20h6M14 21h4M15 22h2" /><path stroke="%23856531" d="M12 11h3M17 11h3M12 12h3M17 12h3M8 16h1M12 16h3M17 16h3M23 16h1M8 17h2M12 17h3M17 17h3M22 17h2M9 18h2M21 18h2M10 19h2M20 19h2M11 20h2M19 20h2M12 21h2M18 21h2M13 22h2M17 22h2M14 23h4M15 24h2" /></svg>');
+}
+.calibrated:active {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23856531" d="M15 8h2M14 9h4M13 10h6M12 11h8M11 12h10M10 13h2M15 13h2M20 13h2M9 14h3M15 14h2M20 14h3M8 15h16M8 16h16M8 17h16M9 18h3M15 18h2M20 18h3M10 19h2M15 19h2M20 19h2M11 20h10M12 21h8M13 22h6M14 23h4M15 24h2" /></svg>');
 }
 
 .not-calibrated {
-  border-color: $color-danger;
-  color: $color-danger;
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23F44336" d="M15 8h2M14 9h4M13 10h6M12 11h8M11 12h1M15 12h2M20 12h1M10 13h2M15 13h2M20 13h2M9 14h3M15 14h2M20 14h3M8 15h16M8 16h16M9 17h3M15 17h2M20 17h3M10 18h2M15 18h2M20 18h2M11 19h1M15 19h2M20 19h1M12 20h8M13 21h6M14 22h4M15 23h2" /><path stroke="%2381373E" d="M12 12h3M17 12h3M8 17h1M12 17h3M17 17h3M23 17h1M9 18h1M22 18h1M10 19h1M21 19h1M11 20h1M20 20h1M12 21h1M19 21h1M13 22h1M18 22h1M14 23h1M17 23h1M15 24h2" /></svg>');
 }
-.calibrated {
-  border-color: $color-warning;
-  color: $color-warning;
+.not-calibrated:hover {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23F44336" d="M15 7h2M14 8h4M13 9h6M12 10h8M11 11h1M15 11h2M20 11h1M10 12h2M15 12h2M20 12h2M9 13h3M15 13h2M20 13h3M8 14h16M8 15h16M9 16h3M15 16h2M20 16h3M10 17h2M15 17h2M20 17h2M11 18h1M15 18h2M20 18h1M12 19h8M13 20h6M14 21h4M15 22h2" /><path stroke="%2381373E" d="M12 11h3M17 11h3M12 12h3M17 12h3M8 16h1M12 16h3M17 16h3M23 16h1M8 17h2M12 17h3M17 17h3M22 17h2M9 18h2M21 18h2M10 19h2M20 19h2M11 20h2M19 20h2M12 21h2M18 21h2M13 22h2M17 22h2M14 23h4M15 24h2" /></svg>');
 }
-.exactly-calibrated {
-  border-color: $color-success;
-  color: $color-success;
+.not-calibrated:active {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%2381373E" d="M15 8h2M14 9h4M13 10h6M12 11h8M11 12h10M10 13h2M15 13h2M20 13h2M9 14h3M15 14h2M20 14h3M8 15h16M8 16h16M8 17h16M9 18h3M15 18h2M20 18h3M10 19h2M15 19h2M20 19h2M11 20h10M12 21h8M13 22h6M14 23h4M15 24h2" /></svg>');
+}
+
+.add-item {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%237faf54" d="M18 12h4M18 13h4M18 14h4M18 15h4M14 16h12M14 17h12M14 18h12M14 19h12M18 20h4M18 21h4M18 22h4M18 23h4" /><path stroke="%23ffaa5e" d="M8 13h10M22 13h2M8 14h1M11 14h1M14 14h1M23 14h1M8 15h1M10 15h2M14 15h1M16 15h2M23 15h1M8 16h1M11 16h1M8 17h1M10 17h3M8 18h6" /><path stroke="%23d08159" d="M9 14h2M12 14h2M15 14h3M22 14h1M9 15h1M12 15h2M15 15h1M22 15h1M9 16h2M12 16h2M9 17h1M13 17h1M8 19h6" /><path stroke="%23544e68" d="M14 20h4M22 20h4M14 21h4M22 21h4M18 24h4M18 25h4" /></svg>');
+}
+.add-item:hover {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23bfce95" d="M18 11h4M18 12h4M18 13h4M18 14h4M14 15h12M14 16h12M14 17h12M14 18h12M18 19h4M18 20h4M18 21h4M18 22h4" /><path stroke="%23ffd4a3" d="M8 12h10M22 12h2M8 13h1M11 13h1M14 13h1M23 13h1M8 14h1M10 14h2M14 14h1M16 14h2M23 14h1M8 15h1M11 15h1M8 16h1M10 16h3M8 17h6" /><path stroke="%23d08159" d="M9 13h2M12 13h2M15 13h3M22 13h1M9 14h1M12 14h2M15 14h1M22 14h1M9 15h2M12 15h2M9 16h1M13 16h1M8 18h6M8 19h6" /><path stroke="%23544e68" d="M14 19h4M22 19h4M14 20h4M22 20h4M14 21h4M22 21h4M18 23h4M18 24h4M18 25h4" /></svg>');
+}
+.add-item:active {
+  content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges"><metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata><path stroke="%23544e68" d="M18 12h4M18 13h4M18 14h4M18 15h4M14 16h12M14 17h12M14 18h12M14 19h12M14 20h12M14 21h12M18 22h4M18 23h4M18 24h4M18 25h4" /><path stroke="%23d08159" d="M8 13h10M22 13h2M8 14h10M22 14h2M8 15h10M22 15h2M8 16h6M8 17h6M8 18h6M8 19h6" /></svg>');
 }
 
 .list {

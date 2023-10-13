@@ -1,15 +1,24 @@
-<div class="card">
-  <div class="card-content">
-    <div class="collection-bar">
-      <input class="search" placeholder="Search">
-      <button (click)="add()">NEW</button>
+<div class="panel-container">
+  <div class="card full-width-card">
+    <div class="card-content">
+      <div class="collection-bar">
+        <input class="search" placeholder="Search">
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-content">
+      <div class="collection-bar">
+        <a (click)="add()" class="rnd-btn add-collection"></a>
+      </div>
     </div>
   </div>
 </div>
+
 <div *ngIf="showFavourite && favCollections" class="collections-with-header">
   <div class="heading"><span class="text-heading">Favorites</span></div>
   <div class="collections-lines">
-    <a *ngFor="let collection of favCollections;" class="card" [routerLink]="['collection', collection.id]">
+    <a *ngFor="let collection of favCollections;" [routerLink]="['collection', collection.id]" class="card">
       <div class="card-content">{{collection.name}}</div>
     </a>
   </div>
@@ -17,7 +26,7 @@
 <div class="collections-with-header">
   <div class="heading"><span class="text-heading">Collections</span></div>
   <div class="collections-container">
-    <div *ngFor="let collection of collections;"  class="collection-card">
+    <div *ngFor="let collection of collections;" class="collection-card">
       <app-collection-card [collection]="collection"></app-collection-card>
     </div>
   </div>
