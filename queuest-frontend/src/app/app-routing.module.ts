@@ -6,6 +6,7 @@ import { CollectionPageComponent } from './pages/collection-page/collection-page
 import { collectionItemsResolver } from './resolvers/collection-items.resolver';
 import { collectionResolver } from './resolvers/collection.resolver';
 import {favCollectionsResolver} from "./resolvers/favCollections.resolver";
+import {TestPageComponent} from "./pages/test-page/test-page.component";
 
 const routes: Routes = [
     {
@@ -21,6 +22,10 @@ const routes: Routes = [
             collection: collectionResolver,
         },
     },
+  {
+    path: 'test',
+    component: TestPageComponent,
+  },
 ];
 
 @NgModule({

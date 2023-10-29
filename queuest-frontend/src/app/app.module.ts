@@ -30,6 +30,7 @@ import { CollectionsSidepanelComponent } from './components/collections/collecti
 import { CollectionCardComponent } from './components/collections/collection-card/collection-card.component';
 import { AddCollectionComponent } from './components/add-collection/add-collection.component';
 import { CollectionPageComponent } from './pages/collection-page/collection-page.component';
+import { TestPageComponent } from './pages/test-page/test-page.component';
 
 @NgModule({
     declarations: [
@@ -46,6 +47,7 @@ import { CollectionPageComponent } from './pages/collection-page/collection-page
         CollectionCardComponent,
         AddCollectionComponent,
         CollectionPageComponent,
+        TestPageComponent,
     ],
     imports: [
         BrowserModule,
