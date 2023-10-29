@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { UserEntity } from '../persistence/entities/user.entity';
-import { Repository } from 'typeorm';
-import { FirebaseUser } from '../auth/firebase-user';
-import { AccessDeniedError } from 'sequelize';
+import {Injectable, Logger, UnauthorizedException} from '@nestjs/common';
+import {InjectRepository} from '@nestjs/typeorm';
+import {UserEntity} from '../persistence/entities/user.entity';
+import {QueryFailedError, Repository} from 'typeorm';
+import {FirebaseUser} from '../auth/firebase-user';
+import {AccessDeniedError} from 'sequelize';
 
 @Injectable()
 export class UserService {
@@ -12,7 +12,8 @@ export class UserService {
     constructor(
         @InjectRepository(UserEntity)
         private userRepository: Repository<UserEntity>,
-    ) {}
+    ) {
+    }
 
     findAll(): Promise<UserEntity[]> {
         // return new Promise<User[]>((resolve) => []);
@@ -21,7 +22,7 @@ export class UserService {
 
     findOne(id: number): Promise<UserEntity | null> {
         // return new Promise<User>((resolve) => null);
-        return this.userRepository.findOneBy({ id });
+        return this.userRepository.findOneBy({id});
     }
 
     save(): void {
@@ -32,7 +33,7 @@ export class UserService {
     }
 
     async syncFirebaseUser(user: FirebaseUser): Promise<UserEntity | null> {
-        const find = await this.userRepository.findOneBy({ uid: user.uid });
+        const find = await this.userRepository.findOneBy({uid: user.uid});
         if (find !== null) {
             return find;
         }
@@ -40,7 +41,14 @@ export class UserService {
         const userEntity = new UserEntity();
         userEntity.email = user.email;
         userEntity.uid = user.uid;
-        return await this.userRepository.save(userEntity);
+        // return await this.userRepository.save(userEntity);
+        try {
+            return await this.userRepository.save(userEntity);
+        } catch (ex: any) {
+            if (ex instanceof QueryFailedError && ex.message.includes("unq_user_uuid")) {
+                return await this.userRepository.findOneBy({uid: user.uid});
+            } else throw ex;
+        }
     }
 
     checkUserAccess(uid: string, user: UserEntity | undefined) {
