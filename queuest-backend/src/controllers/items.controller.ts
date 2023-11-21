@@ -59,7 +59,15 @@ export class ItemsController {
         return await this.itemsService.getItemsSorted(user.uid, collectionId);
     }
 
-    @Get(':id/bestpair')
+    @Get('least-calibrated')
+    @ApiOkResponse({description: 'Least calibrated item from collection', type: Item})
+    @UseGuards(AuthGuard)
+    async getLeastCalibratedItem(@Req() request: any, @Param('collectionId') collectionId: number): Promise<Item> {
+        const user: FirebaseUser = request.user;
+        return await this.itemsService.getLeastCalibratedItem(user.uid, collectionId);
+    }
+
+    @Get(':id/bestpair/:strict')
     @ApiQuery({name: 'exclude', type: [Number], required: false})
     @UseGuards(AuthGuard)
     @ApiOkResponse({
@@ -69,6 +77,7 @@ export class ItemsController {
     async getBestPair(
         @Req() request: any,
         @Param('id') itemId: number,
+        @Param('strict') strict: boolean,
         @Query(
             'exclude',
             new ParseArrayPipe({
@@ -80,6 +89,6 @@ export class ItemsController {
             exclude: number[] | undefined,
     ): Promise<ItemPair | undefined> {
         const user: FirebaseUser = request.user;
-        return await this.itemsService.getBestPair(user.uid, itemId, exclude);
+        return await this.itemsService.getBestPair(user.uid, itemId, strict, exclude);
     }
 }

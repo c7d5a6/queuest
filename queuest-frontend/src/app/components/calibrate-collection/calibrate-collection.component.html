@@ -1,0 +1,36 @@
+<h2>{{title}}</h2>
+<table *ngIf="!calibrated">
+  <colgroup>
+    <col span="1" style="width: 50%;">
+    <col span="1" style="width: 72px;">
+    <col span="1" style="width: 50%;">
+  </colgroup>
+  <tbody>
+  <tr *ngFor="let p of items; let i = index">
+    <td>
+      <button (click)="addRelation(p,i,p.item1.id,p.item2.id)"
+              [ngClass]="p.item1.id === p.relation?.from?'selected-left':''"
+              class="compare compare-left ">{{p.item1.name}}</button>
+    </td>
+    <td>
+      <button (click)="deleteRelation(p,i)" [ngClass]="!p.relation?'selected-center':''"
+              class="compare compare-center "></button>
+    </td>
+    <td>
+      <button (click)="addRelation(p,i,p.item2.id,p.item1.id)"
+              [ngClass]="p.item2.id === p.relation?.from?'selected-right':''"
+              class="compare compare-right ">{{p.item2.name}}</button>
+    </td>
+  </tr>
+  </tbody>
+</table>
+<!--<div>-->
+<!--  <ul>-->
+<!--    <li *ngFor="let p of items; let i = index">-->
+<!--      <app-pair (pressed)="itemPressed(i)" [pair]="p"></app-pair>-->
+<!--    </li>-->
+<!--  </ul>-->
+<!--</div>-->
+<span *ngIf="!calibrated" style="padding-left: 20px;"><button (click)="getNextBestPair()">Next</button></span>
+<h3 *ngIf="calibrated">Calibrated!</h3>
+<button (click)="close()" *ngIf="calibrated">Close</button>

@@ -10,6 +10,7 @@ import {CollectionsService} from "../../api/services/collections.service";
 import {CollectionWithItems} from "../../api/models/collection-with-items";
 import {AddCollectionComponent} from "../../components/add-collection/add-collection.component";
 import {AddItemComponent} from "../../components/add-item/add-item.component";
+import {CalibrateCollectionComponent} from "../../components/calibrate-collection/calibrate-collection.component";
 
 @Component({
   selector: 'app-collection-page',
@@ -60,7 +61,19 @@ export class CollectionPageComponent implements OnInit {
       })
       .afterClosed$.subscribe(() =>
       this.reload());
+  }
 
+  calibrateCollection() {
+    this.dialogService
+      .open(CalibrateCollectionComponent, {
+        // data is typed based on the passed generic
+        data: {
+          title: `Calibrate`,
+          collectionId: this.collection.id,
+        },
+      })
+      .afterClosed$.subscribe(() =>
+      this.reload());
   }
 
   deleteItem(itemId: number | undefined) {

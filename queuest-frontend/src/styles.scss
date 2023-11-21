@@ -102,6 +102,7 @@ ul {
 ngneat-dialog {
   .ngneat-dialog-backdrop {
     background: var($color-darker, 0.50) !important;
+    padding: 0;
 
     .ngneat-dialog-content {
       background: $color-dark !important;

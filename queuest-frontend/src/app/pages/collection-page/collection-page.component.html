@@ -8,7 +8,7 @@
     <div class="collection-items">
       <a (click)="addItem()" class="rnd-btn add-item" title="Add new item"></a>
       <a [className]="calibrated<0.5?'rnd-btn not-calibrated':calibrated<0.90?'rnd-btn calibrated':'rnd-btn exactly-calibrated'"
-         [title]="calibrated |  percent:'0.0'" >
+         [title]="calibrated |  percent:'0.0'" (click)="calibrateCollection()">
       </a>
       <a (click)="addToFavs()" *ngIf="!collection.favourite" class="rnd-btn unfav-btn" title="Add collection to favourites"></a>
       <a (click)="removeFromFavs()" *ngIf="collection.favourite" class="rnd-btn fav-btn" title="Remove collection from favourites"></a>

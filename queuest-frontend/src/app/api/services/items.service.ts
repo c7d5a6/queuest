@@ -187,9 +187,62 @@ export class ItemsService extends BaseService {
   }
 
   /**
+   * Path part for operation itemsControllerGetLeastCalibratedItem
+   */
+  static readonly ItemsControllerGetLeastCalibratedItemPath = '/collections/{collectionId}/items/least-calibrated';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `itemsControllerGetLeastCalibratedItem()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  itemsControllerGetLeastCalibratedItem$Response(params: {
+    collectionId: number;
+  },
+  context?: HttpContext
+
+): Observable<StrictHttpResponse<Item>> {
+
+    const rb = new RequestBuilder(this.rootUrl, ItemsService.ItemsControllerGetLeastCalibratedItemPath, 'get');
+    if (params) {
+      rb.path('collectionId', params.collectionId, {});
+    }
+
+    return this.http.request(rb.build({
+      responseType: 'json',
+      accept: 'application/json',
+      context: context
+    })).pipe(
+      filter((r: any) => r instanceof HttpResponse),
+      map((r: HttpResponse<any>) => {
+        return r as StrictHttpResponse<Item>;
+      })
+    );
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `itemsControllerGetLeastCalibratedItem$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  itemsControllerGetLeastCalibratedItem(params: {
+    collectionId: number;
+  },
+  context?: HttpContext
+
+): Observable<Item> {
+
+    return this.itemsControllerGetLeastCalibratedItem$Response(params,context).pipe(
+      map((r: StrictHttpResponse<Item>) => r.body as Item)
+    );
+  }
+
+  /**
    * Path part for operation itemsControllerGetBestPair
    */
-  static readonly ItemsControllerGetBestPairPath = '/collections/{collectionId}/items/{id}/bestpair';
+  static readonly ItemsControllerGetBestPairPath = '/collections/{collectionId}/items/{id}/bestpair/{strict}';
 
   /**
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
@@ -199,6 +252,7 @@ export class ItemsService extends BaseService {
    */
   itemsControllerGetBestPair$Response(params: {
     id: number;
+    strict: boolean;
     exclude?: Array<number>;
   },
   context?: HttpContext
@@ -208,6 +262,7 @@ export class ItemsService extends BaseService {
     const rb = new RequestBuilder(this.rootUrl, ItemsService.ItemsControllerGetBestPairPath, 'get');
     if (params) {
       rb.path('id', params.id, {});
+      rb.path('strict', params.strict, {});
       rb.query('exclude', params.exclude, {});
     }
 
@@ -231,6 +286,7 @@ export class ItemsService extends BaseService {
    */
   itemsControllerGetBestPair(params: {
     id: number;
+    strict: boolean;
     exclude?: Array<number>;
   },
   context?: HttpContext
