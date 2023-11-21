@@ -12,6 +12,7 @@ import { AddItemComponent } from './components/add-item/add-item.component';
 import { PairComponent } from './components/pairs/pair/pair.component';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CalibrateItemComponent } from './components/calibrate-item/calibrate-item.component';
+import { CalibrateCollectionComponent } from './components/calibrate-collection/calibrate-collection.component';
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import {
     getAnalytics,
@@ -40,6 +41,7 @@ import { TestPageComponent } from './pages/test-page/test-page.component';
         AddItemComponent,
         PairComponent,
         CalibrateItemComponent,
+        CalibrateCollectionComponent,
         LoginComponent,
         CollectionsComponent,
         CollectionsPageComponent,

@@ -1,6 +1,4 @@
-import {
-  Component, OnInit,
-} from '@angular/core';
+import {Component, OnInit,} from '@angular/core';
 import {ItemsService} from '../../api/services/items.service';
 import {DialogRef} from "@ngneat/dialog";
 import {Data} from "@angular/router";
@@ -8,13 +6,13 @@ import {ItemPair} from "../../api/models/item-pair";
 import {ItemsRelationService} from "../../api/services/items-relation.service";
 
 @Component({
-  selector: 'app-calibrate-item',
-  templateUrl: './calibrate-item.component.html',
-  styleUrls: ['./calibrate-item.component.scss'],
+  selector: 'app-calibrate-collection',
+  templateUrl: './calibrate-collection.component.html',
+  styleUrls: ['./calibrate-collection.component.scss'],
 })
-export class CalibrateItemComponent implements OnInit {
+export class CalibrateCollectionComponent implements OnInit {
 
-  itemId: number | undefined;
+  collectionId: number | undefined;
   title: string = '';
   items: ItemPair[] = [];
   calibrated = true;
@@ -28,8 +26,8 @@ export class CalibrateItemComponent implements OnInit {
     if (ref.data['title']) {
       this.title = ref.data['title']
     }
-    if (ref.data['itemId']) {
-      this.itemId = ref.data['itemId']
+    if (ref.data['collectionId']) {
+      this.collectionId = ref.data['collectionId']
     }
   }
 
@@ -44,24 +42,27 @@ export class CalibrateItemComponent implements OnInit {
   }
 
   getNextBestPair() {
+    if (!this.collectionId) return;
     const ids: number[] = [];
-    ids.push(this.itemId!);
     this.items.forEach((item) => ids.push(item.item2.id!));
     this.itemsService
-      .itemsControllerGetBestPair({
-        id: this.itemId!,
-        exclude: ids,
-        strict: true
-      })
-      .subscribe((pair) => {
-        if (!!pair) {
-          this.items.push(pair);
-          this.calibrated = false;
-        } else {
-          this.calibrated = true;
-        }
-        console.log(pair, this.items.length)
-      });
+      .itemsControllerGetLeastCalibratedItem({collectionId: this.collectionId})
+      .subscribe((item) =>
+        this.itemsService
+          .itemsControllerGetBestPair({
+            id: item.id!,
+            exclude: ids,
+            strict: false
+          })
+          .subscribe((pair) => {
+            if (!!pair) {
+              this.items.push(pair);
+              this.calibrated = false;
+            } else {
+              this.calibrated = true;
+            }
+            console.log(pair, this.items.length)
+          }));
   }
 
   ngOnInit(): void {

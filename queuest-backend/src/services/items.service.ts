@@ -1,4 +1,4 @@
-import {HttpException, HttpStatus, Injectable, Logger} from '@nestjs/common';
+import {BadRequestException, HttpException, HttpStatus, Injectable, Logger} from '@nestjs/common';
 import {ItemEntity} from '../persistence/entities/item.entity';
 import {Graph} from '../models/graph';
 import {GraphService} from './graph.service';
@@ -14,6 +14,7 @@ import {UserService} from "./user.service";
 import {ItemRelation} from "../models/item-relation";
 import {ItemPair} from "../models/item-pair";
 import {CollectionWithItems} from "../models/collection-with-items";
+import {AccessDeniedError} from "sequelize";
 
 @Injectable()
 export class ItemsService {
@@ -112,7 +113,7 @@ export class ItemsService {
         this.setGraphEdgesByEdges(items, edge, graph);
     }
 
-    async getBestPair(userUid: string, id: number, exclude?: number[]) {
+    async getBestPair(userUid: string, id: number, strict: boolean, exclude?: number[],) {
         const itemFrom = await this.collectionItemRepository.findOneBy({
             id: id,
         });
@@ -128,15 +129,35 @@ export class ItemsService {
         await this.setGraphEdgesByEdges(items, edge, graph);
         const itemsSorted = this.getItemEntitySortedByGraph(graph, items);
         const itemPosition = itemsSorted.findIndex((item) => item.id == id);
-        if (this.isItemCalibrated(itemsSorted, edge, itemFrom, itemPosition))
+        if (strict && this.isItemCalibrated(itemsSorted, edge, itemFrom, itemPosition))
             return undefined;
         const excludeSet = exclude ? new Set<number>(exclude) : new Set<number>();
-        const bestPairForItem = this.getBestPairForItem(id, itemsSorted, excludeSet, edge);
+        const bestPairForItem = this.getBestPairForItem(id, itemsSorted, excludeSet, edge, strict);
         if (!bestPairForItem) return undefined;
         if (excludeSet.has(bestPairForItem.id)) return undefined;
         const itemPair = this.itemPairFromItems(itemFrom, bestPairForItem, edge);
         if (!!itemPair.relation) return undefined;
         return itemPair;
+    }
+
+    async getLeastCalibratedItem(uid: string, collectionId: number) {
+        const collection: CollectionEntity = await this.collectionService.getCollection(uid, collectionId);
+        const items = await this.collectionItemRepository.findBy({
+            collection: {id: collection.id},
+        });
+        const edge: Edges = await this.itemsRelationService.getRelationsMaps(items);
+        if (items.length == 0) throw new BadRequestException("No items in collection");
+        return ItemsService.mapToItem(
+            items.reduce((prev, cur) => {
+                const p = Math.sqrt(edge.relationsInverted.get(prev.id)?.length ? edge.relationsInverted.get(prev.id)!.length : 0)
+                    + Math.sqrt(edge.relations.get(prev.id)?.length ? edge.relations.get(prev.id)!.length : 0);
+                const c = Math.sqrt(edge.relationsInverted.get(cur.id)?.length ? edge.relationsInverted.get(cur.id)!.length : 0)
+                    + Math.sqrt(edge.relations.get(cur.id)?.length ? edge.relations.get(cur.id)!.length : 0);
+                if (c < p) return cur
+                else return prev;
+            }),
+            false
+        );
     }
 
     private isItemCalibrated(sortedArray: CollectionItemEntity[], edge: Edges, item: CollectionItemEntity, itemIndex: number) {
@@ -199,6 +220,7 @@ export class ItemsService {
         itemsList: CollectionItemEntity[],
         exclude: Set<number>,
         edge: Edges,
+        strict: boolean
     ): CollectionItemEntity | undefined {
         const itemPosition = itemsList.findIndex((item) => item.id == itemId);
         if (itemPosition < 0) throw new Error(`There is no item with ${itemId}`);
@@ -256,4 +278,5 @@ export class ItemsService {
         if (edge.relations.has(fromId)) return 0 <= edge.relations.get(fromId)!.findIndex((idx) => idx === toId);
         return false;
     }
+
 }
