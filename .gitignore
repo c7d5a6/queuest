@@ -130,3 +130,7 @@ dist
 .pnp.*
 
 queuest-backend/app-pm2.json
+
+queuest-zig/zig-cache/
+
+queuest-zig/zig-out/
