@@ -35,6 +35,22 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+
+    const libC = b.addStaticLibrary(.{
+        .name = "regez",
+        .optimize = .Debug,
+        .target = target,
+    });
+    libC.addIncludePath(.{ .path = "c-src" });
+    libC.addCSourceFiles(.{
+        //.root = libC.path
+        .files = &.{"c-src/regez.c"},
+    });
+    libC.linkLibC();
+    exe.linkLibrary(libC);
+    exe.addIncludePath(.{ .path = "c-src" });
+    exe.linkLibC();
+
     const zap = b.dependency("zap", .{
         .target = target,
         .optimize = optimize,
