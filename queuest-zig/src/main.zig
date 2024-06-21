@@ -1,64 +1,7 @@
 const std = @import("std");
-const expect = std.testing.expect;
 const zap = @import("zap");
-const regez = @cImport({
-    @cInclude("regex.h");
-    @cInclude("regez.h");
-});
-
-var routes: std.StringHashMap(zap.HttpRequestFn) = undefined;
-
-// const Regex = struct {
-//    inner: *regez.regex_t,
-//
-//    fn init(pattern: [:0]const u8) !Regex {
-//        const inner = regez.alloc_regex_t().?;
-//        if (0 != regez.regcomp(inner, pattern, regez.REG_NEWLINE | regez.REG_EXTENDED)) {
-//            return error.compile;
-//        }
-//
-//       return .{
-//          .inner = inner,
-//        };
-//    }
-//
-//    fn deinit(self: Regex) void {
-//        regez.free_regex_t(self.inner);
-//    }
-//
-// /   fn matches(self: Regex, input: [:0]const u8) bool {
-//        const match_size = 1;
-//        var pmatch: [match_size]regez.regmatch_t = undefined;
-//        return 0 == regez.regexec(self.inner, input, match_size, &pmatch, 0);
-//    }
-//};
-
-fn on_request_verbose(r: zap.Request) void {
-    if (r.path) |the_path| {
-        std.debug.print("PATH: {s}\n", .{the_path});
-    }
-    if (r.query) |the_query| {
-        std.debug.print("QUERY: {s}\n", .{the_query});
-    }
-    r.sendBody("<html><body><h1>Hello from ZAP!!!</h1></body></html>") catch return;
-}
-
-fn dispatch_routes(r: zap.Request) void {
-    // dispatch
-    if (r.path) |the_path| {
-        if (routes.get(the_path)) |foo| {
-            foo(r);
-            return;
-        }
-    }
-
-    r.sendError(error.Error, null, 404);
-}
-
-fn setup_routes(a: std.mem.Allocator) !void {
-    routes = std.StringHashMap(zap.HttpRequestFn).init(a);
-    try routes.put("/api/hello", on_request_verbose);
-}
+const routes = @import("routes/routes.zig");
+const expect = std.testing.expect;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{
@@ -75,11 +18,11 @@ pub fn main() !void {
         try reg();
         // use this allocator for all your memory allocation
         const allocator = gpa.allocator();
-        try setup_routes(allocator);
+        try routes.setup_routes(allocator);
         defer routes.deinit();
         var listener = zap.HttpListener.init(.{
             .port = 3000,
-            .on_request = dispatch_routes,
+            .on_request = routes.dispatch_routes,
             .log = true,
         });
         try listener.listen();
