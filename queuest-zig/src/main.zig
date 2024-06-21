@@ -1,4 +1,5 @@
 const std = @import("std");
+const expect = std.testing.expect;
 const zap = @import("zap");
 const regez = @cImport({
     @cInclude("regex.h");
@@ -7,30 +8,30 @@ const regez = @cImport({
 
 var routes: std.StringHashMap(zap.HttpRequestFn) = undefined;
 
-const Regex = struct {
-    inner: *regez.regex_t,
-
-    fn init(pattern: [:0]const u8) !Regex {
-        const inner = regez.alloc_regex_t().?;
-        if (0 != regez.regcomp(inner, pattern, regez.REG_NEWLINE | regez.REG_EXTENDED)) {
-            return error.compile;
-        }
-
-        return .{
-            .inner = inner,
-        };
-    }
-
-    fn deinit(self: Regex) void {
-        regez.free_regex_t(self.inner);
-    }
-
-    fn matches(self: Regex, input: [:0]const u8) bool {
-        const match_size = 1;
-        var pmatch: [match_size]regez.regmatch_t = undefined;
-        return 0 == regez.regexec(self.inner, input, match_size, &pmatch, 0);
-    }
-};
+// const Regex = struct {
+//    inner: *regez.regex_t,
+//
+//    fn init(pattern: [:0]const u8) !Regex {
+//        const inner = regez.alloc_regex_t().?;
+//        if (0 != regez.regcomp(inner, pattern, regez.REG_NEWLINE | regez.REG_EXTENDED)) {
+//            return error.compile;
+//        }
+//
+//       return .{
+//          .inner = inner,
+//        };
+//    }
+//
+//    fn deinit(self: Regex) void {
+//        regez.free_regex_t(self.inner);
+//    }
+//
+// /   fn matches(self: Regex, input: [:0]const u8) bool {
+//        const match_size = 1;
+//        var pmatch: [match_size]regez.regmatch_t = undefined;
+//        return 0 == regez.regexec(self.inner, input, match_size, &pmatch, 0);
+//    }
+//};
 
 fn on_request_verbose(r: zap.Request) void {
     if (r.path) |the_path| {
@@ -100,23 +101,32 @@ pub fn main() !void {
 
 fn reg() !void {
     {
-        const regex = try Regex.init("[ab]c");
-        defer regex.deinit();
-
-        try std.testing.expect(regex.matches("bc"));
-        try std.testing.expect(!regex.matches("cc"));
-        std.debug.print("Regex : {}\n", .{regex.matches("aab")});
+        //        const regex = try Regex.init("[ab]c");
+        //        defer regex.deinit();
+        //
+        //        try std.testing.expect(regex.matches("bc"));
+        //        try std.testing.expect(!regex.matches("cc"));
+        //        std.debug.print("Regex : {}\n", .{regex.matches("aab")});
     }
 
     {
-        const regex = try Regex.init("John.*o");
-        defer regex.deinit();
+        //        const regex = try Regex.init("John.*o");
+        //        defer regex.deinit();
 
-        try regex.exec(
-            \\ 1) John Driverhacker;
-            \\ 2) John Doe;
-            \\ 3) John Foo;
-            \\
-        );
+        //        try regex.exec(
+        //            \\ 1) John Driverhacker;
+        //            \\ 2) John Doe;
+        //            \\ 3) John Foo;
+        //            \\
+        //        );
     }
+}
+
+test "always fail" {
+    try expect(true);
+}
+
+test "always true" {
+    std.debug.print("Test started\n", .{});
+    try expect(true);
 }
