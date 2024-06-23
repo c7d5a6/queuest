@@ -23,7 +23,7 @@ pub fn main() !void {
         var listener = zap.HttpListener.init(.{
             .port = 3000,
             .on_request = routes.dispatch_routes,
-            .log = true,
+            .log = false,
         });
         try listener.listen();
         std.debug.print("Listening on 0.0.0.0:3000\n", .{});
