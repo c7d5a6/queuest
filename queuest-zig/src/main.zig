@@ -4,21 +4,15 @@ const routes = @import("routes/routes.zig");
 const expect = std.testing.expect;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{
+    const gpa = std.heap.GeneralPurposeAllocator(.{
         .thread_safe = true,
     }){};
+    _ = gpa;
+    var buffer: [1000]u8 = undefined;
+    var fba = std.heap.FixedBufferAllocator.init(&buffer);
     {
-        //        const Regex_t = ?*regex.regex_t;
-        //        const rexx: Regex_t = regex.alloc_regex_t();
-        //        const reti = regex.regcomp(rexx, "^a[[:alnum:]]", 0);
-        //        if (reti != 0) {
-        //            std.debug.print("Could not compile regex\n", .{});
-        //            return;
-        //        }
-        try reg();
         // use this allocator for all your memory allocation
-        const allocator = gpa.allocator();
-        try routes.setup_routes(allocator);
+        try routes.setup_routes(fba.allocator());
         defer routes.deinit();
         var listener = zap.HttpListener.init(.{
             .port = 3000,
@@ -38,31 +32,8 @@ pub fn main() !void {
     // all defers should have run by now
     std.debug.print("\n\nSTOPPED!\n\n", .{});
     // we'll arrive here after zap.stop()
-    const leaked = gpa.detectLeaks();
-    std.debug.print("Leaks detected: {}\n", .{leaked});
-}
-
-fn reg() !void {
-    {
-        //        const regex = try Regex.init("[ab]c");
-        //        defer regex.deinit();
-        //
-        //        try std.testing.expect(regex.matches("bc"));
-        //        try std.testing.expect(!regex.matches("cc"));
-        //        std.debug.print("Regex : {}\n", .{regex.matches("aab")});
-    }
-
-    {
-        //        const regex = try Regex.init("John.*o");
-        //        defer regex.deinit();
-
-        //        try regex.exec(
-        //            \\ 1) John Driverhacker;
-        //            \\ 2) John Doe;
-        //            \\ 3) John Foo;
-        //            \\
-        //        );
-    }
+    // const leaked = gpa.detectLeaks();
+    // std.debug.print("Leaks detected: {}\n", .{leaked});
 }
 
 test "always fail" {
