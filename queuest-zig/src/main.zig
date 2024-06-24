@@ -30,9 +30,9 @@ pub fn main() !void {
         // start worker threads
         zap.start(.{
             // if all threads hang, your server will hang
-            .threads = 2,
+            .threads = 5,
             // workers share memory so do not share states if you have multiple workers
-            .workers = 1,
+            .workers = 2,
         });
     }
     // all defers should have run by now

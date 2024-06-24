@@ -80,7 +80,6 @@ fn on_request_verbose(r: zap.Request) void {
 
 pub fn dispatch_routes(r: zap.Request) void {
     defer _ = arena.reset(.retain_capacity);
-    r.methodAsEnum();
     // dispatch
     if (r.path) |path| {
         for (routes) |route| {
