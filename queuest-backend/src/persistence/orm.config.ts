@@ -10,14 +10,14 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
     entities: [__dirname + '/entities/*.entity{.ts,.js}'],
     logging: !!process.env.DEV_DATABASE,
     synchronize: false,
-    ssl: !process.env.DEV_DATABASE,
-    extra: !process.env.DEV_DATABASE
-        ? {
-              ssl: {
-                  rejectUnauthorized: false,
-              },
-          }
-        : {},
+    ssl:false,// !process.env.DEV_DATABASE,
+    extra: false, //!process.env.DEV_DATABASE
+        // ? {
+        //       ssl: {
+        //           rejectUnauthorized: false,
+        //       },
+        //   }
+        // : {},
 };
 
 module.exports = typeOrmConfig;

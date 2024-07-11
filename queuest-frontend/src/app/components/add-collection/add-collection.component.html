@@ -2,6 +2,6 @@
   <form [formGroup]="form">
     <!--  <small>Name</small>-->
     <input class="input-item" formControlName="name" id="name" placeholder="Collection Name">
-    <button (click)="addNewItem($event)" [disabled]="form.invalid">Add</button>
+    <button (mousedown)="addNewItem($event)" [disabled]="form.invalid">Add</button>
   </form>
 </div>

@@ -6,12 +6,12 @@
 <div class="card">
   <div class="card-content">
     <div class="collection-items">
-      <a (click)="addItem()" class="rnd-btn add-item" title="Add new item"></a>
+      <a (mousedown)="addItem()" class="rnd-btn add-item" title="Add new item"></a>
       <a [className]="calibrated<0.5?'rnd-btn not-calibrated':calibrated<0.90?'rnd-btn calibrated':'rnd-btn exactly-calibrated'"
-         [title]="calibrated |  percent:'0.0'" (click)="calibrateCollection()">
+         [title]="calibrated |  percent:'0.0'" (mousedown)="calibrateCollection()">
       </a>
-      <a (click)="addToFavs()" *ngIf="!collection.favourite" class="rnd-btn unfav-btn" title="Add collection to favourites"></a>
-      <a (click)="removeFromFavs()" *ngIf="collection.favourite" class="rnd-btn fav-btn" title="Remove collection from favourites"></a>
+      <a (mousedown)="addToFavs()" *ngIf="!collection.favourite" class="rnd-btn unfav-btn" title="Add collection to favourites"></a>
+      <a (mousedown)="removeFromFavs()" *ngIf="collection.favourite" class="rnd-btn fav-btn" title="Remove collection from favourites"></a>
     </div>
   </div>
 </div>
@@ -21,8 +21,8 @@
   <div class="card-content">
     <ol>
       <li *ngFor="let item of items">{{item.name}}
-        <a (click)="calibrateItem(item.id!)" *ngIf="!item.calibrated" class="calibrate-item-btn"></a>
-        <a (click)="deleteItem(item.id)" class="delete-btn"></a>
+        <a (mousedown)="calibrateItem(item.id!)" *ngIf="!item.calibrated" class="calibrate-item-btn"></a>
+        <a (mousedown)="deleteItem(item.id)" class="delete-btn"></a>
       </li>
     </ol>
   </div>

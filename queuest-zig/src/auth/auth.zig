@@ -144,3 +144,8 @@ pub const HtmlMiddleWare = struct {
         return true;
     }
 };
+
+test "print" {
+    std.debug.print("\nAuth print", .{});
+    _ = firebase;
+}

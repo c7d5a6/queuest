@@ -36,6 +36,7 @@ test "can decode sample certificate" {
     std.debug.print("0 {any}\n", .{cb.bytes.items});
     const cert = try std.crypto.Certificate.parse(.{ .buffer = cb.bytes.items, .index = 0 });
     std.debug.print("1 {any}\n", .{cert});
+    std.debug.print("1 {any}\n", .{cert});
     // const pub_key_seq = try std.crypto.Certificate.der.Element.parse(pub_key, 0);
     // std.debug.print("1 {any}\n", .{pub_key_seq});
     // assert(pub_key_seq.identifier.tag != .sequence);

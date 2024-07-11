@@ -76,7 +76,7 @@ pub fn main() !void {
 }
 
 test {
-    std.testing.refAllDecls(@This());
+    std.testing.refAllDeclsRecursive(@This());
     // or refAllDeclsRecursive
 }
 
@@ -94,12 +94,9 @@ test "loading google" {
     const allocator = gpa.allocator();
     var arrayList = std.ArrayList(u8).init(allocator);
     var client: std.http.Client = .{ .allocator = allocator };
-    const result = try client.fetch(.{ .location = .{ .url = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com" }, .response_storage = .{ .dynamic = &arrayList } });
-    std.debug.print("Result {any}", result);
-    std.debug.print("Body {s}", .{arrayList.items});
+    _ = try client.fetch(.{ .location = .{ .url = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com" }, .response_storage = .{ .dynamic = &arrayList } });
 
     const object = try std.json.parseFromSlice(std.json.Value, allocator, arrayList.items, .{});
-    std.debug.print("\njson {any}", .{object});
     for (object.value.object.keys()) |key| {
         std.debug.print("\njson {s}", .{key});
         if (std.mem.eql(u8, key, "5691a195b2425e2aed60633d7cb19054156b977d")) {
