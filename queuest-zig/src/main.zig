@@ -84,3 +84,15 @@ test "always true" {
     std.debug.print("Test started\n", .{});
     try expect(true);
 }
+
+test "loading google" {
+    var gpa = std.heap.GeneralPurposeAllocator(.{
+        .thread_safe = true,
+    }){};
+    const allocator = gpa.allocator();
+    var arrayList = std.ArrayList(u8).init(allocator);
+    var client: std.http.Client = .{ .allocator = allocator };
+    const result = try client.fetch(.{ .location = .{ .url = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com" }, .response_storage = .{ .dynamic = &arrayList } });
+    std.debug.print("Result {any}", result);
+    std.debug.print("Body {s}", .{arrayList.items});
+}
