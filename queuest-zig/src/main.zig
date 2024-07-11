@@ -85,6 +85,8 @@ test "always true" {
     try expect(true);
 }
 
+const Place = struct { lat: f32, long: f32 };
+
 test "loading google" {
     var gpa = std.heap.GeneralPurposeAllocator(.{
         .thread_safe = true,
@@ -95,4 +97,15 @@ test "loading google" {
     const result = try client.fetch(.{ .location = .{ .url = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com" }, .response_storage = .{ .dynamic = &arrayList } });
     std.debug.print("Result {any}", result);
     std.debug.print("Body {s}", .{arrayList.items});
+
+    const object = try std.json.parseFromSlice(std.json.Value, allocator, arrayList.items, .{});
+    std.debug.print("\njson {any}", .{object});
+    for (object.value.object.keys()) |key| {
+        std.debug.print("\njson {s}", .{key});
+        if (std.mem.eql(u8, key, "5691a195b2425e2aed60633d7cb19054156b977d")) {
+            std.debug.print("\tIt's it!!!", .{});
+            const cert = object.value.object.get(key);
+            std.debug.print("\n{s}", .{cert.?.string});
+        }
+    }
 }
