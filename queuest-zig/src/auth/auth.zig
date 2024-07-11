@@ -1,36 +1,18 @@
 const std = @import("std");
 const zap = @import("zap");
+const firebase = @import("firebase.zig");
 
-// create a combined context struct
 pub const Context = struct {
     user: ?UserMiddleWare.User = null,
     session: ?SessionMiddleWare.Session = null,
 };
 
-// we create a Handler type based on our Context
 const Handler = zap.Middleware.Handler(Context);
 
-//
-// ZIG-CEPTION!!!
-//
-// Note how amazing zig is:
-// - we create the "mixed" context based on the both middleware structs
-// - we create the handler based on this context
-// - we create the middleware structs based on the handler
-//     - which needs the context
-//     - which needs the middleware structs
-//     - ZIG-CEPTION!
-
-// Example user middleware: puts user info into the context
 pub const UserMiddleWare = struct {
     handler: Handler,
-
     const Self = @This();
 
-    // Just some arbitrary struct we want in the per-request context
-    // note: it MUST have all default values!!!
-    // note: it MUST have all default values!!!
-    // note: it MUST have all default values!!!
     // note: it MUST have all default values!!!
     // This is so that it can be constructed via .{}
     // as we can't expect the listener to know how to initialize our context structs
@@ -45,27 +27,22 @@ pub const UserMiddleWare = struct {
         };
     }
 
-    // we need the handler as a common interface to chain stuff
     pub fn getHandler(self: *Self) *Handler {
         return &self.handler;
     }
 
-    // note that the first parameter is of type *Handler, not *Self !!!
     pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) bool {
-
-        // this is how we would get our self pointer
         const self: *Self = @fieldParentPtr("handler", handler);
         _ = self;
 
-        // do our work: fill in the user field of the context
         context.user = User{
             .name = "renerocksai",
             .email = "supa@secret.org",
         };
 
-        std.debug.print("\n\nUser Middleware: set user in context {any}\n\n", .{context.user});
+        const authHeader = zap.Auth.extractAuthHeader(.Bearer, &r);
+        std.debug.print("User Middleware: set user in context {?s}\n\n", .{authHeader});
 
-        // continue in the chain
         return handler.handleOther(r, context);
     }
 };
