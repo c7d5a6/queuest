@@ -69,12 +69,9 @@ pub fn createPath(path: [:0]const u8, method: zap.HttpRequestFn) Path {
 }
 
 fn on_request_verbose(r: zap.Request) void {
-    // if (r.path) |the_path| {
-    //     std.debug.print("PATH: {s}\n", .{the_path});
-    // }
-    // if (r.query) |the_query| {
-    //     std.debug.print("QUERY: {s}\n", .{the_query});
-    // }
+    // if (r.path) |the_path| { std.debug.print("PATH: {s}\n", .{the_path}); }
+    // if (r.query) |the_query| { std.debug.print("QUERY: {s}\n", .{the_query}); }
+    //
     r.sendBody("<html><body><h1>Hello from ZAP!!!</h1></body></html>") catch return;
 }
 

@@ -36,8 +36,9 @@ pub fn main() !void {
     // std.debug.print("Leaks detected: {}\n", .{leaked});
 }
 
-test "always fail" {
-    try expect(true);
+test {
+    std.testing.refAllDecls(@This());
+    // or refAllDeclsRecursive
 }
 
 test "always true" {

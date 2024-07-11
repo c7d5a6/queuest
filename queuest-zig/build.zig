@@ -41,14 +41,15 @@ pub fn build(b: *std.Build) void {
         .optimize = .Debug,
         .target = target,
     });
-    libC.addIncludePath(.{ .path = "c-src" });
+    // libC.addIncludePath(.{ .path = "c-src" });
+    libC.addIncludePath(b.path("c-src"));
     libC.addCSourceFiles(.{
         //.root = libC.path
         .files = &.{"c-src/regez.c"},
     });
     libC.linkLibC();
     exe.linkLibrary(libC);
-    exe.addIncludePath(.{ .path = "c-src" });
+    exe.addIncludePath(b.path("c-src"));
     exe.linkLibC();
 
     const zap = b.dependency("zap", .{
@@ -88,23 +89,29 @@ pub fn build(b: *std.Build) void {
 
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
-    const lib_unit_tests = b.addTest(.{
-        .root_source_file = b.path("src/root.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
-    const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
+    // const lib_unit_tests = b.addTest(.{
+    //     .root_source_file = b.path("src/main.zig"),
+    //     .target = target,
+    //     .optimize = optimize,
+    // });
+    // lib_unit_tests.linkLibrary(libC);
+    // lib_unit_tests.addIncludePath(b.path("c-src"));
+    // lib_unit_tests.linkLibC();
+    // lib_unit_tests.root_module.addImport("zap", zap.module("zap"));
+    // lib_unit_tests.linkLibrary(zap.artifact("facil.io"));
+    //
+    // const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
 
     const exe_unit_tests = b.addTest(.{
-        .root_source_file = b.path("src/routes/routes.zig"),
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
     exe_unit_tests.linkLibrary(libC);
-    exe_unit_tests.addIncludePath(.{ .path = "c-src" });
+    exe_unit_tests.addIncludePath(b.path("c-src"));
     exe_unit_tests.linkLibC();
     exe_unit_tests.root_module.addImport("zap", zap.module("zap"));
+    exe_unit_tests.linkLibrary(zap.artifact("facil.io"));
 
     const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
 
@@ -112,6 +119,6 @@ pub fn build(b: *std.Build) void {
     // the `zig build --help` menu, providing a way for the user to request
     // running the unit tests.
     const test_step = b.step("test", "Run unit tests");
-    test_step.dependOn(&run_lib_unit_tests.step);
+    // test_step.dependOn(&run_lib_unit_tests.step);
     test_step.dependOn(&run_exe_unit_tests.step);
 }
