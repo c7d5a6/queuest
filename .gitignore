@@ -134,3 +134,5 @@ queuest-backend/app-pm2.json
 queuest-zig/zig-cache/
 
 queuest-zig/zig-out/
+
+queuest-zig/.zig-cache/
