@@ -87,22 +87,22 @@ test "always true" {
 
 const Place = struct { lat: f32, long: f32 };
 
-test "loading google" {
-    var gpa = std.heap.GeneralPurposeAllocator(.{
-        .thread_safe = true,
-    }){};
-    const allocator = gpa.allocator();
-    var arrayList = std.ArrayList(u8).init(allocator);
-    var client: std.http.Client = .{ .allocator = allocator };
-    _ = try client.fetch(.{ .location = .{ .url = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com" }, .response_storage = .{ .dynamic = &arrayList } });
-
-    const object = try std.json.parseFromSlice(std.json.Value, allocator, arrayList.items, .{});
-    for (object.value.object.keys()) |key| {
-        std.debug.print("\njson {s}", .{key});
-        if (std.mem.eql(u8, key, "5691a195b2425e2aed60633d7cb19054156b977d")) {
-            std.debug.print("\tIt's it!!!", .{});
-            const cert = object.value.object.get(key);
-            std.debug.print("\n{s}", .{cert.?.string});
-        }
-    }
-}
+// test "loading google" {
+//     var gpa = std.heap.GeneralPurposeAllocator(.{
+//         .thread_safe = true,
+//     }){};
+//     const allocator = gpa.allocator();
+//     var arrayList = std.ArrayList(u8).init(allocator);
+//     var client: std.http.Client = .{ .allocator = allocator };
+//     _ = try client.fetch(.{ .location = .{ .url = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com" }, .response_storage = .{ .dynamic = &arrayList } });
+//
+//     const object = try std.json.parseFromSlice(std.json.Value, allocator, arrayList.items, .{});
+//     for (object.value.object.keys()) |key| {
+//         std.debug.print("\njson {s}", .{key});
+//         if (std.mem.eql(u8, key, "5691a195b2425e2aed60633d7cb19054156b977d")) {
+//             std.debug.print("\tIt's it!!!", .{});
+//             const cert = object.value.object.get(key);
+//             std.debug.print("\n{s}", .{cert.?.string});
+//         }
+//     }
+// }

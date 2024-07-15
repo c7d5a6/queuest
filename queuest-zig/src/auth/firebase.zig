@@ -2,6 +2,7 @@ const std = @import("std");
 const assert = std.debug.assert;
 
 //https://firebase.google.com/docs/auth/admin/verify-id-tokens
+//https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com
 
 const pub_key =
     // \\-----BEGIN CERTIFICATE-----
@@ -24,39 +25,56 @@ const pub_key =
     \\QWcuIetHbD3jQQ1nKOPcHwBC5+hJOq8uEPnXqlJmEdFq
     // \\-----END CERTIFICATE-----
 ;
+// const sig_base = "TF8sbfeV97nGj8kk8HhmnS_nStkLFJu9ylMcw_aa4giMQpVoqzSf5qnd6aV26fbXbuzl3XyU4doD5ysMwsJgcnFa4JxOEn-OLNtlkuV2DMnC_TLv14HAhp5jFges4OXCZD10KbiHdKTi-U-91IFNGR64_1iIndiOc4MKmV6ZO-hj0Qo9dFS8TfVsH0NPGdJB4slQf9KKtVV6P5NCpQAtL99ybGcH3VOTHN4q0BmfGjIP98NQWLKJ-8a6jg_b76PlQshWxsIJF_AoB1_Hf7yGxIOT_poLprAFH9_6bXRRUhMEuV4SyoQ6WVHeslWPX06WGRbqUHzsciTIdydAcdXBMQ";
+const sig_base = "TF8sbfeV97nGj8kk8HhmnS_nStkLFJu9ylMcw_aa4giMQpVoqzSf5qnd6aV26fbXbuzl3XyU4doD5ysMwsJgcnFa4JxOEn-OLNtlkuV2DMnC_TLv14HAhp5jFges4OXCZD10KbiHdKTi-U-91IFNGR64_1iIndiOc4MKmV6ZO-hj0Qo9dFS8TfVsH0NPGdJB4slQf9KKtVV6P5NCpQAtL99ybGcH3VOTHN4q0BmfGjIP98NQWLKJ-8a6jg_b76PlQshWxsIJF_AoB1_Hf7yGxIOT_poLprAFH9_6bXRRUhMEuV4SyoQ6WVHeslWPX06WGRbqUHzsciTIdydAcdXBMQ";
+const jwt_base = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjU2OTFhMTk1YjI0MjVlMmFlZDYwNjMzZDdjYjE5MDU0MTU2Yjk3N2QiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiYzdkNWE2IiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FBY0hUdGVVUTN3MHNsMWliajhMVjF4WU04TnMwLWJFd2k2MnlvMVZPNTFDdWc9czk2LWMiLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vcXVldWVzdC1jYjg4NSIsImF1ZCI6InF1ZXVlc3QtY2I4ODUiLCJhdXRoX3RpbWUiOjE3MDQ1ODgxNjQsInVzZXJfaWQiOiJWV3RnZFNsZk91ZWJ2Mlh6YW5IRDRkb0tOZkQyIiwic3ViIjoiVld0Z2RTbGZPdWVidjJYemFuSEQ0ZG9LTmZEMiIsImlhdCI6MTcyMDk4NjM5MywiZXhwIjoxNzIwOTg5OTkzLCJlbWFpbCI6ImdvZGluZnJvZ0BnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjEwMjk5NTk2MzcxMTIyODA2OTY5NiJdLCJlbWFpbCI6WyJnb2RpbmZyb2dAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ";
+
+const base64 = std.base64.standard.decoderWithIgnore(" \t\r\n");
 
 test "can decode sample certificate" {
-    var cb: std.crypto.Certificate.Bundle = .{};
     var gpa = std.heap.GeneralPurposeAllocator(.{
         .thread_safe = true,
     }){};
     const allocator = gpa.allocator();
-    try std.crypto.Certificate.Bundle.addCertsFromFilePathAbsolute(&cb, allocator, "/home/c7d5a6/projects/queuest/queuest-zig/src/auth/cert");
+    std.debug.print("\n:initial memry: {any}", .{pub_key.len});
+    const buff = try allocator.alloc(u8, pub_key.len * 2);
 
-    std.debug.print("0 {any}\n", .{cb.bytes.items});
-    const cert = try std.crypto.Certificate.parse(.{ .buffer = cb.bytes.items, .index = 0 });
-    std.debug.print("1 {any}\n", .{cert});
-    std.debug.print("1 {any}\n", .{cert});
-    // const pub_key_seq = try std.crypto.Certificate.der.Element.parse(pub_key, 0);
-    // std.debug.print("1 {any}\n", .{pub_key_seq});
-    // assert(pub_key_seq.identifier.tag != .sequence);
-    // const modulus_elem = try std.crypto.Certificate.der.Element.parse(pub_key, pub_key_seq.slice.start);
-    // std.debug.print("2 {any}\n", .{modulus_elem});
-    // assert(modulus_elem.identifier.tag != .integer);
-    // const exponent_elem = try std.crypto.Certificate.der.Element.parse(pub_key, modulus_elem.slice.end);
-    // std.debug.print("3 {any}\n", .{exponent_elem});
-    // assert(exponent_elem.identifier.tag != .integer);
-    // // Skip over meaningless zeroes in the modulus.
-    // const modulus_raw = pub_key[modulus_elem.slice.start..modulus_elem.slice.end];
-    // std.debug.print("4 {any}\n", .{modulus_raw});
-    // const modulus_offset = for (modulus_raw, 0..) |byte, i| {
-    //     if (byte != 0) break i;
-    // } else modulus_raw.len;
-    // const result = .{
-    //     .modulus = modulus_raw[modulus_offset..],
-    //     .exponent = pub_key[exponent_elem.slice.start..exponent_elem.slice.end],
+    const encoded_cert = std.mem.trim(u8, pub_key[0..], " \t\r\n");
+    std.debug.print("\n1 trim cert len: {d}", .{encoded_cert.len});
+    const newlen = try base64.decode(buff, encoded_cert);
+    std.debug.print("\n2 new len: {d}", .{newlen});
+
+    const parsed_cert = std.crypto.Certificate.parse(.{
+        .buffer = buff,
+        .index = 0,
+    }) catch |err| switch (err) {
+        error.CertificateHasUnrecognizedObjectId => {
+            return err;
+        },
+        else => |e| return e,
+    };
+
+    // std.debug.print("\nCertificate: {any}", .{parsed_cert});
+    std.debug.print("\nCertificate: {s}", .{parsed_cert.issuer()});
+    std.debug.print("\nCertificate: {s}", .{parsed_cert.pubKey()});
+
+    // Signature
+    std.debug.print("\n:initial signature: {d}", .{sig_base.len});
+    const buff_sig = try allocator.alloc(u8, sig_base.len);
+    const encoded_sig = std.mem.trim(u8, sig_base[0..], " \t\r\n");
+    const sig_len = try std.base64.url_safe.decoderWithIgnore(" \t\r\n").decode(buff_sig, encoded_sig);
+    std.debug.print("\n:signature len: {d}", .{sig_len});
+
+    const pk_components = try std.crypto.Certificate.rsa.PublicKey.parseDer(parsed_cert.pubKey());
+
+    std.debug.print("\nPubKey: {any}", .{pk_components});
+
+    const public_key = std.crypto.Certificate.rsa.PublicKey.fromBytes(pk_components.exponent, pk_components.modulus) catch return error.CertificateSignatureInvalid;
+    std.debug.print("\nPubKey: {any}", .{public_key});
+    std.debug.print("\nPubKey: {d}", .{pk_components.modulus.len});
+    try std.crypto.Certificate.rsa.PSSSignature.verify(256, buff_sig[0..256].*, jwt_base, public_key, std.crypto.hash.sha2.Sha256);
+    // const em_dec = std.crypto.Certificate.rsa.encrypt(pk_components.modulus.len, buff_sig[0..sig_len].*, public_key) catch |err| switch (err) {
+    //     error.MessageTooLong => unreachable,
     // };
-    //
-    // std.debug.print("resut {any}\n\n", .{result});
-    // const pubK = std.crypto.Certificate.rsa.PublicKey.parseDer(cert_data);
+    // std.debug.print("\nPubKey: {s}", .{em_dec});
 }
