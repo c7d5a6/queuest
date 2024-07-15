@@ -1,0 +1,31 @@
+{
+  "alg": "RS256",
+  "kid": "c1540ac71bb92aa0693c827190acabe5b055cbec",
+  "typ": "JWT"
+}
+.
+{
+  "name": "c7d5a6",
+  "picture": "https://lh3.googleusercontent.com/a/AAcHTteUQ3w0sl1ibj8LV1xYM8Ns0-bEwi62yo1VO51Cug=s96-c",
+  "iss": "https://securetoken.google.com/queuest-cb885",
+  "aud": "queuest-cb885",
+  "auth_time": 1718713141,
+  "user_id": "VWtgdSlfOuebv2XzanHD4doKNfD2",
+  "sub": "VWtgdSlfOuebv2XzanHD4doKNfD2",
+  "iat": 1721057940,
+  "exp": 1721061540,
+  "email": "godinfrog@gmail.com",
+  "email_verified": true,
+  "firebase": {
+    "identities": {
+      "google.com": [
+        "102995963711228069696"
+      ],
+      "email": [
+        "godinfrog@gmail.com"
+      ]
+    },
+    "sign_in_provider": "google.com"
+  }
+}
+
