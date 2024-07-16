@@ -2,6 +2,52 @@ const std = @import("std");
 const crypto = std.crypto;
 const PublicKey = crypto.Certificate.rsa.PublicKey;
 
+const FirebaseError = error{
+    CannotLoadPubKeys,
+    ErrorLoadingPubKeys,
+    TooManyGoolePubKeys,
+};
+
+const GooglePubKey = struct {
+    key: [40]u8,
+    certificate: [2 * 1024]u8,
+};
+
+var goole_keys: [3]GooglePubKey = undefined;
+
+fn reloadPublicKeys(allocator: std.mem.Allocator) FirebaseError!void {
+    var arrayList = std.ArrayList(u8).init(allocator);
+    arrayList.ensureTotalCapacity(4 * 1024) catch return error.CannotLoadPubKeys;
+    defer arrayList.deinit();
+
+    var client: std.http.Client = .{ .allocator = allocator };
+    var server_header_buffer: [4 * 1024]u8 = undefined;
+
+    const response = client.fetch(.{
+        .location = .{ .url = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com" },
+        .response_storage = .{ .dynamic = &arrayList },
+        .server_header_buffer = &server_header_buffer,
+    }) catch return error.ErrorLoadingPubKeys;
+    std.debug.print("\nServer header: {s}", .{server_header_buffer});
+
+    if (response.status != .ok) {
+        return error.ErrorLoadingPubKeys;
+    }
+
+    // TODO: Reload max-age
+    // Use the value of max-age in the Cache-Control header of the response from that endpoint to know when to refresh the public keys.
+
+    const object = std.json.parseFromSlice(std.json.Value, allocator, arrayList.items, .{}) catch return error.CannotLoadPubKeys;
+    for (object.value.object.keys(), 0..) |key, i| {
+        if (i >= goole_keys.len) {
+            return error.TooManyGoolePubKeys;
+        }
+        const cert = object.value.object.get(key).?.string;
+        @memcpy(&goole_keys[i].key, key);
+        @memcpy(goole_keys[i].certificate[0..cert.len], cert);
+    }
+}
+
 //https://firebase.google.com/docs/auth/admin/verify-id-tokens
 //https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com
 //
@@ -80,23 +126,10 @@ test "loading google" {
         .thread_safe = true,
     }){};
     const allocator = gpa.allocator();
-    var arrayList = std.ArrayList(u8).init(allocator);
-    var client: std.http.Client = .{ .allocator = allocator };
-    var server_header_buffer: [16 * 1024]u8 = undefined;
-    _ = try client.fetch(.{
-        .location = .{ .url = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com" },
-        .response_storage = .{ .dynamic = &arrayList },
-        .server_header_buffer = &server_header_buffer,
-    });
-    std.debug.print("\nServer header: {s}", .{server_header_buffer});
-
-    const object = try std.json.parseFromSlice(std.json.Value, allocator, arrayList.items, .{});
-    for (object.value.object.keys()) |key| {
-        std.debug.print("\njson {s}", .{key});
-        if (std.mem.eql(u8, key, "5691a195b2425e2aed60633d7cb19054156b977d")) {
+    try reloadPublicKeys(allocator);
+    for (goole_keys) |pk| {
+        if (std.mem.eql(u8, &pk.key, "5691a195b2425e2aed60633d7cb19054156b977d")) {
             std.debug.print("\tIt's it!!!", .{});
-            const cert = object.value.object.get(key);
-            std.debug.print("\n{s}", .{cert.?.string});
         }
     }
 }
