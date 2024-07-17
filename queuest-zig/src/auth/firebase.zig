@@ -6,11 +6,12 @@ const FirebaseError = error{
     CannotLoadPubKeys,
     ErrorLoadingPubKeys,
     TooManyGoolePubKeys,
+    MissingCertificateMarkerInGooglePubKey,
 };
 
 const GooglePubKey = struct {
     key: [40]u8,
-    certificate: [2 * 1024]u8,
+    certificate: [1024]u8,
 };
 
 var goole_keys: [3]GooglePubKey = undefined;
@@ -44,7 +45,18 @@ fn reloadPublicKeys(allocator: std.mem.Allocator) FirebaseError!void {
         }
         const cert = object.value.object.get(key).?.string;
         @memcpy(&goole_keys[i].key, key);
-        @memcpy(goole_keys[i].certificate[0..cert.len], cert);
+
+        const begin_marker = "-----BEGIN CERTIFICATE-----";
+        const end_marker = "-----END CERTIFICATE-----";
+        const begin_marker_start = std.mem.indexOfPos(u8, cert, 0, begin_marker) orelse
+            return error.MissingCertificateMarkerInGooglePubKey;
+        const cert_start = begin_marker_start + begin_marker.len;
+        const cert_end = std.mem.indexOfPos(u8, cert, cert_start, end_marker) orelse
+            return error.MissingCertificateMarkerInGooglePubKey;
+        const encoded_cert = std.mem.trim(u8, cert[cert_start..cert_end], " \t\r\n");
+        var buff: [1024]u8 = undefined;
+        const len = base64.decode(&buff, encoded_cert) catch return error.ErrorLoadingPubKeys;
+        @memcpy(goole_keys[i].certificate[0..len], buff[0..len]);
     }
 }
 
@@ -130,6 +142,16 @@ test "loading google" {
     for (goole_keys) |pk| {
         if (std.mem.eql(u8, &pk.key, "5691a195b2425e2aed60633d7cb19054156b977d")) {
             std.debug.print("\tIt's it!!!", .{});
+            const buff = try allocator.alloc(u8, pub_key.len * 3 / 4);
+            const encoded_cert = std.mem.trim(u8, pk.certificate[0..], " \t\r\n");
+            _ = try base64.decode(buff, encoded_cert);
+
+            const parsed_cert = try std.crypto.Certificate.parse(.{
+                .buffer = buff,
+                .index = 0,
+            });
+
+            std.debug.print("\nCertificate: {s}", .{parsed_cert.issuer()});
         }
     }
 }
@@ -149,7 +171,6 @@ test "can decode sample certificate" {
         .index = 0,
     });
 
-    // std.debug.print("\nCertificate: {any}", .{parsed_cert});
     std.debug.print("\nCertificate: {s}", .{parsed_cert.issuer()});
 
     //Public +1key
