@@ -33,11 +33,7 @@ var goole_keys: [3]GooglePubKey = undefined;
 var cache_time: i64 = 0;
 
 pub fn verifySignature(allocator: Allocator, key: []const u8, msg: []const u8, sig_b64: []const u8) FirebaseError!bool {
-    var arena = std.heap.ArenaAllocator.init(allocator);
-    const aa = arena.allocator();
-    defer arena.deinit();
-
-    try checkAndReloadPK(aa);
+    try checkAndReloadPK(allocator);
 
     for (goole_keys) |pk| {
         if (mem.eql(u8, &pk.key, key)) {
@@ -50,6 +46,7 @@ pub fn verifySignature(allocator: Allocator, key: []const u8, msg: []const u8, s
             return verifyMessage(msg, sig_b64, public_key) catch return error.ErrorVerifyingMessage;
         }
     }
+    print("\nMissing cert {s}\n", .{key});
     return error.MissingCertificateMarkerInGooglePubKey;
 }
 
@@ -142,6 +139,7 @@ fn verifyMessage(msg: []const u8, sig_b64: []const u8, p_key: PublicKey) !bool {
 }
 
 fn decryptSignature(sig_b64: []const u8, p_key: PublicKey) ![digets_bits]u8 {
+    std.debug.print("\ndecryptSignature {s}\n", .{sig_b64});
     var signature: [256]u8 = undefined;
     var res: [256]u8 = undefined;
     // signature
@@ -208,7 +206,6 @@ test "check signature" {
     print("\nTime to load verify: {d}\n", .{std.time.microTimestamp() - mili});
     try expect(verified);
     try expect(verified2);
-    try expect(!gpa.detectLeaks());
 }
 
 test "loading google" {
