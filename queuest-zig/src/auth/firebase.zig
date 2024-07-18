@@ -21,6 +21,7 @@ const FirebaseError = error{
     ErrorLoadingPubKeys,
     TooManyGoolePubKeys,
     MissingCertificateMarkerInGooglePubKey,
+    ErrorVerifyingMessage,
 };
 
 const GooglePubKey = struct {
@@ -29,6 +30,31 @@ const GooglePubKey = struct {
 };
 
 var goole_keys: [3]GooglePubKey = undefined;
+var cache_time: i64 = 0;
+
+pub fn verifySignature(allocator: Allocator, key: []const u8, msg: []const u8, sig_b64: []const u8) FirebaseError!bool {
+    try checkAndReloadPK(allocator);
+
+    for (goole_keys) |pk| {
+        if (mem.eql(u8, &pk.key, key)) {
+            const parsed_cert = Certificate.parse(.{
+                .buffer = pk.certificate[0..],
+                .index = 0,
+            }) catch return error.ErrorVerifyingMessage;
+            const pk_components = PublicKey.parseDer(parsed_cert.pubKey()) catch return error.ErrorVerifyingMessage;
+            const public_key = PublicKey.fromBytes(pk_components.exponent, pk_components.modulus) catch return error.ErrorVerifyingMessage;
+            return verifyMessage(msg, sig_b64, public_key) catch return error.ErrorVerifyingMessage;
+        }
+    }
+    return error.MissingCertificateMarkerInGooglePubKey;
+}
+
+fn checkAndReloadPK(allocator: Allocator) FirebaseError!void {
+    const now = std.time.timestamp();
+    if (now > cache_time) {
+        try reloadPublicKeys(allocator);
+    }
+}
 
 fn reloadPublicKeys(allocator: Allocator) FirebaseError!void {
     var arrayList = ArrayList(u8).init(allocator);
@@ -38,18 +64,20 @@ fn reloadPublicKeys(allocator: Allocator) FirebaseError!void {
     var client: Client = .{ .allocator = allocator };
     var server_header_buffer: [4 * 1024]u8 = undefined;
 
+    const mili = std.time.microTimestamp();
     const response = client.fetch(.{
         .location = .{ .url = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com" },
         .response_storage = .{ .dynamic = &arrayList },
         .server_header_buffer = &server_header_buffer,
     }) catch return error.ErrorLoadingPubKeys;
+    print("\nTime to load cert: {d}\n", .{std.time.microTimestamp() - mili});
 
     if (response.status != .ok) {
         return error.ErrorLoadingPubKeys;
     }
 
-    // TODO: Reload max-age
     // Use the value of max-age in the Cache-Control header of the response from that endpoint to know when to refresh the public keys.
+    try updateCacheAge(server_header_buffer[0..]);
 
     const object = json.parseFromSlice(json.Value, allocator, arrayList.items, .{}) catch return error.CannotLoadPubKeys;
     for (object.value.object.keys(), 0..) |key, i| {
@@ -81,6 +109,21 @@ fn reloadPublicKeys(allocator: Allocator) FirebaseError!void {
         @memcpy(goole_keys[i].certificate[0..len], buff[0..len]);
         @memset(goole_keys[i].certificate[len..], 0);
     }
+}
+
+fn updateCacheAge(headers: []u8) FirebaseError!void {
+    const begin_marker = "Cache-Control";
+    const cache_start = mem.indexOfPos(u8, headers, 0, begin_marker) orelse
+        return error.MissingCertificateMarkerInGooglePubKey;
+    const max_marker = "max-age=";
+    const max_start = max_marker.len + (mem.indexOfPos(u8, headers, cache_start, max_marker) orelse
+        return error.MissingCertificateMarkerInGooglePubKey);
+    const del_marker = ",";
+    const max_end = mem.indexOfPos(u8, headers, max_start, del_marker) orelse
+        return error.MissingCertificateMarkerInGooglePubKey;
+
+    const new_time = std.fmt.parseUnsigned(u32, headers[max_start..max_end], 10) catch return error.CannotLoadPubKeys;
+    cache_time = std.time.timestamp() + new_time;
 }
 
 //https://firebase.google.com/docs/auth/admin/verify-id-tokens
@@ -150,7 +193,20 @@ const pub_key =
 const sig_base = "UCopADIJH60STk_rojzzLfgUXXztvpe3Hnvp7MJTlx_MxFDOWEe6FbXlQHM-ygCkic0yNpYt9gDxPHH2uva7YXc3CUyl86Wx88pbmCmIIUo72nUoIWtNEXCm_npB9eO7rEYdiBlY6bxplIjnMnwYA7fljkx113-JzGm-4gUfqB-X65SrOQzF1IH-mFpjWTvI-DfOaNyVdf_8P47si8o8cuKUyXENITOhTu6h5s2MIUwGVf_Q0ZXIePoUlHatn0-qqvoBanJYPGz5rg8J40x-YEQx08CYDm17t7Dyfrvu9e4lk3uGmiUlr9pkZC5dzhgaJToK1o6sJIlgSQhs14SBaw";
 const jwt_base = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImMxNTQwYWM3MWJiOTJhYTA2OTNjODI3MTkwYWNhYmU1YjA1NWNiZWMiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiYzdkNWE2IiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FBY0hUdGVVUTN3MHNsMWliajhMVjF4WU04TnMwLWJFd2k2MnlvMVZPNTFDdWc9czk2LWMiLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vcXVldWVzdC1jYjg4NSIsImF1ZCI6InF1ZXVlc3QtY2I4ODUiLCJhdXRoX3RpbWUiOjE3MTg3MTMxNDEsInVzZXJfaWQiOiJWV3RnZFNsZk91ZWJ2Mlh6YW5IRDRkb0tOZkQyIiwic3ViIjoiVld0Z2RTbGZPdWVidjJYemFuSEQ0ZG9LTmZEMiIsImlhdCI6MTcyMTA1Nzk0MCwiZXhwIjoxNzIxMDYxNTQwLCJlbWFpbCI6ImdvZGluZnJvZ0BnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjEwMjk5NTk2MzcxMTIyODA2OTY5NiJdLCJlbWFpbCI6WyJnb2RpbmZyb2dAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ";
 
+test "check signature" {
+    const mili = std.time.microTimestamp();
+    // var gpa = std.heap.GeneralPurposeAllocator(.{
+    //     .thread_safe = true,
+    // }){};
+    const allocator = std.heap.c_allocator;
+    // gpa.allocator();
+    const verified = try verifySignature(allocator, "c1540ac71bb92aa0693c827190acabe5b055cbec", jwt_base[0..], sig_base[0..]);
+    try expect(verified);
+    print("\nTime to load verify: {d}\n", .{std.time.microTimestamp() - mili});
+}
+
 test "loading google" {
+    const mili = std.time.milliTimestamp();
     var gpa = std.heap.GeneralPurposeAllocator(.{
         .thread_safe = true,
     }){};
@@ -168,6 +224,7 @@ test "loading google" {
         }
     }
     try expect(cert_found);
+    print("\nTime to load goole: {d}\n", .{std.time.milliTimestamp() - mili});
 }
 
 test "can decode sample certificate" {
