@@ -98,7 +98,7 @@ pub const HtmlMiddleWare = struct {
                 sessionFound = true;
 
                 std.debug.assert(r.isFinished() == false);
-                const message = std.fmt.bufPrint(&buf, "User: {any} / {s}, Session: {s} / {s}", .{
+                const message = std.fmt.bufPrint(&buf, "User: {any} / {?s}, Session: {s} / {s}", .{
                     user.authenticated,
                     user.uuid,
                     session.info,

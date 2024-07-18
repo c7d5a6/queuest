@@ -8,6 +8,7 @@ const firebase = @import("firebase.zig");
 const contextLib = @import("context.zig");
 const Context = contextLib.Context;
 const Session = contextLib.Session;
+const Auth = contextLib.Auth;
 
 const Handler = zap.Middleware.Handler(Context);
 const base64Url = std.base64.url_safe.decoderWithIgnore(" \t\r\n");
@@ -50,15 +51,23 @@ pub const JWTMiddleware = struct {
             var arena = std.heap.ArenaAllocator.init(self.allocator);
             defer arena.deinit();
             const allocator = arena.allocator();
-            parseJWT(allocator, authHeader.?) catch |err| {
-                r.sendError(err, if (@errorReturnTrace()) |t| t.* else null, 401);
+            const sub = parseJWT(allocator, authHeader.?) catch "";
+            context.user = Auth{
+                .authenticated = true,
+                .uuid = [0]**28,
+            };
+            @memcpy(&context.user.?.uuid.?, sub[0..context.user.?.uuid.?.len]);
+        } else {
+            context.user = Auth{
+                .authenticated = false,
             };
         }
+
         return handler.handleOther(r, context);
     }
 };
 
-fn parseJWT(allocator: Allocator, jwt: []const u8) AuthError!void {
+fn parseJWT(allocator: Allocator, jwt: []const u8) AuthError![]const u8 {
     std.debug.print("JWT Middleware: set user in context {?s}\n\n", .{jwt});
     const bearer = zap.Auth.AuthScheme.Bearer.str();
     const jwt_start = bearer.len + (mem.indexOfPos(u8, jwt, 0, bearer) orelse
@@ -75,6 +84,7 @@ fn parseJWT(allocator: Allocator, jwt: []const u8) AuthError!void {
     const is_signature_ok = firebase.verifySignature(allocator, key[0..], jwt[jwt_start..jwt_sig_start], jwt[jwt_sig_start + 1 ..]) catch return error.SignatureDecodingError;
     if (!is_signature_ok)
         return error.SignatureWrong;
+    return sub;
 }
 
 fn parseJWTHead(allocator: Allocator, head_base: []const u8) AuthError![]const u8 {
@@ -201,7 +211,7 @@ test "parse jwt" {
     }){};
     const allocator = gpa.allocator();
 
-    parseJWT(allocator, test_jwt) catch |err| {
+    _ = parseJWT(allocator, test_jwt) catch |err| {
         // try std.testing.expectError(AuthError, err);
         try std.testing.expectEqual(AuthError.TokenExpared, err);
     };

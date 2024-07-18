@@ -7,7 +7,7 @@ pub const Context = struct {
 // as we can't expect the listener to know how to initialize our context structs
 pub const Auth = struct {
     authenticated: bool = false,
-    uuid: []const u8 = undefined,
+    uuid: ?[28]u8 = null,
 };
 // Just some arbitrary struct we want in the per-request context
 // note: it MUST have all default values!!!
