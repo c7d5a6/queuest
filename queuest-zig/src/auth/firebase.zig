@@ -1,6 +1,20 @@
 const std = @import("std");
+const ArrayList = std.ArrayList;
 const crypto = std.crypto;
-const PublicKey = crypto.Certificate.rsa.PublicKey;
+const Certificate = crypto.Certificate;
+const PublicKey = Certificate.rsa.PublicKey;
+const json = std.json;
+const Client = std.http.Client;
+const mem = std.mem;
+const Allocator = mem.Allocator;
+//
+const digets_bits = 256;
+const base64Url = std.base64.url_safe.decoderWithIgnore(" \t\r\n");
+const base64Std = std.base64.standard.decoderWithIgnore(" \t\r\n");
+const Modulus = std.crypto.ff.Modulus(4096);
+const Fe = Modulus.Fe;
+//
+const print = std.debug.print;
 
 const FirebaseError = error{
     CannotLoadPubKeys,
@@ -16,12 +30,12 @@ const GooglePubKey = struct {
 
 var goole_keys: [3]GooglePubKey = undefined;
 
-fn reloadPublicKeys(allocator: std.mem.Allocator) FirebaseError!void {
-    var arrayList = std.ArrayList(u8).init(allocator);
+fn reloadPublicKeys(allocator: Allocator) FirebaseError!void {
+    var arrayList = ArrayList(u8).init(allocator);
     arrayList.ensureTotalCapacity(4 * 1024) catch return error.CannotLoadPubKeys;
     defer arrayList.deinit();
 
-    var client: std.http.Client = .{ .allocator = allocator };
+    var client: Client = .{ .allocator = allocator };
     var server_header_buffer: [4 * 1024]u8 = undefined;
 
     const response = client.fetch(.{
@@ -29,7 +43,6 @@ fn reloadPublicKeys(allocator: std.mem.Allocator) FirebaseError!void {
         .response_storage = .{ .dynamic = &arrayList },
         .server_header_buffer = &server_header_buffer,
     }) catch return error.ErrorLoadingPubKeys;
-    std.debug.print("\nServer header: {s}", .{server_header_buffer});
 
     if (response.status != .ok) {
         return error.ErrorLoadingPubKeys;
@@ -38,25 +51,35 @@ fn reloadPublicKeys(allocator: std.mem.Allocator) FirebaseError!void {
     // TODO: Reload max-age
     // Use the value of max-age in the Cache-Control header of the response from that endpoint to know when to refresh the public keys.
 
-    const object = std.json.parseFromSlice(std.json.Value, allocator, arrayList.items, .{}) catch return error.CannotLoadPubKeys;
+    const object = json.parseFromSlice(json.Value, allocator, arrayList.items, .{}) catch return error.CannotLoadPubKeys;
     for (object.value.object.keys(), 0..) |key, i| {
         if (i >= goole_keys.len) {
             return error.TooManyGoolePubKeys;
         }
-        const cert = object.value.object.get(key).?.string;
         @memcpy(&goole_keys[i].key, key);
+
+        const json_value = object.value.object.get(key).?.string;
+        const size = std.mem.replacementSize(u8, json_value, "\\n", "\n");
+        var cert = allocator.alloc(u8, size) catch return error.CannotLoadPubKeys;
+        defer allocator.free(cert);
+        _ = std.mem.replace(u8, json_value, "\\n", "\n", cert);
 
         const begin_marker = "-----BEGIN CERTIFICATE-----";
         const end_marker = "-----END CERTIFICATE-----";
-        const begin_marker_start = std.mem.indexOfPos(u8, cert, 0, begin_marker) orelse
+
+        const begin_marker_start = mem.indexOfPos(u8, cert, 0, begin_marker) orelse
             return error.MissingCertificateMarkerInGooglePubKey;
         const cert_start = begin_marker_start + begin_marker.len;
-        const cert_end = std.mem.indexOfPos(u8, cert, cert_start, end_marker) orelse
+        const cert_end = mem.indexOfPos(u8, cert, cert_start, end_marker) orelse
             return error.MissingCertificateMarkerInGooglePubKey;
-        const encoded_cert = std.mem.trim(u8, cert[cert_start..cert_end], " \t\r\n");
-        var buff: [1024]u8 = undefined;
-        const len = base64.decode(&buff, encoded_cert) catch return error.ErrorLoadingPubKeys;
+        const encoded_cert = mem.trim(u8, cert[cert_start..cert_end], " \t\r\n");
+
+        var buff = allocator.alloc(u8, encoded_cert.len * 4 / 3) catch return error.CannotLoadPubKeys;
+        defer allocator.free(buff);
+        const len = base64Std.decode(buff, encoded_cert) catch return error.ErrorLoadingPubKeys;
+
         @memcpy(goole_keys[i].certificate[0..len], buff[0..len]);
+        @memset(goole_keys[i].certificate[len..], 0);
     }
 }
 
@@ -65,25 +88,19 @@ fn reloadPublicKeys(allocator: std.mem.Allocator) FirebaseError!void {
 //
 // RSA
 // https://www.cs.cornell.edu/courses/cs5430/2015sp/notes/rsa_sign_vs_dec.php
-
-const digets_bits = 256;
-const base64 = std.base64.standard.decoderWithIgnore(" \t\r\n");
-const Modulus = std.crypto.ff.Modulus(4096);
-const Fe = Modulus.Fe;
-
 fn verifyMessage(msg: []const u8, sig_b64: []const u8, p_key: PublicKey) !bool {
     // Decrypting
     const decr_sig = try decryptSignature(sig_b64, p_key);
     const message_hashed = hashMessage(msg);
 
-    return std.mem.eql(u8, &message_hashed, &decr_sig);
+    return mem.eql(u8, &message_hashed, &decr_sig);
 }
 
 fn decryptSignature(sig_b64: []const u8, p_key: PublicKey) ![digets_bits]u8 {
     var signature: [256]u8 = undefined;
     var res: [256]u8 = undefined;
     // signature
-    _ = try std.base64.url_safe.decoderWithIgnore(" \t\r\n").decode(&signature, sig_b64);
+    _ = try base64Url.decode(&signature, sig_b64);
     // encrypting
     const m = try Fe.fromBytes(p_key.n, &signature, .big);
     const e = p_key.n.powPublic(m, p_key.e) catch unreachable;
@@ -139,21 +156,18 @@ test "loading google" {
     }){};
     const allocator = gpa.allocator();
     try reloadPublicKeys(allocator);
+    var cert_found = false;
     for (goole_keys) |pk| {
-        if (std.mem.eql(u8, &pk.key, "5691a195b2425e2aed60633d7cb19054156b977d")) {
-            std.debug.print("\tIt's it!!!", .{});
-            const buff = try allocator.alloc(u8, pub_key.len * 3 / 4);
-            const encoded_cert = std.mem.trim(u8, pk.certificate[0..], " \t\r\n");
-            _ = try base64.decode(buff, encoded_cert);
-
-            const parsed_cert = try std.crypto.Certificate.parse(.{
-                .buffer = buff,
+        if (mem.eql(u8, &pk.key, "5691a195b2425e2aed60633d7cb19054156b977d")) {
+            const parsed_cert = try Certificate.parse(.{
+                .buffer = pk.certificate[0..],
                 .index = 0,
             });
-
-            std.debug.print("\nCertificate: {s}", .{parsed_cert.issuer()});
+            try expect(parsed_cert.issuer().len > 0);
+            cert_found = true;
         }
     }
+    try expect(cert_found);
 }
 
 test "can decode sample certificate" {
@@ -163,15 +177,13 @@ test "can decode sample certificate" {
     const allocator = gpa.allocator();
     const buff = try allocator.alloc(u8, pub_key.len * 3 / 4);
 
-    const encoded_cert = std.mem.trim(u8, pub_key[0..], " \t\r\n");
-    _ = try base64.decode(buff, encoded_cert);
+    const encoded_cert = mem.trim(u8, pub_key[0..], " \t\r\n");
+    _ = try base64Std.decode(buff, encoded_cert);
 
     const parsed_cert = try std.crypto.Certificate.parse(.{
         .buffer = buff,
         .index = 0,
     });
-
-    std.debug.print("\nCertificate: {s}", .{parsed_cert.issuer()});
 
     //Public +1key
     const pk_components = try PublicKey.parseDer(parsed_cert.pubKey());
