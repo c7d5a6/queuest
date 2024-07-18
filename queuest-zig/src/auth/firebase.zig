@@ -33,7 +33,11 @@ var goole_keys: [3]GooglePubKey = undefined;
 var cache_time: i64 = 0;
 
 pub fn verifySignature(allocator: Allocator, key: []const u8, msg: []const u8, sig_b64: []const u8) FirebaseError!bool {
-    try checkAndReloadPK(allocator);
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    const aa = arena.allocator();
+    defer arena.deinit();
+
+    try checkAndReloadPK(aa);
 
     for (goole_keys) |pk| {
         if (mem.eql(u8, &pk.key, key)) {
@@ -89,7 +93,6 @@ fn reloadPublicKeys(allocator: Allocator) FirebaseError!void {
         const json_value = object.value.object.get(key).?.string;
         const size = std.mem.replacementSize(u8, json_value, "\\n", "\n");
         var cert = allocator.alloc(u8, size) catch return error.CannotLoadPubKeys;
-        defer allocator.free(cert);
         _ = std.mem.replace(u8, json_value, "\\n", "\n", cert);
 
         const begin_marker = "-----BEGIN CERTIFICATE-----";
@@ -103,7 +106,6 @@ fn reloadPublicKeys(allocator: Allocator) FirebaseError!void {
         const encoded_cert = mem.trim(u8, cert[cert_start..cert_end], " \t\r\n");
 
         var buff = allocator.alloc(u8, encoded_cert.len * 4 / 3) catch return error.CannotLoadPubKeys;
-        defer allocator.free(buff);
         const len = base64Std.decode(buff, encoded_cert) catch return error.ErrorLoadingPubKeys;
 
         @memcpy(goole_keys[i].certificate[0..len], buff[0..len]);
@@ -195,14 +197,18 @@ const jwt_base = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImMxNTQwYWM3MWJiOTJhYTA2OTNjODI3MT
 
 test "check signature" {
     const mili = std.time.microTimestamp();
-    // var gpa = std.heap.GeneralPurposeAllocator(.{
-    //     .thread_safe = true,
-    // }){};
-    const allocator = std.heap.c_allocator;
-    // gpa.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{
+        .thread_safe = true,
+    }){};
+    const allocator = gpa.allocator();
+    // const allocator = std.heap.page_allocator;
     const verified = try verifySignature(allocator, "c1540ac71bb92aa0693c827190acabe5b055cbec", jwt_base[0..], sig_base[0..]);
-    try expect(verified);
     print("\nTime to load verify: {d}\n", .{std.time.microTimestamp() - mili});
+    const verified2 = try verifySignature(allocator, "c1540ac71bb92aa0693c827190acabe5b055cbec", jwt_base[0..], sig_base[0..]);
+    print("\nTime to load verify: {d}\n", .{std.time.microTimestamp() - mili});
+    try expect(verified);
+    try expect(verified2);
+    try expect(!gpa.detectLeaks());
 }
 
 test "loading google" {
