@@ -9,16 +9,16 @@ pub const Context = struct {
 
 const Handler = zap.Middleware.Handler(Context);
 
-pub const UserMiddleWare = struct {
+pub const JWTMiddleware = struct {
     handler: Handler,
     const Self = @This();
 
     // note: it MUST have all default values!!!
     // This is so that it can be constructed via .{}
     // as we can't expect the listener to know how to initialize our context structs
-    const User = struct {
-        name: []const u8 = undefined,
-        email: []const u8 = undefined,
+    const Auth = struct {
+        authenticated: bool = false,
+        uuid: []const u8 = undefined,
     };
 
     pub fn init(other: ?*Handler) Self {
@@ -32,16 +32,9 @@ pub const UserMiddleWare = struct {
     }
 
     pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) bool {
-        const self: *Self = @fieldParentPtr("handler", handler);
-        _ = self;
-
-        context.user = User{
-            .name = "renerocksai",
-            .email = "supa@secret.org",
-        };
-
         const authHeader = zap.Auth.extractAuthHeader(.Bearer, &r);
-        std.debug.print("User Middleware: set user in context {?s}\n\n", .{authHeader});
+        std.debug.print("JWT Middleware: set user in context {?s}\n\n", .{authHeader});
+        std.debug.print("JWT Middleware: set user in context {?s}\n\n", .{authHeader});
 
         return handler.handleOther(r, context);
     }
