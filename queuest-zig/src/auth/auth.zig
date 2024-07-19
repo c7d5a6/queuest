@@ -51,12 +51,15 @@ pub const JWTMiddleware = struct {
             var arena = std.heap.ArenaAllocator.init(self.allocator);
             defer arena.deinit();
             const allocator = arena.allocator();
-            const sub = parseJWT(allocator, authHeader.?) catch null;
+            const sub = parseJWT(allocator, authHeader.?) catch |err| {
+                r.sendError(err, if (@errorReturnTrace()) |t| t.* else null, 401);
+                return false;
+            };
             context.user = Auth{
                 .authenticated = true,
                 .uuid = sub,
             };
-            std.debug.print("\nSub: {s}\n", .{sub.?[0..28]});
+            std.debug.print("\nSub: {s}\n", .{sub[0..28]});
             std.debug.print("\nuuid: {s}\n", .{context.user.?.uuid.?[0..28]});
         } else {
             context.user = Auth{
@@ -146,12 +149,12 @@ fn parseJWTBody(allocator: Allocator, body_base: []const u8) AuthError![28]u8 {
         if (mem.eql(u8, "exp", k)) {
             exp = true;
             const time = body.value.object.get(k).?.integer;
-            if (time > now) return error.TokenExpared;
+            if (time < now) return error.TokenExpared;
         }
         if (mem.eql(u8, "iat", k)) {
             iat = true;
             const time = body.value.object.get(k).?.integer;
-            if (time < now) return error.WrongIssueTime;
+            if (time > now) return error.WrongIssueTime;
         }
         if (mem.eql(u8, "aud", k)) {
             aud = true;
@@ -170,7 +173,8 @@ fn parseJWTBody(allocator: Allocator, body_base: []const u8) AuthError![28]u8 {
         if (mem.eql(u8, "auth_time", k)) {
             auth_time = true;
             const time = body.value.object.get(k).?.integer;
-            if (time < now) return error.WrongAuthTime;
+            std.debug.print("\nauth time < now {d} < {d}\n", .{ time, now });
+            if (time > now) return error.WrongAuthTime;
         }
         if (mem.eql(u8, "sub", k)) {
             const value = body.value.object.get(k).?.string;
@@ -209,13 +213,18 @@ test "parse head" {
 }
 
 test "parse jwt" {
-    var gpa = std.heap.GeneralPurposeAllocator(.{
-        .thread_safe = true,
-    }){};
+    var gpa = std.heap.GeneralPurposeAllocator(.{ .thread_safe = true }){};
     const allocator = gpa.allocator();
-
     _ = parseJWT(allocator, test_jwt) catch |err| {
-        // try std.testing.expectError(AuthError, err);
         try std.testing.expectEqual(AuthError.TokenExpared, err);
+    };
+}
+
+test "wrong signature" {
+    const jwt = "Bearer " ++ "eyJhbGciOiJSUzI1NiIsImtpZCI6ImMxNTQwYWM3MWJiOTJhYTA2OTNjODI3MTkwYWNhYmU1YjA1NWNiZWMiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiYzdkNWE2IiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FBY0hUdGVVUTN3MHNsMWliajhMVjF4WU04TnMwLWJFd2k2MnlvMVZPNTFDdWc9czk2LWMiLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vcXVldWVzdC1jYjg4NSIsImF1ZCI6InF1ZXVlc3QtY2I4ODUiLCJhdXRoX3RpbWUiOjE3MTg3MTMxNDEsInVzZXJfaWQiOiJWV3RnZFNsZk91ZWJ2Mlh6YW5IRDRkb0tOZkQyIiwic3ViIjoiVld0Z2RTbGZPdWVidjJYemFuSEQ0ZG9LTmZEMiIsImlhdCI6MTcyMTQwMDE3OCwiZXhwIjo5NzIxNDAzNzc4LCJlbWFpbCI6ImdvZGluZnJvZ0BnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjEwMjk5NTk2MzcxMTIyODA2OTY5NiJdLCJlbWFpbCI6WyJnb2RpbmZyb2dAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.MNG6XZGnE13loqTWpTGu_ghCM8UlAjrWjfszRg6oVDSgZqGVn6501mxNh4qRMRIJ3BPz_Ty377gmJgA2ucJLCjgHyy3aApMPBE0DxjHVJ32Tyh88CbbGHjKoFfP9vwbXeatdk8B-ntVO8ZaggPz4vJiuCqlf8E1BipCj301QA7RQlVnDhUhUKnLSO_UnEKwHKyvPb473w4yq698AwbvQQ6_RFbmIe6ZLeH4Ef0ofcodqknHs8xefz_VUV32RDMVfgc8NWyAKEiYd7YYXQg9yu9kb-z6TwN3X-DmFY9cXUehhngsPDxutMkt44AwyWvs5VQ_fRmzrv9TTyiloPflCgg";
+    var gpa = std.heap.GeneralPurposeAllocator(.{ .thread_safe = true }){};
+    const allocator = gpa.allocator();
+    _ = parseJWT(allocator, jwt) catch |err| {
+        try std.testing.expectEqual(AuthError.SignatureWrong, err);
     };
 }
