@@ -51,12 +51,13 @@ pub const JWTMiddleware = struct {
             var arena = std.heap.ArenaAllocator.init(self.allocator);
             defer arena.deinit();
             const allocator = arena.allocator();
-            const sub = parseJWT(allocator, authHeader.?) catch "";
+            const sub = parseJWT(allocator, authHeader.?) catch null;
             context.user = Auth{
                 .authenticated = true,
-                .uuid = [0]**28,
+                .uuid = sub,
             };
-            @memcpy(&context.user.?.uuid.?, sub[0..context.user.?.uuid.?.len]);
+            std.debug.print("\nSub: {s}\n", .{sub.?[0..28]});
+            std.debug.print("\nuuid: {s}\n", .{context.user.?.uuid.?[0..28]});
         } else {
             context.user = Auth{
                 .authenticated = false,
@@ -67,7 +68,7 @@ pub const JWTMiddleware = struct {
     }
 };
 
-fn parseJWT(allocator: Allocator, jwt: []const u8) AuthError![]const u8 {
+fn parseJWT(allocator: Allocator, jwt: []const u8) AuthError![28]u8 {
     std.debug.print("JWT Middleware: set user in context {?s}\n\n", .{jwt});
     const bearer = zap.Auth.AuthScheme.Bearer.str();
     const jwt_start = bearer.len + (mem.indexOfPos(u8, jwt, 0, bearer) orelse
@@ -127,8 +128,9 @@ fn parseJWTHead(allocator: Allocator, head_base: []const u8) AuthError![]const u
 // iss     Issuer  Must be "https://securetoken.google.com/<projectId>", where <projectId> is the same project ID used for aud above.
 // sub     Subject     Must be a non-empty string and must be the uid of the user or device.
 // auth_time   Authentication time     Must be in the past. The time when the user authenticated.
-fn parseJWTBody(allocator: Allocator, body_base: []const u8) AuthError![]const u8 {
+fn parseJWTBody(allocator: Allocator, body_base: []const u8) AuthError![28]u8 {
     const now = std.time.timestamp();
+    std.debug.print("\nNow time {d}\n", .{now});
     const buff = allocator.alloc(u8, body_base.len * 3 / 4) catch return error.ErrorParsingJWT;
     const encoded = mem.trim(u8, body_base[0..], " \t\r\n");
     _ = base64Url.decode(buff, encoded) catch return error.ErrorParsingJWT;
@@ -139,17 +141,17 @@ fn parseJWTBody(allocator: Allocator, body_base: []const u8) AuthError![]const u
     var aud: bool = false;
     var iss: bool = false;
     var auth_time: bool = false;
-    var sub: ?[]const u8 = null;
+    var sub: ?[28]u8 = null;
     for (body.value.object.keys()) |k| {
         if (mem.eql(u8, "exp", k)) {
             exp = true;
             const time = body.value.object.get(k).?.integer;
-            if (time < now) return error.TokenExpared;
+            if (time > now) return error.TokenExpared;
         }
         if (mem.eql(u8, "iat", k)) {
             iat = true;
             const time = body.value.object.get(k).?.integer;
-            if (time > now) return error.WrongIssueTime;
+            if (time < now) return error.WrongIssueTime;
         }
         if (mem.eql(u8, "aud", k)) {
             aud = true;
@@ -168,11 +170,12 @@ fn parseJWTBody(allocator: Allocator, body_base: []const u8) AuthError![]const u
         if (mem.eql(u8, "auth_time", k)) {
             auth_time = true;
             const time = body.value.object.get(k).?.integer;
-            if (time > now) return error.WrongAuthTime;
+            if (time < now) return error.WrongAuthTime;
         }
         if (mem.eql(u8, "sub", k)) {
             const value = body.value.object.get(k).?.string;
-            sub = value;
+            sub = [_]u8{0} ** 28;
+            @memcpy(sub.?[0..28], value[0..28]);
         }
     }
     if (!(exp and iat and aud and iss and auth_time)) {
