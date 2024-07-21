@@ -56,8 +56,13 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    const pg = b.dependency("pg", .{
+        .target = target,
+        .optimize = optimize,
+    });
     exe.root_module.addImport("zap", zap.module("zap"));
     exe.linkLibrary(zap.artifact("facil.io"));
+    exe.root_module.addImport("pg", pg.module("pg"));
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
@@ -112,6 +117,7 @@ pub fn build(b: *std.Build) void {
     exe_unit_tests.linkLibC();
     exe_unit_tests.root_module.addImport("zap", zap.module("zap"));
     exe_unit_tests.linkLibrary(zap.artifact("facil.io"));
+    exe_unit_tests.root_module.addImport("pg", pg.module("pg"));
 
     const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
 

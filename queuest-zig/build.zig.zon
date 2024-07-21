@@ -7,7 +7,7 @@
     // This field is optional.
     // This is currently advisory only; Zig does not yet do anything
     // with this value.
-    //.minimum_zig_version = "0.11.0",
+    .minimum_zig_version = "0.13.0",
 
     // This field is optional.
     // Each dependency must either provide a `url` and `hash`, or a `path`.
@@ -18,6 +18,10 @@
         .zap = .{
             .url = "https://github.com/zigzap/zap/archive/refs/tags/v0.8.0.tar.gz",
             .hash = "12209936c3333b53b53edcf453b1670babb9ae8c2197b1ca627c01e72670e20c1a21",
+        },
+        .pg = .{
+            .url = "git+https://github.com/karlseguin/pg.zig?ref=master#fe2965b7651462258bcdabbb9a5d3aa09a404746",
+            .hash = "12208adc9d7072c98cdfe9dba33d72430e95be1763b6bc4b1091148b997a9281741b",
         },
     },
     .paths = .{

@@ -1,8 +1,10 @@
 const std = @import("std");
 const zap = @import("zap");
+const pg = @import("pg");
 const routes = @import("routes/routes.zig");
-const auth = @import("auth/auth.zig");
-const contextLib = @import("auth/context.zig");
+const auth = @import("middle/auth.zig");
+const trans = @import("middle/trans.zig");
+const contextLib = @import("middle/context.zig");
 const Context = contextLib.Context;
 const Session = contextLib.Session;
 
@@ -25,41 +27,6 @@ const SharedAllocator = struct {
     // static function we can pass to the listener later
     pub fn getAllocator() std.mem.Allocator {
         return allocator;
-    }
-};
-
-// Example session middleware: puts session info into the context
-pub const SessionMiddleWare = struct {
-    handler: Handler,
-
-    const Self = @This();
-
-    pub fn init(other: ?*Handler) Self {
-        return .{
-            .handler = Handler.init(onRequest, other),
-        };
-    }
-
-    // we need the handler as a common interface to chain stuff
-    pub fn getHandler(self: *Self) *Handler {
-        return &self.handler;
-    }
-
-    // note that the first parameter is of type *Handler, not *Self !!!
-    pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) bool {
-        // this is how we would get our self pointer
-        const self: *Self = @fieldParentPtr("handler", handler);
-        _ = self;
-
-        context.session = Session{
-            .info = "secret session",
-            .token = "rot47-asdlkfjsaklfdj",
-        };
-
-        std.debug.print("\n\nSessionMiddleware: set session in context {any}\n\n", .{context.session});
-
-        // continue in the chain
-        return handler.handleOther(r, context);
     }
 };
 
@@ -89,29 +56,27 @@ pub const HtmlMiddleWare = struct {
 
         std.debug.print("\n\nHtmlMiddleware: handling request with context: {any}\n\n", .{context});
 
-        var buf: [1024]u8 = undefined;
+        var buf: [8024]u8 = undefined;
         var userFound: bool = false;
-        var sessionFound: bool = false;
         if (context.user) |user| {
             userFound = true;
-            if (context.session) |session| {
-                sessionFound = true;
+            var result = context.connection.?.query("select * from pg_example_users order by id", .{}) catch unreachable;
+            defer result.deinit();
+            std.debug.print("\nsql result: {any}\n", .{result});
 
-                std.debug.assert(r.isFinished() == false);
-                const message = std.fmt.bufPrint(&buf, "User: {any} / {?s}, Session: {s} / {s}", .{
-                    user.authenticated,
-                    user.uuid,
-                    session.info,
-                    session.token,
-                }) catch unreachable;
-                r.setContentType(.TEXT) catch unreachable;
-                r.sendBody(message) catch unreachable;
-                std.debug.assert(r.isFinished() == true);
-                return true;
-            }
+            std.debug.assert(r.isFinished() == false);
+            const message = std.fmt.bufPrint(&buf, "User: {any} / {?s}\n<div>{any}</div>", .{
+                user.authenticated,
+                user.uuid,
+                result,
+            }) catch unreachable;
+            r.setContentType(.TEXT) catch unreachable;
+            r.sendBody(message) catch unreachable;
+            std.debug.assert(r.isFinished() == true);
+            return true;
         }
 
-        const message = std.fmt.bufPrint(&buf, "User info found: {}, session info found: {}", .{ userFound, sessionFound }) catch unreachable;
+        const message = std.fmt.bufPrint(&buf, "User info found: {}", .{userFound}) catch unreachable;
 
         r.setContentType(.TEXT) catch unreachable;
         r.sendBody(message) catch unreachable;
@@ -125,10 +90,23 @@ pub fn main() !void {
     }){};
     const allocator = gpa.allocator();
     SharedAllocator.init(allocator);
+    var pool = pg.Pool.init(allocator, .{ .size = 5, .connect = .{
+        .port = 5432,
+        .host = "127.0.0.1",
+    }, .auth = .{
+        .username = "queuest",
+        .database = "queuest",
+        .password = "queuest",
+        .timeout = 10_000,
+    } }) catch |err| {
+        std.debug.print("Failed to connect: {}", .{err});
+        std.posix.exit(1);
+    };
+    defer pool.deinit();
     {
         var htmlHandler = HtmlMiddleWare.init(null);
-        var sessionHandler = SessionMiddleWare.init(htmlHandler.getHandler());
-        var jwtHandler = auth.JWTMiddleware.init(sessionHandler.getHandler(), allocator);
+        var transactionHandler = trans.TransactionMiddleware.init(htmlHandler.getHandler(), allocator, pool);
+        var jwtHandler = auth.JWTMiddleware.init(transactionHandler.getHandler(), allocator);
 
         try routes.setup_routes(allocator);
         defer routes.deinit();

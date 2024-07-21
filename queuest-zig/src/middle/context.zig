@@ -1,5 +1,9 @@
+const pg = @import("pg");
+const Conn = pg.Conn;
+
 pub const Context = struct {
     user: ?Auth = null,
+    connection: ?*Conn = null,
     session: ?Session = null,
 };
 // note: it MUST have all default values!!!
