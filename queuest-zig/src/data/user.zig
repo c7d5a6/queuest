@@ -26,4 +26,8 @@ pub const User = struct {
         }
         return user;
     }
+
+    pub fn create(conn: *Conn, uid: []const u8, email: []const u8) !void {
+        _ = try conn.exec("insert into user_tbl (uid, email) values ($1, $2)", .{ uid, email });
+    }
 };
