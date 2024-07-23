@@ -3,32 +3,16 @@ const zap = @import("zap");
 const pg = @import("pg");
 const routes = @import("routes/routes.zig");
 const auth = @import("middle/auth.zig");
+const userMiddle = @import("middle/user.zig");
 const trans = @import("middle/trans.zig");
 const contextLib = @import("middle/context.zig");
 const Context = contextLib.Context;
 const Session = contextLib.Session;
+const SharedAllocator = contextLib.SharedAllocator;
 
 const Handler = zap.Middleware.Handler(Context);
 
 const port = 3000;
-
-// just a way to share our allocator via callback
-const SharedAllocator = struct {
-    // static
-    var allocator: std.mem.Allocator = undefined;
-
-    const Self = @This();
-
-    // just a convenience function
-    pub fn init(a: std.mem.Allocator) void {
-        allocator = a;
-    }
-
-    // static function we can pass to the listener later
-    pub fn getAllocator() std.mem.Allocator {
-        return allocator;
-    }
-};
 
 // Example html middleware: handles the request and sends a response
 pub const HtmlMiddleWare = struct {
@@ -60,14 +44,14 @@ pub const HtmlMiddleWare = struct {
         var userFound: bool = false;
         if (context.user) |user| {
             userFound = true;
-            var result = context.connection.?.query("select * from pg_example_users order by id", .{}) catch unreachable;
+            var result = context.connection.?.query("select * from user_tbl order by id", .{}) catch unreachable;
             defer result.deinit();
             std.debug.print("\nsql result: {any}\n", .{result});
 
             std.debug.assert(r.isFinished() == false);
-            const message = std.fmt.bufPrint(&buf, "User: {any} / {?s}\n<div>{any}</div>", .{
-                user.authenticated,
-                user.uuid,
+            const message = std.fmt.bufPrint(&buf, "User: {s} / {s}\n\n<div>{any}</div>", .{
+                user.email,
+                user.uid,
                 result,
             }) catch unreachable;
             r.setContentType(.TEXT) catch unreachable;
@@ -90,28 +74,33 @@ pub fn main() !void {
     }){};
     const allocator = gpa.allocator();
     SharedAllocator.init(allocator);
-    var pool = pg.Pool.init(allocator, .{ .size = 5, .connect = .{
-        .port = 5432,
-        .host = "127.0.0.1",
-    }, .auth = .{
-        .username = "queuest",
-        .database = "queuest",
-        .password = "queuest",
-        .timeout = 10_000,
-    } }) catch |err| {
-        std.debug.print("Failed to connect: {}", .{err});
-        std.posix.exit(1);
-    };
-    defer pool.deinit();
     {
+        // Database
+        const pool = pg.Pool.init(allocator, .{ .size = 5, .connect = .{
+            .port = 5432,
+            .host = "127.0.0.1",
+        }, .auth = .{
+            .username = "queuest",
+            .database = "queuest",
+            .password = "queuest",
+            .timeout = 10_000,
+        } }) catch |err| {
+            std.debug.print("Failed to connect: {}", .{err});
+            std.posix.exit(1);
+        };
+        defer pool.deinit();
+
+        //Handlers
         var htmlHandler = HtmlMiddleWare.init(null);
-        var transactionHandler = trans.TransactionMiddleware.init(htmlHandler.getHandler(), allocator, pool);
+        var userHandler = userMiddle.UserMiddleware.init(htmlHandler.getHandler(), allocator);
+        var transactionHandler = trans.TransactionMiddleware.init(userHandler.getHandler(), allocator, pool);
         var jwtHandler = auth.JWTMiddleware.init(transactionHandler.getHandler(), allocator);
 
+        // Routes
         try routes.setup_routes(allocator);
         defer routes.deinit();
 
-        // we wrap that in the user Middleware component
+        // Listner with first middleware in line
         var listener = try zap.Middleware.Listener(Context).init(
             .{
                 .port = port,
@@ -129,6 +118,7 @@ pub fn main() !void {
             return;
         };
         std.debug.print("Listening on 0.0.0.0:{d}\n", .{port});
+
         // start worker threads
         zap.start(.{
             // if all threads hang, your server will hang
@@ -137,6 +127,7 @@ pub fn main() !void {
             .workers = 1,
         });
     }
+
     std.debug.print("\n\nSTOPPED!\n\n", .{});
     const leaked = gpa.detectLeaks();
     std.debug.print("Leaks detected: {}\n", .{leaked});

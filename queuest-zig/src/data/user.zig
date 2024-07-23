@@ -3,19 +3,27 @@ const pg = @import("pg");
 const Conn = pg.Conn;
 
 pub const User = struct {
-    id: u64,
-    uid: [128]u8,
-    email: [256]u8,
+    id: i64,
+    uid: []const u8,
+    email: []const u8,
 
     pub fn findByUID(conn: *Conn, uid: []const u8) !?User {
         var result = try conn.queryOpts("select * from user_tbl where uid = $1", .{uid}, .{});
         defer result.deinit();
 
-        if (result.number_of_columns > 1) return error.Error;
+        var user: ?User = null;
 
         if (try result.next()) |row| {
-            try row.to(User, .{ .map = .name });
+            // const user = try row.to(User, .{ .map = .name });
+            user = User{
+                .id = row.get(i64, 0),
+                .uid = row.get([]const u8, 3),
+                .email = row.get([]const u8, 4),
+            };
         }
-        return null;
+        if (try result.next()) |_| {
+            return error.Error;
+        }
+        return user;
     }
 };

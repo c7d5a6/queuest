@@ -55,14 +55,14 @@ pub const JWTMiddleware = struct {
                 r.sendError(err, if (@errorReturnTrace()) |t| t.* else null, 401);
                 return false;
             };
-            context.user = Auth{
+            context.auth = Auth{
                 .authenticated = true,
                 .uuid = sub,
             };
             std.debug.print("\nSub: {s}\n", .{sub[0..28]});
-            std.debug.print("\nuuid: {s}\n", .{context.user.?.uuid.?[0..28]});
+            std.debug.print("\nuuid: {s}\n", .{context.auth.?.uuid.?[0..28]});
         } else {
-            context.user = Auth{
+            context.auth = Auth{
                 .authenticated = false,
             };
         }
