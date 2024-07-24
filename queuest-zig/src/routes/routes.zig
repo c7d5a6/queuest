@@ -12,7 +12,7 @@ pub fn setup_routes(a: std.mem.Allocator) !void {
     arena = std.heap.ArenaAllocator.init(a);
     routes = [_]Path{
         createPath("/api/hello", on_request_verbose),
-        createPath("/api/hello2", on_request_verbose),
+        createPath("/api/collections", on_request_verbose),
     };
 }
 
@@ -69,9 +69,6 @@ pub fn createPath(path: [:0]const u8, method: zap.HttpRequestFn) Path {
 }
 
 fn on_request_verbose(r: zap.Request) void {
-    // if (r.path) |the_path| { std.debug.print("PATH: {s}\n", .{the_path}); }
-    // if (r.query) |the_query| { std.debug.print("QUERY: {s}\n", .{the_query}); }
-    //
     r.sendBody("<html><body><h1>Hello from ZAP!!!</h1></body></html>") catch return;
 }
 
