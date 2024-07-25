@@ -1,5 +1,6 @@
 const std = @import("std");
 const pg = @import("pg");
+const getSoloEntity = @import("utils.zig").getSoloEntity;
 const Conn = pg.Conn;
 
 pub const User = struct {
@@ -11,20 +12,7 @@ pub const User = struct {
         var result = try conn.queryOpts("select * from user_tbl where uid = $1", .{uid}, .{});
         defer result.deinit();
 
-        var user: ?User = null;
-
-        if (try result.next()) |row| {
-            // const user = try row.to(User, .{ .map = .name });
-            user = User{
-                .id = row.get(i64, 0),
-                .uid = row.get([]const u8, 3),
-                .email = row.get([]const u8, 4),
-            };
-        }
-        if (try result.next()) |_| {
-            return error.Error;
-        }
-        return user;
+        return getSoloEntity(User, result);
     }
 
     pub fn create(conn: *Conn, uid: []const u8, email: []const u8) !void {

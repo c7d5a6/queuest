@@ -1,9 +1,14 @@
 const std = @import("std");
 const zap = @import("zap");
+const Context = @import("../middle/context.zig").Context;
+const Collection = @import("../data/collection.zig").Collection;
 const regez = @cImport({
     @cInclude("regex.h");
     @cInclude("regez.h");
 });
+
+pub const ControllerRequest = *const fn (zap.Request, *Context) void;
+pub const DispatchRoutes = *const fn (zap.Request, *Context) void;
 
 var arena: std.heap.ArenaAllocator = undefined;
 var routes: [2]Path = undefined;
@@ -12,8 +17,16 @@ pub fn setup_routes(a: std.mem.Allocator) !void {
     arena = std.heap.ArenaAllocator.init(a);
     routes = [_]Path{
         createPath("/api/hello", on_request_verbose),
-        createPath("/api/collections", on_request_verbose),
+        createPath("/api/collections", on_get_collections),
     };
+}
+
+fn on_get_collections(r: zap.Request, c: *Context) void {
+    const collections: std.ArrayList(Collection) = Collection.findAll(c.connection.?, arena.allocator()) catch unreachable;
+    // const jsonArray = std.json.Array.init(arena.allocator());
+    const json = std.json.stringifyAlloc(arena.allocator(), collections.items, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+    r.setContentType(.JSON) catch return;
+    r.sendJson(json) catch return;
 }
 
 pub fn deinit() void {
@@ -25,7 +38,7 @@ pub fn deinit() void {
 
 const Path = struct {
     path: [:0]const u8,
-    method: zap.HttpRequestFn,
+    method: ControllerRequest,
     regex: Regex,
 };
 
@@ -59,7 +72,7 @@ const Regex = struct {
     }
 };
 
-pub fn createPath(path: [:0]const u8, method: zap.HttpRequestFn) Path {
+pub fn createPath(path: [:0]const u8, method: ControllerRequest) Path {
     const regex: Regex = Regex.init(path) catch unreachable;
     return Path{
         .path = path,
@@ -68,17 +81,18 @@ pub fn createPath(path: [:0]const u8, method: zap.HttpRequestFn) Path {
     };
 }
 
-fn on_request_verbose(r: zap.Request) void {
+fn on_request_verbose(r: zap.Request, c: *Context) void {
+    _ = c;
     r.sendBody("<html><body><h1>Hello from ZAP!!!</h1></body></html>") catch return;
 }
 
-pub fn dispatch_routes(r: zap.Request) void {
+pub fn dispatch_routes(r: zap.Request, c: *Context) void {
     defer _ = arena.reset(.retain_capacity);
     // dispatch
     if (r.path) |path| {
         for (routes) |route| {
             if (route.regex.matches(arena.allocator(), path) catch false) {
-                route.method(r);
+                route.method(r, c);
                 return;
             }
         }
