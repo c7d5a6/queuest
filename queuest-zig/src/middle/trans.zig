@@ -30,7 +30,7 @@ pub const TransactionMiddleware = struct {
         const self: *Self = @fieldParentPtr("handler", handler);
         const pool = self.pool;
         var conn = pool.acquire() catch |err| {
-            std.debug.print("Error in pool creation {}", .{err});
+            std.log.debug("Error in pool creation {}", .{err});
             return false;
         };
         defer conn.release();
