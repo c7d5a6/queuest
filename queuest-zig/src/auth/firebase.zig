@@ -14,7 +14,6 @@ const base64Std = std.base64.standard.decoderWithIgnore(" \t\r\n");
 const Modulus = std.crypto.ff.Modulus(4096);
 const Fe = Modulus.Fe;
 //
-const print = std.debug.print;
 
 const FirebaseError = error{
     CannotLoadPubKeys,
@@ -46,7 +45,7 @@ pub fn verifySignature(allocator: Allocator, key: []const u8, msg: []const u8, s
             return verifyMessage(msg, sig_b64, public_key) catch return error.ErrorVerifyingMessage;
         }
     }
-    print("\nMissing cert {s}\n", .{key});
+    std.log.debug("\nMissing cert {s}\n", .{key});
     return error.MissingCertificateMarkerInGooglePubKey;
 }
 
@@ -71,7 +70,7 @@ fn reloadPublicKeys(allocator: Allocator) FirebaseError!void {
         .response_storage = .{ .dynamic = &arrayList },
         .server_header_buffer = &server_header_buffer,
     }) catch return error.ErrorLoadingPubKeys;
-    print("\nTime to load cert: {d}\n", .{std.time.microTimestamp() - mili});
+    std.log.debug("\nTime to load cert: {d}\n", .{std.time.microTimestamp() - mili});
 
     if (response.status != .ok) {
         return error.ErrorLoadingPubKeys;
@@ -139,7 +138,7 @@ fn verifyMessage(msg: []const u8, sig_b64: []const u8, p_key: PublicKey) !bool {
 }
 
 fn decryptSignature(sig_b64: []const u8, p_key: PublicKey) ![digets_bits]u8 {
-    std.debug.print("\ndecryptSignature {s}\n", .{sig_b64});
+    std.log.debug("\ndecryptSignature {s}\n", .{sig_b64});
     var signature: [256]u8 = undefined;
     var res: [256]u8 = undefined;
     // signature
@@ -201,9 +200,9 @@ test "check signature" {
     const allocator = gpa.allocator();
     // const allocator = std.heap.page_allocator;
     const verified = try verifySignature(allocator, "c1540ac71bb92aa0693c827190acabe5b055cbec", jwt_base[0..], sig_base[0..]);
-    print("\nTime to load verify: {d}\n", .{std.time.microTimestamp() - mili});
+    std.log.debug("\nTime to load verify: {d}\n", .{std.time.microTimestamp() - mili});
     const verified2 = try verifySignature(allocator, "c1540ac71bb92aa0693c827190acabe5b055cbec", jwt_base[0..], sig_base[0..]);
-    print("\nTime to load verify: {d}\n", .{std.time.microTimestamp() - mili});
+    std.log.debug("\nTime to load verify: {d}\n", .{std.time.microTimestamp() - mili});
     try expect(verified);
     try expect(verified2);
 }
@@ -227,7 +226,7 @@ test "loading google" {
         }
     }
     try expect(cert_found);
-    print("\nTime to load goole: {d}\n", .{std.time.milliTimestamp() - mili});
+    std.log.debug("\nTime to load goole: {d}\n", .{std.time.milliTimestamp() - mili});
 }
 
 test "can decode sample certificate" {

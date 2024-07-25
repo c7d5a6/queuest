@@ -9,7 +9,7 @@ pub const User = struct {
     email: []const u8,
 
     pub fn findByUID(conn: *Conn, uid: []const u8) !?User {
-        var result = try conn.queryOpts("select * from user_tbl where uid = $1", .{uid}, .{});
+        var result = try conn.queryOpts("select * from user_tbl where uid = $1", .{uid}, .{ .column_names = true });
         defer result.deinit();
 
         return getSoloEntity(User, result);

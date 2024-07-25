@@ -42,7 +42,7 @@ pub const HtmlMiddleWare = struct {
 
         self.dispatch(r, context);
 
-        std.debug.print("\n\nHtmlMiddleware: handling request with context: {any}\n\n", .{context});
+        std.log.debug("\n\nHtmlMiddleware: handling request with context: {any}\n\n", .{context});
 
         // var buf: [8024]u8 = undefined;
         // var userFound: bool = false;
@@ -50,7 +50,7 @@ pub const HtmlMiddleWare = struct {
         //     userFound = true;
         //     var result = context.connection.?.query("select * from user_tbl order by id", .{}) catch unreachable;
         //     defer result.deinit();
-        //     std.debug.print("\nsql result: {any}\n", .{result});
+        //     std.log.debug("\nsql result: {any}\n", .{result});
         //
         //     std.debug.assert(r.isFinished() == false);
         //     const message = std.fmt.bufPrint(&buf, "User: {s} / {s}\n\n<div>{any}</div>", .{
@@ -89,7 +89,7 @@ pub fn main() !void {
             .password = "queuest",
             .timeout = 10_000,
         } }) catch |err| {
-            std.debug.print("Failed to connect: {}", .{err});
+            std.log.debug("Failed to connect: {}", .{err});
             std.posix.exit(1);
         };
         defer pool.deinit();
@@ -118,10 +118,10 @@ pub fn main() !void {
         zap.enableDebugLog();
 
         listener.listen() catch |err| {
-            std.debug.print("\nLISTEN ERROR: {any}\n", .{err});
+            std.log.debug("\nLISTEN ERROR: {any}\n", .{err});
             return;
         };
-        std.debug.print("Listening on 0.0.0.0:{d}\n", .{port});
+        std.log.debug("Listening on 0.0.0.0:{d}\n", .{port});
 
         // start worker threads
         zap.start(.{
@@ -132,9 +132,9 @@ pub fn main() !void {
         });
     }
 
-    std.debug.print("\n\nSTOPPED!\n\n", .{});
+    std.log.debug("\n\nSTOPPED!\n\n", .{});
     const leaked = gpa.detectLeaks();
-    std.debug.print("Leaks detected: {}\n", .{leaked});
+    std.log.debug("Leaks detected: {}\n", .{leaked});
 }
 
 const expect = std.testing.expect;
@@ -145,6 +145,6 @@ test {
 }
 
 test "always true" {
-    std.debug.print("Test started\n", .{});
+    std.log.debug("Test started\n", .{});
     try expect(true);
 }

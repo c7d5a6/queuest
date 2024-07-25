@@ -17,7 +17,7 @@ pub fn setup_routes(a: std.mem.Allocator) !void {
     arena = std.heap.ArenaAllocator.init(a);
     routes = [_]Path{
         createPath("/api/hello", on_request_verbose),
-        createPath("/api/collections", on_get_collections),
+        createPath("/collections", on_get_collections),
     };
 }
 
