@@ -1,6 +1,7 @@
 const std = @import("std");
 const zap = @import("zap");
 const pg = @import("pg");
+const builtin = @import("builtin");
 const routes = @import("routes/routes.zig");
 const DispatchRoutes = routes.DispatchRoutes;
 const auth = @import("middle/auth.zig");
@@ -73,10 +74,8 @@ pub const HtmlMiddleWare = struct {
 };
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{
-        .thread_safe = true,
-    }){};
-    const allocator = gpa.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = if (builtin.mode == .Debug) gpa.allocator() else std.heap.c_allocator;
     SharedAllocator.init(allocator);
     {
         // Database
