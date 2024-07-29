@@ -53,7 +53,7 @@ pub fn main() !void {
         var userHandler = userMiddle.UserMiddleware.init(controllerHandler.getHandler(), allocator);
         var transactionHandler = trans.TransactionMiddleware.init(userHandler.getHandler(), allocator, pool);
         var jwtHandler = auth.JWTMiddleware.init(transactionHandler.getHandler(), allocator);
-        var headerHandler = header.HeaderMiddleWare.init(jwtHandler.getHandler());
+        // var headerHandler = header.HeaderMiddleWare.init(jwtHandler.getHandler());
 
         //
         // --- Listner with first middleware in line
@@ -65,7 +65,7 @@ pub fn main() !void {
                 .max_clients = 100000, // TODO: setup this number
                 .on_request = null, // must be null
             },
-            headerHandler.getHandler(),
+            jwtHandler.getHandler(),
             SharedAllocator.getAllocator,
         );
         listener.listen() catch |err| {
