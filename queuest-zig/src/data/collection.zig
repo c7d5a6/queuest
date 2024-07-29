@@ -2,6 +2,7 @@ const std = @import("std");
 const pg = @import("pg");
 const User = @import("user.zig").User;
 const Conn = pg.Conn;
+const getSoloEntity = @import("utils.zig").getSoloEntity;
 
 const table_name = "collection_tbl";
 
@@ -29,5 +30,12 @@ pub const Collection = struct {
             array.append(collection) catch unreachable;
         }
         return array;
+    }
+
+    pub fn findByIdAndUserId(conn: *Conn, id: i64, user_id: i64) !?Collection {
+        var result = try conn.queryOpts("select * from " ++ table_name ++ " where id = $1 and user_id = $2", .{ id, user_id }, .{ .column_names = true });
+        defer result.deinit();
+
+        return getSoloEntity(Collection, result);
     }
 };

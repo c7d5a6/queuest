@@ -12,13 +12,15 @@ const Handler = zap.Middleware.Handler(Context);
 pub const ControllerMiddleWare = struct {
     handler: Handler,
     dispatch: DispatchRoutes,
+    allocator: Allocator,
 
     const Self = @This();
 
-    pub fn init(other: ?*Handler, dispatch: DispatchRoutes) Self {
+    pub fn init(other: ?*Handler, dispatch: DispatchRoutes, allocator: Allocator) Self {
         return .{
             .handler = Handler.init(onRequest, other),
             .dispatch = dispatch,
+            .allocator = allocator,
         };
     }
 
@@ -29,11 +31,12 @@ pub const ControllerMiddleWare = struct {
 
     // note that the first parameter is of type *Handler, not *Self !!!
     pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) bool {
-
         // this is how we would get our self pointer
         const self: *Self = @fieldParentPtr("handler", handler);
+        var arena = std.heap.ArenaAllocator.init(self.allocator);
+        defer arena.deinit();
 
-        self.dispatch(r, context);
+        self.dispatch(arena.allocator(), r, context);
 
         std.log.debug("\n\nHtmlMiddleware: handling request with context: {any}\n\n", .{context});
 

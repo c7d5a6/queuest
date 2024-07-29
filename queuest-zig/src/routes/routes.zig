@@ -1,15 +1,17 @@
 const std = @import("std");
 const zap = @import("zap");
+const Method = zap.Method;
 const Context = @import("../middle/context.zig").Context;
-const Collection = @import("../data/collection.zig").Collection;
+const collections = @import("../services/collections.zig");
 const Regex = @import("matcher.zig").Regex;
 
-pub const ControllerRequest = *const fn (zap.Request, *Context, anytype) void;
-pub const DispatchRoutes = *const fn (zap.Request, *Context) void;
+pub const ControllerRequest = *const fn (std.mem.Allocator, zap.Request, *Context, anytype) void;
+pub const DispatchRoutes = *const fn (std.mem.Allocator, zap.Request, *Context) void;
 
 var arena: std.heap.ArenaAllocator = undefined;
 
 const Path = struct {
+    httpMethod: Method,
     path: [:0]const u8,
     methodType: type,
     method: ControllerRequest,
@@ -17,17 +19,31 @@ const Path = struct {
 //
 // --- Paths of REST methods
 //
-const rt = [_]struct { [:0]const u8, type, ControllerRequest }{
-    .{ "/api/hello", struct {}, on_request_verbose },
-    .{ "/collections", struct {}, on_get_collections },
+const rt = [_]struct { Method, [:0]const u8, type, ControllerRequest }{
+    .{ .GET, "/api/hello", struct {}, on_request_verbose },
+    // -- Collections
+    .{ .GET, "/collections", struct {}, collections.on_get_collections },
+    .{ .GET, "/collections/{collectionId}", struct { collectionId: i64 }, collections.on_get_collection },
+    // POST /collections
+    // GET /collections/fav
+    // POST /collections/fav/{collectionId}
+    // DELETE /collections/fav/{collectionId}
+    // POST /collections/visit/{collectionId}
+    // -- Items
+    // POST /collections/{collectionId}/items
+    // GET /collections/{collectionId}/items
+    // DELETE /collections/{collectionId}/items/{collectionItemId}
+    // GET /collections/{collectionId}/items/least-calibrated
+    // GET /collections/{collectionId}/items/{id}/bestpair/{strict}
 };
 const routes: [rt.len]Path = init_rts: {
     var initial: [rt.len]Path = undefined;
     for (&initial, 0..) |*pt, i| {
         pt.* = Path{
-            .path = rt[i][0],
-            .methodType = rt[i][1],
-            .method = rt[i][2],
+            .httpMethod = rt[i][0],
+            .path = rt[i][1],
+            .methodType = rt[i][2],
+            .method = rt[i][3],
         };
     }
     break :init_rts initial;
@@ -44,7 +60,7 @@ pub fn setup_routes(a: std.mem.Allocator) !void {
         var arena_tmp = std.heap.ArenaAllocator.init(a);
         defer arena_tmp.deinit();
         inline for (0..rt.len) |i| {
-            const pathPattern = getPathPattern(arena_tmp.allocator(), rt[i][0]);
+            const pathPattern = getPathPattern(arena_tmp.allocator(), rt[i][1]);
             const regex: Regex = Regex.init(pathPattern) catch unreachable;
             routesMatcher[i] = regex;
         }
@@ -155,27 +171,21 @@ fn getRouteParams(comptime T: type, comptime path: []const u8, url: []const u8) 
     return result;
 }
 
-fn on_get_collections(r: zap.Request, c: *Context, params: anytype) void {
-    _ = params;
-    const collections: std.ArrayList(Collection) = Collection.findAllForUserId(c.connection.?, arena.allocator(), c.user.?.id) catch unreachable;
-    const json = std.json.stringifyAlloc(arena.allocator(), collections.items, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
-    r.setContentType(.JSON) catch return;
-    r.sendJson(json) catch return;
-}
-
-fn on_request_verbose(r: zap.Request, c: *Context, params: anytype) void {
+fn on_request_verbose(a: std.mem.Allocator, r: zap.Request, c: *Context, params: anytype) void {
     _ = c;
-    std.debug.print("\nMethod params {any}\n", .{params.helloId});
+    _ = params;
+    _ = a;
     r.sendBody("<html><body><h1>Hello from ZAP!!!</h1></body></html>") catch return;
 }
 
-pub fn dispatch_routes(r: zap.Request, c: *Context) void {
+pub fn dispatch_routes(a: std.mem.Allocator, r: zap.Request, c: *Context) void {
     // dispatch
+    const httpMethod = r.methodAsEnum();
     if (r.path) |path| {
         inline for (routes, 0..) |route, i| {
-            if (routesMatcher[i].matches(arena.allocator(), path) catch false) {
+            if (httpMethod == route.httpMethod and routesMatcher[i].matches(arena.allocator(), path) catch false) {
                 const params = getRouteParams(route.methodType, route.path, path);
-                route.method(r, c, params);
+                route.method(a, r, c, params);
                 return;
             }
         }
