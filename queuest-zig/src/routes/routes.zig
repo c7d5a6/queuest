@@ -19,6 +19,7 @@ const Path = struct {
 //
 const rt = [_]struct { [:0]const u8, ControllerRequest }{
     .{ "/api/hello", on_request_verbose },
+    .{ "/api/hello/{helloId}/fav/{favId}", on_request_verbose },
     .{ "/collections", on_get_collections },
 };
 var routes: [rt.len]Path = undefined;
@@ -45,21 +46,50 @@ pub fn deinit() void {
     arena.deinit();
 }
 
-const regStart = "^";
-const urlEnd = "(\\?[^&?=]+=[^&?=]+(&[^&?=]+=[^&?=]+)*)?$";
-
-pub fn createPath(a: std.mem.Allocator, path: [:0]const u8, method: ControllerRequest) Path {
-    var urlReg = a.alloc(u8, regStart.len + path.len + urlEnd.len + 1) catch unreachable;
-    @memcpy(urlReg[0..regStart.len], regStart);
-    @memcpy(urlReg[regStart.len .. regStart.len + path.len], path);
-    @memcpy(urlReg[regStart.len + path.len .. urlReg.len - 1], urlEnd);
-    urlReg[urlReg.len - 1] = 0;
-    const regex: Regex = Regex.init(urlReg[0 .. urlReg.len - 1 :0]) catch unreachable;
+fn createPath(a: std.mem.Allocator, path: [:0]const u8, method: ControllerRequest) Path {
+    const pathPattern = getPathPattern(a, path);
+    const regex: Regex = Regex.init(pathPattern) catch unreachable;
     return Path{
         .path = path,
         .method = method,
         .regex = regex,
     };
+}
+
+const regStart = "^";
+const paramRx = "([^/?]+)";
+const urlEnd = "(\\?[^&?=]+=[^&?=]+(&[^&?=]+=[^&?=]+)*)?$";
+
+fn getPathPattern(a: std.mem.Allocator, path: [:0]const u8) [:0]u8 {
+    var urlReg = a.alloc(u8, 1024 + path.len) catch unreachable;
+    var start: usize = 0;
+
+    var end: usize = regStart.len;
+    @memcpy(urlReg[start..end], regStart);
+    start = end;
+
+    var startPath: usize = 0;
+    while (std.mem.indexOfScalarPos(u8, path[0..], startPath, '{')) |pos| {
+        const endPath = std.mem.indexOfScalarPos(u8, path[0..], pos, '}') orelse unreachable;
+        end = end + pos - startPath;
+        @memcpy(urlReg[start..end], path[startPath..pos]);
+        startPath = endPath + 1;
+        start = end;
+
+        end = end + paramRx.len;
+        @memcpy(urlReg[start..end], paramRx);
+        start = end;
+    }
+
+    end = end + path.len - startPath;
+    @memcpy(urlReg[start..end], path[startPath..]);
+    start = end;
+
+    end = end + urlEnd.len;
+    @memcpy(urlReg[start..end], urlEnd);
+
+    urlReg[end] = 0;
+    return urlReg[0..end :0];
 }
 
 fn on_get_collections(r: zap.Request, c: *Context) void {
@@ -96,13 +126,12 @@ test "create and match path" {
     }){};
     const allocator = gpa.allocator();
 
-    const pathStr = "/api/hello";
+    const pathStr = "/api/hello/{id}/fav/{favid}";
     const path = createPath(allocator, pathStr, testApiFn);
     defer path.regex.deinit();
-    const pathIn = [_]u8{ '/', 'a', 'p', 'i', '/', 'h', 'e', 'l', 'l', 'o', '/' };
-    const t = try path.regex.matches(std.heap.page_allocator, pathIn[0..10]);
+    const pathIn = [_]u8{ '/', 'a', 'p', 'i', '/', 'h', 'e', 'l', 'l', 'o', '/', '1', '/', 'f', 'a', 'v', '/', '5', '0', '/' };
+    const t = try path.regex.matches(std.heap.page_allocator, pathIn[0..19]);
     const f = try path.regex.matches(std.heap.page_allocator, pathIn[0..]);
-    std.debug.print("Text {s} if {any}", .{ pathIn[0..], f });
     try expect(t);
     try expect(!f);
 }
