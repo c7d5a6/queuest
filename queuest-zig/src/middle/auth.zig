@@ -229,6 +229,7 @@ test "wrong signature" {
     var gpa = std.heap.GeneralPurposeAllocator(.{ .thread_safe = true }){};
     const allocator = gpa.allocator();
     _ = parseJWT(allocator, jwt) catch |err| {
-        try std.testing.expectEqual(AuthError.SignatureWrong, err);
+        // Signature can't be decoded because test signature key are expared and google dropped it
+        try std.testing.expectEqual(AuthError.SignatureDecodingError, err);
     };
 }

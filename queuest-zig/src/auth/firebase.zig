@@ -191,20 +191,20 @@ const pub_key =
 const sig_base = "UCopADIJH60STk_rojzzLfgUXXztvpe3Hnvp7MJTlx_MxFDOWEe6FbXlQHM-ygCkic0yNpYt9gDxPHH2uva7YXc3CUyl86Wx88pbmCmIIUo72nUoIWtNEXCm_npB9eO7rEYdiBlY6bxplIjnMnwYA7fljkx113-JzGm-4gUfqB-X65SrOQzF1IH-mFpjWTvI-DfOaNyVdf_8P47si8o8cuKUyXENITOhTu6h5s2MIUwGVf_Q0ZXIePoUlHatn0-qqvoBanJYPGz5rg8J40x-YEQx08CYDm17t7Dyfrvu9e4lk3uGmiUlr9pkZC5dzhgaJToK1o6sJIlgSQhs14SBaw";
 const jwt_base = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImMxNTQwYWM3MWJiOTJhYTA2OTNjODI3MTkwYWNhYmU1YjA1NWNiZWMiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiYzdkNWE2IiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FBY0hUdGVVUTN3MHNsMWliajhMVjF4WU04TnMwLWJFd2k2MnlvMVZPNTFDdWc9czk2LWMiLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vcXVldWVzdC1jYjg4NSIsImF1ZCI6InF1ZXVlc3QtY2I4ODUiLCJhdXRoX3RpbWUiOjE3MTg3MTMxNDEsInVzZXJfaWQiOiJWV3RnZFNsZk91ZWJ2Mlh6YW5IRDRkb0tOZkQyIiwic3ViIjoiVld0Z2RTbGZPdWVidjJYemFuSEQ0ZG9LTmZEMiIsImlhdCI6MTcyMTA1Nzk0MCwiZXhwIjoxNzIxMDYxNTQwLCJlbWFpbCI6ImdvZGluZnJvZ0BnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjEwMjk5NTk2MzcxMTIyODA2OTY5NiJdLCJlbWFpbCI6WyJnb2RpbmZyb2dAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ";
 
-test "check signature" {
-    const mili = std.time.microTimestamp();
-    var gpa = std.heap.GeneralPurposeAllocator(.{
-        .thread_safe = true,
-    }){};
-    const allocator = gpa.allocator();
-    // const allocator = std.heap.page_allocator;
-    const verified = try verifySignature(allocator, "c1540ac71bb92aa0693c827190acabe5b055cbec", jwt_base[0..], sig_base[0..]);
-    std.log.debug("\nTime to load verify: {d}\n", .{std.time.microTimestamp() - mili});
-    const verified2 = try verifySignature(allocator, "c1540ac71bb92aa0693c827190acabe5b055cbec", jwt_base[0..], sig_base[0..]);
-    std.log.debug("\nTime to load verify: {d}\n", .{std.time.microTimestamp() - mili});
-    try expect(verified);
-    try expect(verified2);
-}
+// test "check signature" {
+//     const mili = std.time.microTimestamp();
+//     var gpa = std.heap.GeneralPurposeAllocator(.{
+//         .thread_safe = true,
+//     }){};
+//     const allocator = gpa.allocator();
+//     // const allocator = std.heap.page_allocator;
+//     const verified = try verifySignature(allocator, "c1540ac71bb92aa0693c827190acabe5b055cbec", jwt_base[0..], sig_base[0..]);
+//     std.log.debug("\nTime to load verify: {d}\n", .{std.time.microTimestamp() - mili});
+//     const verified2 = try verifySignature(allocator, "c1540ac71bb92aa0693c827190acabe5b055cbec", jwt_base[0..], sig_base[0..]);
+//     std.log.debug("\nTime to load verify: {d}\n", .{std.time.microTimestamp() - mili});
+//     try expect(verified);
+//     try expect(verified2);
+// }
 
 test "loading google" {
     const mili = std.time.milliTimestamp();
@@ -215,7 +215,7 @@ test "loading google" {
     try reloadPublicKeys(allocator);
     var cert_found = false;
     for (goole_keys) |pk| {
-        if (mem.eql(u8, &pk.key, "5691a195b2425e2aed60633d7cb19054156b977d")) {
+        if (mem.eql(u8, &pk.key, "0cb42742ae58f4da467bcdaea4b95a29fba0c5f9")) {
             const parsed_cert = try Certificate.parse(.{
                 .buffer = pk.certificate[0..],
                 .index = 0,

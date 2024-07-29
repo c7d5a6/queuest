@@ -2,31 +2,40 @@ const std = @import("std");
 const zap = @import("zap");
 const Context = @import("../middle/context.zig").Context;
 const Collection = @import("../data/collection.zig").Collection;
-const regez = @cImport({
-    @cInclude("regex.h");
-    @cInclude("regez.h");
-});
+const Regex = @import("matcher.zig").Regex;
 
 pub const ControllerRequest = *const fn (zap.Request, *Context) void;
 pub const DispatchRoutes = *const fn (zap.Request, *Context) void;
 
 var arena: std.heap.ArenaAllocator = undefined;
-var routes: [2]Path = undefined;
 
+const Path = struct {
+    path: [:0]const u8,
+    method: ControllerRequest,
+    regex: Regex,
+};
+//
+// --- Paths of REST methods
+//
+const rt = [_]struct { [:0]const u8, ControllerRequest }{
+    .{ "/api/hello", on_request_verbose },
+    .{ "/collections", on_get_collections },
+};
+var routes: [rt.len]Path = undefined;
+
+//
+// --- Setup
+//
 pub fn setup_routes(a: std.mem.Allocator) !void {
-    arena = std.heap.ArenaAllocator.init(a);
-    routes = [_]Path{
-        createPath("/api/hello", on_request_verbose),
-        createPath("/collections", on_get_collections),
-    };
-}
+    {
+        var arena_tmp = std.heap.ArenaAllocator.init(a);
+        defer arena_tmp.deinit();
+        for (&routes, 0..) |*pt, i| {
+            pt.* = createPath(arena_tmp.allocator(), rt[i][0], rt[i][1]);
+        }
+    }
 
-fn on_get_collections(r: zap.Request, c: *Context) void {
-    const collections: std.ArrayList(Collection) = Collection.findAll(c.connection.?, arena.allocator()) catch unreachable;
-    // const jsonArray = std.json.Array.init(arena.allocator());
-    const json = std.json.stringifyAlloc(arena.allocator(), collections.items, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
-    r.setContentType(.JSON) catch return;
-    r.sendJson(json) catch return;
+    arena = std.heap.ArenaAllocator.init(a);
 }
 
 pub fn deinit() void {
@@ -36,49 +45,28 @@ pub fn deinit() void {
     arena.deinit();
 }
 
-const Path = struct {
-    path: [:0]const u8,
-    method: ControllerRequest,
-    regex: Regex,
-};
+const regStart = "^";
+const urlEnd = "(\\?[^&?=]+=[^&?=]+(&[^&?=]+=[^&?=]+)*)?$";
 
-const Regex = struct {
-    inner: *regez.regex_t,
-
-    fn init(pattern: [:0]const u8) !Regex {
-        const inner = regez.alloc_regex_t().?;
-        if (0 != regez.regcomp(inner, pattern, regez.REG_NEWLINE | regez.REG_EXTENDED)) {
-            return error.compile;
-        }
-
-        return .{
-            .inner = inner,
-        };
-    }
-
-    fn deinit(self: Regex) void {
-        regez.free_regex_t(self.inner);
-    }
-
-    fn matches(self: Regex, allocator: std.mem.Allocator, input: []const u8) !bool {
-        const a_input: []u8 = try allocator.alloc(u8, input.len + 1);
-        @memcpy(a_input[0..input.len], input);
-        a_input[input.len] = 0;
-        const c_input: [:0]const u8 = a_input[0..input.len :0];
-        const match_size = 1;
-        var pmatch: [match_size]regez.regmatch_t = undefined;
-        const res = regez.regexec(self.inner, c_input, match_size, &pmatch, 0);
-        return 0 == res;
-    }
-};
-
-pub fn createPath(path: [:0]const u8, method: ControllerRequest) Path {
-    const regex: Regex = Regex.init(path) catch unreachable;
+pub fn createPath(a: std.mem.Allocator, path: [:0]const u8, method: ControllerRequest) Path {
+    var urlReg = a.alloc(u8, regStart.len + path.len + urlEnd.len + 1) catch unreachable;
+    @memcpy(urlReg[0..regStart.len], regStart);
+    @memcpy(urlReg[regStart.len .. regStart.len + path.len], path);
+    @memcpy(urlReg[regStart.len + path.len .. urlReg.len - 1], urlEnd);
+    urlReg[urlReg.len - 1] = 0;
+    const regex: Regex = Regex.init(urlReg[0 .. urlReg.len - 1 :0]) catch unreachable;
     return Path{
         .path = path,
         .method = method,
         .regex = regex,
     };
+}
+
+fn on_get_collections(r: zap.Request, c: *Context) void {
+    const collections: std.ArrayList(Collection) = Collection.findAll(c.connection.?, arena.allocator()) catch unreachable;
+    const json = std.json.stringifyAlloc(arena.allocator(), collections.items, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+    r.setContentType(.JSON) catch return;
+    r.sendJson(json) catch return;
 }
 
 fn on_request_verbose(r: zap.Request, c: *Context) void {
@@ -103,14 +91,25 @@ pub fn dispatch_routes(r: zap.Request, c: *Context) void {
 const expect = std.testing.expect;
 
 test "create and match path" {
+    var gpa = std.heap.GeneralPurposeAllocator(.{
+        .thread_safe = true,
+    }){};
+    const allocator = gpa.allocator();
+
     const pathStr = "/api/hello";
-    const path = createPath(pathStr, testApiFn);
+    const path = createPath(allocator, pathStr, testApiFn);
     defer path.regex.deinit();
-    const pathIn: [10]u8 = .{ '/', 'a', 'p', 'i', '/', 'h', 'e', 'l', 'l', 'o' };
-    const result = try path.regex.matches(std.heap.page_allocator, pathIn[0..]);
-    try expect(result);
+    const pathIn = [_]u8{ '/', 'a', 'p', 'i', '/', 'h', 'e', 'l', 'l', 'o', '/' };
+    const t = try path.regex.matches(std.heap.page_allocator, pathIn[0..10]);
+    const f = try path.regex.matches(std.heap.page_allocator, pathIn[0..]);
+    std.debug.print("Text {s} if {any}", .{ pathIn[0..], f });
+    try expect(t);
+    try expect(!f);
 }
 
-fn testApiFn(method: zap.Request) void {
-    _ = method;
+fn testApiFn(r: zap.Request, c: *Context) void {
+    _ = r;
+    _ = c;
 }
+
+// test "check"
