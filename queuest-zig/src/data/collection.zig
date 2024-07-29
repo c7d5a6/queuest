@@ -18,8 +18,8 @@ pub const Collection = struct {
     name: []const u8 = "0",
     favourite_yn: bool = true,
 
-    pub fn findAll(conn: *Conn, allocator: std.mem.Allocator) !std.ArrayList(Collection) {
-        var result = try conn.queryOpts("select * from " ++ table_name, .{}, .{ .column_names = true });
+    pub fn findAllForUserId(conn: *Conn, allocator: std.mem.Allocator, user_id: i64) !std.ArrayList(Collection) {
+        var result = try conn.queryOpts("select * from " ++ table_name ++ " where user_id = $1", .{user_id}, .{ .column_names = true });
         defer result.deinit();
 
         var array = std.ArrayList(Collection).init(allocator);

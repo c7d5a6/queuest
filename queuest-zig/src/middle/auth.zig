@@ -67,10 +67,6 @@ pub const JWTMiddleware = struct {
             };
         }
 
-        r.setHeader("Access-Control-Allow-Origin", "*") catch unreachable;
-        r.setHeader("Access-Control-Allow-Methods", "*") catch unreachable;
-        r.setHeader("Access-Control-Allow-Headers", "*") catch unreachable;
-        r.setHeader("Expires", "0") catch unreachable;
         return handler.handleOther(r, context);
     }
 };

@@ -157,7 +157,7 @@ fn getRouteParams(T: type, path: Path, url: []const u8) T {
 }
 
 fn on_get_collections(r: zap.Request, c: *Context) void {
-    const collections: std.ArrayList(Collection) = Collection.findAll(c.connection.?, arena.allocator()) catch unreachable;
+    const collections: std.ArrayList(Collection) = Collection.findAllForUserId(c.connection.?, arena.allocator()) catch unreachable;
     const json = std.json.stringifyAlloc(arena.allocator(), collections.items, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
