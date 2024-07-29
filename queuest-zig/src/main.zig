@@ -78,7 +78,9 @@ pub fn main() !void {
     const allocator = if (builtin.mode == .Debug) gpa.allocator() else std.heap.c_allocator;
     SharedAllocator.init(allocator);
     {
-        // Database
+        //
+        // --- Database
+        //
         const pool = pg.Pool.init(allocator, .{ .size = 5, .connect = .{
             .port = 5432,
             .host = "127.0.0.1",
@@ -93,36 +95,43 @@ pub fn main() !void {
         };
         defer pool.deinit();
 
-        // Routes
+        //
+        // --- Routes
+        //
         try routes.setup_routes(allocator);
         defer routes.deinit();
 
-        //Handlers
+        //
+        // --- Handlers
+        //
         var htmlHandler = HtmlMiddleWare.init(null, routes.dispatch_routes);
         var userHandler = userMiddle.UserMiddleware.init(htmlHandler.getHandler(), allocator);
         var transactionHandler = trans.TransactionMiddleware.init(userHandler.getHandler(), allocator, pool);
         var jwtHandler = auth.JWTMiddleware.init(transactionHandler.getHandler(), allocator);
 
-        // Listner with first middleware in line
+        //
+        // --- Listner with first middleware in line
+        //
         var listener = try zap.Middleware.Listener(Context).init(
             .{
                 .port = port,
                 .log = true,
-                .max_clients = 100000,
+                .max_clients = 100000, // TODO: setup this number
                 .on_request = null, // must be null
             },
             jwtHandler.getHandler(),
             SharedAllocator.getAllocator,
         );
-        zap.enableDebugLog();
-
         listener.listen() catch |err| {
             std.log.debug("\nLISTEN ERROR: {any}\n", .{err});
             return;
         };
+        if (builtin.mode == .Debug) zap.enableDebugLog();
         std.log.debug("Listening on 0.0.0.0:{d}\n", .{port});
 
-        // start worker threads
+        //
+        // --- Start worker threads
+        //
         zap.start(.{
             // if all threads hang, your server will hang
             .threads = 1,
@@ -131,9 +140,11 @@ pub fn main() !void {
         });
     }
 
-    std.log.debug("\n\nSTOPPED!\n\n", .{});
-    const leaked = gpa.detectLeaks();
-    std.log.debug("Leaks detected: {}\n", .{leaked});
+    if (builtin.mode == .Debug) {
+        std.log.debug("\n\nSTOPPED!\n\n", .{});
+        const leaked = gpa.detectLeaks();
+        std.log.debug("Leaks detected: {}\n", .{leaked});
+    }
 }
 
 const expect = std.testing.expect;

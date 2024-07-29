@@ -46,10 +46,10 @@ pub const JWTMiddleware = struct {
 
     pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) bool {
         const self: *Self = @fieldParentPtr("handler", handler);
+        var arena = std.heap.ArenaAllocator.init(self.allocator);
+        defer arena.deinit();
         const authHeader = zap.Auth.extractAuthHeader(.Bearer, &r);
         if (authHeader != null) {
-            var arena = std.heap.ArenaAllocator.init(self.allocator);
-            defer arena.deinit();
             const allocator = arena.allocator();
             const sub = parseJWT(allocator, authHeader.?) catch |err| {
                 r.sendError(err, if (@errorReturnTrace()) |t| t.* else null, 401);

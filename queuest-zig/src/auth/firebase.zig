@@ -59,7 +59,6 @@ fn checkAndReloadPK(allocator: Allocator) FirebaseError!void {
 fn reloadPublicKeys(allocator: Allocator) FirebaseError!void {
     var arrayList = ArrayList(u8).init(allocator);
     arrayList.ensureTotalCapacity(4 * 1024) catch return error.CannotLoadPubKeys;
-    defer arrayList.deinit();
 
     var client: Client = .{ .allocator = allocator };
     var server_header_buffer: [4 * 1024]u8 = undefined;
