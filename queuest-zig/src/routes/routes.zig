@@ -92,6 +92,70 @@ fn getPathPattern(a: std.mem.Allocator, path: [:0]const u8) [:0]u8 {
     return urlReg[0..end :0];
 }
 
+pub fn StructTag(comptime T: type) type {
+    switch (@typeInfo(T)) {
+        .Struct => |st| {
+            var enum_fields: [st.fields.len]std.builtin.Type.EnumField = undefined;
+            inline for (st.fields, 0..) |field, index| {
+                enum_fields[index] = .{
+                    .name = field.name,
+                    .value = index,
+                };
+            }
+            return @Type(.{
+                .Enum = .{
+                    .tag_type = u16,
+                    .fields = &enum_fields,
+                    .decls = &.{},
+                    .is_exhaustive = true,
+                },
+            });
+        },
+        else => @compileError("Not a struct"),
+    }
+}
+
+pub fn setField(ptr: anytype, tag: StructTag(@TypeOf(ptr.*)), value: anytype) void {
+    const T = @TypeOf(value);
+    const st = @typeInfo(@TypeOf(ptr.*)).Struct;
+    inline for (st.fields, 0..) |field, index| {
+        if (tag == @as(@TypeOf(tag), @enumFromInt(index))) {
+            if (field.type == T) {
+                @field(ptr.*, field.name) = value;
+            } else {
+                @panic("Type mismatch: " ++ @typeName(field.type) ++ " != " ++ @typeName(T));
+            }
+        }
+    }
+}
+
+fn getRouteParams(T: type, path: Path, url: []const u8) T {
+    const params_type_info = @typeInfo(T);
+    if (params_type_info != .Struct) {
+        @compileError("expected tuple or struct argument, found " ++ @typeName(T));
+    }
+    const tag: StructTag(T) = i64;
+    var result: T = undefined;
+    var start: usize = 0;
+    var valueStart: usize = 0;
+    var i: usize = 0;
+    while (std.mem.indexOfScalarPos(u8, path.path[0..], start, '{')) |pos| {
+        valueStart = valueStart + pos - start;
+        const end = std.mem.indexOfScalarPos(u8, path.path[0..], pos, '}') orelse unreachable;
+        const valueEnd = std.mem.indexOfScalarPos(u8, url[0..], valueStart, '/') orelse url.len;
+        const paramName = path.path[pos + 1 .. end];
+        _ = paramName;
+        const paramValue = url[valueStart..valueEnd];
+        const value = std.fmt.parseInt(i64, paramValue, 10);
+        setField(&result, tag, value);
+        i = i + 1;
+        start = end;
+        valueStart = valueEnd - 1;
+    }
+
+    return result;
+}
+
 fn on_get_collections(r: zap.Request, c: *Context) void {
     const collections: std.ArrayList(Collection) = Collection.findAll(c.connection.?, arena.allocator()) catch unreachable;
     const json = std.json.stringifyAlloc(arena.allocator(), collections.items, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
@@ -134,6 +198,20 @@ test "create and match path" {
     const f = try path.regex.matches(std.heap.page_allocator, pathIn[0..]);
     try expect(t);
     try expect(!f);
+}
+
+test "getting path params" {
+    var gpa = std.heap.GeneralPurposeAllocator(.{
+        .thread_safe = true,
+    }){};
+    const allocator = gpa.allocator();
+    const pathStr = "/api/hello/{id}/fav/{favId}/{i}";
+    const path = createPath(allocator, pathStr, testApiFn);
+    defer path.regex.deinit();
+
+    const param = getRouteParams(struct { i64, i64, i64 }, path, "/api/hello/12/fav/5/1");
+
+    try expect(param[0] == 12);
 }
 
 fn testApiFn(r: zap.Request, c: *Context) void {
