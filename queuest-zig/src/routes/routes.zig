@@ -24,17 +24,20 @@ const rt = [_]struct { Method, [:0]const u8, type, ControllerRequest }{
     // -- Collections
     .{ .GET, "/collections", struct {}, collections.on_get_collections },
     .{ .GET, "/collections/{collectionId}", struct { collectionId: i64 }, collections.on_get_collection },
-    // POST /collections
     // GET /collections/fav
+    // POST /collections
     // POST /collections/fav/{collectionId}
-    // DELETE /collections/fav/{collectionId}
     // POST /collections/visit/{collectionId}
+    // DELETE /collections/fav/{collectionId}
     // -- Items
-    // POST /collections/{collectionId}/items
     // GET /collections/{collectionId}/items
-    // DELETE /collections/{collectionId}/items/{collectionItemId}
     // GET /collections/{collectionId}/items/least-calibrated
     // GET /collections/{collectionId}/items/{id}/bestpair/{strict}
+    // POST /collections/{collectionId}/items
+    // DELETE /collections/{collectionId}/items/{collectionItemId}
+    // -- ItemsRelation
+    // POST /relations/{fromId}/{toId}
+    // DELETE /relations/{itemAId}/{itemBId}
 };
 const routes: [rt.len]Path = init_rts: {
     var initial: [rt.len]Path = undefined;
@@ -108,43 +111,6 @@ fn getPathPattern(a: std.mem.Allocator, path: [:0]const u8) [:0]u8 {
 
     urlReg[end] = 0;
     return urlReg[0..end :0];
-}
-
-pub fn StructTag(comptime T: type) type {
-    switch (@typeInfo(T)) {
-        .Struct => |st| {
-            var enum_fields: [st.fields.len]std.builtin.Type.EnumField = undefined;
-            inline for (st.fields, 0..) |field, index| {
-                enum_fields[index] = .{
-                    .name = field.name,
-                    .value = index,
-                };
-            }
-            return @Type(.{
-                .Enum = .{
-                    .tag_type = u16,
-                    .fields = &enum_fields,
-                    .decls = &.{},
-                    .is_exhaustive = true,
-                },
-            });
-        },
-        else => @compileError("Not a struct"),
-    }
-}
-
-pub fn setField(ptr: anytype, tag: StructTag(@TypeOf(ptr.*)), value: anytype) void {
-    const T = @TypeOf(value);
-    const st = @typeInfo(@TypeOf(ptr.*)).Struct;
-    inline for (st.fields, 0..) |field, index| {
-        if (tag == @as(@TypeOf(tag), @enumFromInt(index))) {
-            if (field.type == T) {
-                @field(ptr.*, field.name) = value;
-            } else {
-                @panic("Type mismatch: " ++ @typeName(field.type) ++ " != " ++ @typeName(T));
-            }
-        }
-    }
 }
 
 fn getRouteParams(comptime T: type, comptime path: []const u8, url: []const u8) T {
