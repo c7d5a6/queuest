@@ -10,6 +10,11 @@ pub const DispatchRoutes = *const fn (std.mem.Allocator, zap.Request, *Context) 
 
 var arena: std.heap.ArenaAllocator = undefined;
 
+const Access = enum {
+    Unauthorized,
+    Authorized,
+};
+
 const Path = struct {
     httpMethod: Method,
     path: [:0]const u8,
@@ -19,12 +24,12 @@ const Path = struct {
 //
 // --- Paths of REST methods
 //
-const rt = [_]struct { Method, [:0]const u8, type, ControllerRequest }{
-    .{ .GET, "/api/hello", struct {}, on_request_verbose },
+const rt = [_]struct { Method, Access, [:0]const u8, type, ControllerRequest }{
+    .{ .GET, .Unauthorized, "/api/hello", struct {}, on_request_verbose },
     // -- Collections
-    .{ .GET, "/collections", struct {}, collections.on_get_collections },
-    .{ .GET, "/collections/{collectionId}", struct { collectionId: i64 }, collections.on_get_collection },
-    // GET /collections/fav
+    .{ .GET, .Authorized, "/collections", struct {}, collections.on_get_collections },
+    .{ .GET, .Authorized, "/collections/{collectionId}", struct { collectionId: i64 }, collections.on_get_collection },
+    .{ .GET, .Authorized, "/collections/fav", struct {}, collections.on_get_fav_collections },
     // POST /collections
     // POST /collections/fav/{collectionId}
     // POST /collections/visit/{collectionId}
@@ -44,9 +49,9 @@ const routes: [rt.len]Path = init_rts: {
     for (&initial, 0..) |*pt, i| {
         pt.* = Path{
             .httpMethod = rt[i][0],
-            .path = rt[i][1],
-            .methodType = rt[i][2],
-            .method = rt[i][3],
+            .path = rt[i][2],
+            .methodType = rt[i][3],
+            .method = rt[i][4],
         };
     }
     break :init_rts initial;
@@ -63,7 +68,7 @@ pub fn setup_routes(a: std.mem.Allocator) !void {
         var arena_tmp = std.heap.ArenaAllocator.init(a);
         defer arena_tmp.deinit();
         inline for (0..rt.len) |i| {
-            const pathPattern = getPathPattern(arena_tmp.allocator(), rt[i][1]);
+            const pathPattern = getPathPattern(arena_tmp.allocator(), rt[i][2]);
             const regex: Regex = Regex.init(pathPattern) catch unreachable;
             routesMatcher[i] = regex;
         }

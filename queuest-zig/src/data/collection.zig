@@ -2,7 +2,9 @@ const std = @import("std");
 const pg = @import("pg");
 const User = @import("user.zig").User;
 const Conn = pg.Conn;
-const getSoloEntity = @import("utils.zig").getSoloEntity;
+const utils = @import("utils.zig");
+const getSoloEntity = utils.getSoloEntity;
+const getList = utils.getList;
 
 const table_name = "collection_tbl";
 
@@ -23,13 +25,14 @@ pub const Collection = struct {
         var result = try conn.queryOpts("select * from " ++ table_name ++ " where user_id = $1", .{user_id}, .{ .column_names = true });
         defer result.deinit();
 
-        var array = std.ArrayList(Collection).init(allocator);
+        return getList(Collection, allocator, result);
+    }
 
-        while (try result.next()) |row| {
-            const collection = row.to(Collection, .{ .map = .name }) catch unreachable;
-            array.append(collection) catch unreachable;
-        }
-        return array;
+    pub fn findAllFavForUserId(conn: *Conn, allocator: std.mem.Allocator, user_id: i64) !std.ArrayList(Collection) {
+        var result = try conn.queryOpts("select * from " ++ table_name ++ " where user_id = $1 and favoutite_yn", .{user_id}, .{ .column_names = true });
+        defer result.deinit();
+
+        return getList(Collection, allocator, result);
     }
 
     pub fn findByIdAndUserId(conn: *Conn, id: i64, user_id: i64) !?Collection {

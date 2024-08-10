@@ -1,3 +1,4 @@
+const std = @import("std");
 const pg = @import("pg");
 const Result = pg.Result;
 
@@ -15,4 +16,15 @@ pub fn getSoloEntity(T: type, result: *Result) !?T {
         return error.NonSigleResult;
     }
     return e;
+}
+
+pub fn getList(T: type, allocator: std.mem.Allocator, result: *Result) !std.ArrayList(T) {
+    var array = std.ArrayList(T).init(allocator);
+
+    while (try result.next()) |row| {
+        const e = try row.to(T, .{ .map = .name });
+        try array.append(e);
+    }
+
+    return array;
 }
