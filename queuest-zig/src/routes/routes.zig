@@ -17,6 +17,7 @@ const Access = enum {
 
 const Path = struct {
     httpMethod: Method,
+    access: Access,
     path: [:0]const u8,
     methodType: type,
     method: ControllerRequest,
@@ -28,8 +29,8 @@ const rt = [_]struct { Method, Access, [:0]const u8, type, ControllerRequest }{
     .{ .GET, .Unauthorized, "/api/hello", struct {}, on_request_verbose },
     // -- Collections
     .{ .GET, .Authorized, "/collections", struct {}, collections.on_get_collections },
-    .{ .GET, .Authorized, "/collections/{collectionId}", struct { collectionId: i64 }, collections.on_get_collection },
     .{ .GET, .Authorized, "/collections/fav", struct {}, collections.on_get_fav_collections },
+    .{ .GET, .Authorized, "/collections/{collectionId}", struct { collectionId: i64 }, collections.on_get_collection },
     // POST /collections
     // POST /collections/fav/{collectionId}
     // POST /collections/visit/{collectionId}
@@ -49,6 +50,7 @@ const routes: [rt.len]Path = init_rts: {
     for (&initial, 0..) |*pt, i| {
         pt.* = Path{
             .httpMethod = rt[i][0],
+            .access = rt[i][1],
             .path = rt[i][2],
             .methodType = rt[i][3],
             .method = rt[i][4],
@@ -133,6 +135,7 @@ fn getRouteParams(comptime T: type, comptime path: []const u8, url: []const u8) 
         const valueEnd = std.mem.indexOfScalarPos(u8, url[0..], valueStart, '/') orelse url.len;
         const paramName = path[pos + 1 .. end];
         const paramValue = url[valueStart..valueEnd];
+        std.log.debug("parse int param value: {s}", .{paramValue});
         const value = std.fmt.parseInt(i64, paramValue, 10) catch unreachable;
         @field(result, paramName) = value;
         start = end;
@@ -155,6 +158,10 @@ pub fn dispatch_routes(a: std.mem.Allocator, r: zap.Request, c: *Context) void {
     if (r.path) |path| {
         inline for (routes, 0..) |route, i| {
             if (httpMethod == route.httpMethod and routesMatcher[i].matches(arena.allocator(), path) catch false) {
+                if (route.access == .Authorized and (c.auth == null or !c.auth.?.authenticated)) {
+                    r.sendError(error.Error, null, 401);
+                    return;
+                }
                 const params = getRouteParams(route.methodType, route.path, path);
                 route.method(a, r, c, params);
                 return;
@@ -166,21 +173,22 @@ pub fn dispatch_routes(a: std.mem.Allocator, r: zap.Request, c: *Context) void {
 
 const expect = std.testing.expect;
 
-// test "create and match path" {
-//     var gpa = std.heap.GeneralPurposeAllocator(.{
-//         .thread_safe = true,
-//     }){};
-//     const allocator = gpa.allocator();
-//
-//     const pathStr = "/api/hello/{id}/fav/{favid}";
-//     const path = createPath(allocator, pathStr, struct { id: i64, favid: i64 }, testApiFn);
-//     defer path.regex.deinit();
-//     const pathIn = [_]u8{ '/', 'a', 'p', 'i', '/', 'h', 'e', 'l', 'l', 'o', '/', '1', '/', 'f', 'a', 'v', '/', '5', '0', '/' };
-//     const t = try path.regex.matches(std.heap.page_allocator, pathIn[0..19]);
-//     const f = try path.regex.matches(std.heap.page_allocator, pathIn[0..]);
-//     try expect(t);
-//     try expect(!f);
-// }
+test "create and match path" {
+    var gpa = std.heap.GeneralPurposeAllocator(.{
+        .thread_safe = true,
+    }){};
+    const allocator = gpa.allocator();
+
+    const pathStr = "/api/hello/{id}/fav/{favid}";
+    const pathPattern = getPathPattern(allocator, pathStr);
+    const regex: Regex = Regex.init(pathPattern) catch unreachable;
+    defer regex.deinit();
+    const pathIn = [_]u8{ '/', 'a', 'p', 'i', '/', 'h', 'e', 'l', 'l', 'o', '/', '1', '/', 'f', 'a', 'v', '/', '5', '0', '/' };
+    const t = try regex.matches(std.heap.page_allocator, pathIn[0..19]);
+    const f = try regex.matches(std.heap.page_allocator, pathIn[0..]);
+    try expect(t);
+    try expect(!f);
+}
 
 test "test" {
     const path = "/api/hello/{id}/fav/{favId}/{i}";

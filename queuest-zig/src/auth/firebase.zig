@@ -215,7 +215,7 @@ test "loading google" {
     try reloadPublicKeys(allocator);
     var cert_found = false;
     for (goole_keys) |pk| {
-        if (mem.eql(u8, &pk.key, "0cb42742ae58f4da467bcdaea4b95a29fba0c5f9")) {
+        if (mem.eql(u8, &pk.key, "ce371730ef86eba29a5212d9b96f3675504f62bc")) {
             const parsed_cert = try Certificate.parse(.{
                 .buffer = pk.certificate[0..],
                 .index = 0,

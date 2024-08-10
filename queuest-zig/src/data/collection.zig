@@ -29,7 +29,7 @@ pub const Collection = struct {
     }
 
     pub fn findAllFavForUserId(conn: *Conn, allocator: std.mem.Allocator, user_id: i64) !std.ArrayList(Collection) {
-        var result = try conn.queryOpts("select * from " ++ table_name ++ " where user_id = $1 and favoutite_yn", .{user_id}, .{ .column_names = true });
+        var result = try conn.queryOpts("select * from " ++ table_name ++ " where user_id = $1 and favourite_yn", .{user_id}, .{ .column_names = true });
         defer result.deinit();
 
         return getList(Collection, allocator, result);
