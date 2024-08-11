@@ -127,4 +127,28 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run unit tests");
     // test_step.dependOn(&run_lib_unit_tests.step);
     test_step.dependOn(&run_exe_unit_tests.step);
+
+    // ---
+    // --- Debug informations step
+    const exe_debug_step = b.addExecutable(.{
+        .name = "queuest-zig-debug-info",
+        .root_source_file = b.path("src/type-check.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    exe_debug_step.linkLibrary(libC);
+    exe_debug_step.addIncludePath(b.path("c-src"));
+    exe_debug_step.linkLibC();
+    exe_debug_step.root_module.addImport("zap", zap.module("zap"));
+    // exe_debug_step.linkLibrary(zap.artifact("facil.io"));
+    exe_debug_step.root_module.addImport("pg", pg.module("pg"));
+
+    const run_exe_debug_step = b.addRunArtifact(exe_debug_step);
+
+    // Similar to creating the run step earlier, this exposes a `test` step to
+    // the `zig build --help` menu, providing a way for the user to request
+    // running the unit tests.
+    const debug_step = b.step("debug", "Run debug info");
+    // test_step.dependOn(&run_lib_unit_tests.step);
+    debug_step.dependOn(&run_exe_debug_step.step);
 }

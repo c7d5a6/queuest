@@ -15,12 +15,12 @@ const Access = enum {
     Authorized,
 };
 
-const Path = struct {
+pub const Path = struct {
+    path: [:0]const u8,
+    method: ControllerRequest,
     httpMethod: Method,
     access: Access,
-    path: [:0]const u8,
     methodType: type,
-    method: ControllerRequest,
 };
 //
 // --- Paths of REST methods
