@@ -5,6 +5,7 @@ const pg = @import("pg");
 const Pool = pg.Pool;
 const contextLib = @import("context.zig");
 const Context = contextLib.Context;
+const ci = @import("../data/item.zig").CollectionItem;
 
 const Handler = zap.Middleware.Handler(Context);
 
@@ -15,6 +16,14 @@ pub const TransactionMiddleware = struct {
     const Self = @This();
 
     pub fn init(other: ?*Handler, allocator: Allocator, pool: *Pool) Self {
+        var conn = pool.acquire() catch |err| {
+            std.log.debug("Error in pool creation {}", .{err});
+            unreachable;
+        };
+        defer conn.release();
+
+        _ = ci.findAllForCollectionId(conn, allocator, 1) catch unreachable;
+
         return .{
             .handler = Handler.init(onRequest, other),
             .allocator = allocator,
