@@ -3,6 +3,7 @@ const zap = @import("zap");
 const Method = zap.Method;
 const Context = @import("../middle/context.zig").Context;
 const collections = @import("../services/collections.zig");
+const items = @import("../services/items.zig");
 const Regex = @import("matcher.zig").Regex;
 
 pub const ControllerRequest = *const fn (std.mem.Allocator, zap.Request, *Context, anytype) void;
@@ -36,7 +37,7 @@ const rt = [_]struct { Method, Access, [:0]const u8, type, ControllerRequest }{
     // POST /collections/visit/{collectionId}
     // DELETE /collections/fav/{collectionId}
     // -- Items
-    // GET /collections/{collectionId}/items
+    .{ .GET, .Authorized, "/collections/{collectionId}/items", struct { collectionId: i64 }, items.on_get_items },
     // GET /collections/{collectionId}/items/least-calibrated
     // GET /collections/{collectionId}/items/{id}/bestpair/{strict}
     // POST /collections/{collectionId}/items
