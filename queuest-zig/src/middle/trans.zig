@@ -22,7 +22,8 @@ pub const TransactionMiddleware = struct {
         };
         defer conn.release();
 
-        _ = ci.findAllForCollectionId(conn, allocator, 1) catch unreachable;
+        const items = ci.findAllForCollectionId(conn, allocator, 1) catch unreachable;
+        std.debug.print("Items: {any}", .{items.items});
 
         return .{
             .handler = Handler.init(onRequest, other),

@@ -7,9 +7,25 @@ const getSoloEntity = utils.getSoloEntity;
 const getList = utils.getList;
 
 const table_name = "collection_item_tbl";
+
 const ItemType = enum {
-    ITEM,
-    COLLECTION,
+    item,
+    collection,
+};
+
+const Item = struct {
+    id: i64,
+    name: []const u8,
+};
+
+const Collection = struct {
+    id: i64,
+    name: []const u8,
+};
+
+const InnerItem = union(ItemType) {
+    item: Item,
+    collection: Collection,
 };
 
 // id                    | bigint                   |           | not null | nextval('pk_sequence'::regclass) | plain   |             |              |
@@ -22,32 +38,48 @@ const ItemType = enum {
 pub const CollectionItem = struct {
     id: i64,
     collection_id: i64,
-    // type: ItemType,
-    item_id: ?i64 = null,
-    collection_subitem_id: ?i64 = null,
-    name: []const u8 = "0",
+    inner: InnerItem,
 
     fn toCollectionItem(row: pg.Row) !CollectionItem {
-        return try row.to(CollectionItem, .{ .map = .name });
+        var value: CollectionItem = undefined;
+        // return try row.to(CollectionItem, .{ .map = .name });
+        @field(value, "id") = row.getCol(i64, "id");
+        @field(value, "collection_id") = row.getCol(i64, "collection_id");
+        const typeStr = row.getCol([]const u8, "type");
+        const TypeStr = enum { ITEM, COLLECTION };
+        const tp = std.meta.stringToEnum(TypeStr, typeStr) orelse unreachable;
+        const inner = switch (tp) {
+            .ITEM => InnerItem{ .item = Item{
+                .id = row.getCol(i64, "item_id"),
+                .name = row.getCol([]const u8, "item_name"),
+            } },
+            .COLLECTION => InnerItem{ .collection = Collection{
+                .id = row.getCol(i64, "collection_subitem_id"),
+                .name = row.getCol([]const u8, "col_name"),
+            } },
+        };
+        @field(value, "inner") = inner;
+
+        return value;
     }
-    pub fn findAllForCollectionId(conn: *Conn, allocator: std.mem.Allocator, collection_id: i64) !?(CollectionItem) {
-        _ = collection_id;
-        var result = try conn.queryOpts("select ci.*,i.name from " ++ table_name ++ " as ci left join item_tbl as i on ci.item_id = i.id ", .{}, .{ .column_names = true });
+
+    pub fn findAllForCollectionId(conn: *Conn, allocator: std.mem.Allocator, collection_id: i64) !std.ArrayList(CollectionItem) {
+        var result = try conn.queryOpts(
+            \\select ci.*,it.name as item_name,cl.name as col_name  
+            \\ from collection_item_tbl as ci
+            \\ left join item_tbl as it on ci.item_id = it.id 
+            \\ left join collection_tbl as cl on ci.collection_subitem_id = cl.id
+            \\   where collection_id = $1
+        , .{collection_id}, .{ .column_names = true });
         defer result.deinit();
 
-        _ = allocator;
+        var array = std.ArrayList(CollectionItem).init(allocator);
 
-        var e: ?CollectionItem = null;
-
-        if (try result.next()) |row| {
-            for (row._result.column_names) |c_name| {
-                std.debug.print("\n\t{s}", .{c_name});
-            }
-            std.debug.print("\nCollectionItem {any}\n", .{row});
-            e = try toCollectionItem(row);
-            std.debug.print("\nCollectionItem {any}\n", .{e});
-            // e = try row.to(T, .{ .map = .name });
+        while (try result.next()) |row| {
+            const e = try toCollectionItem(row);
+            try array.append(e);
         }
-        return e;
+
+        return array;
     }
 };
