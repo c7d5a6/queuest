@@ -4,8 +4,9 @@ const zap = @import("zap");
 const Request = zap.Request;
 const Context = @import("../middle/context.zig").Context;
 const Item = @import("../data/item.zig").CollectionItem;
+const ControllerError = @import("../routes/router-errors.zig").ControllerError;
 
-pub fn on_get_items(a: Allocator, r: Request, c: *Context, params: anytype) void {
+pub fn on_get_items(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
     const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch unreachable;
     const It = struct { id: i64, name: []const u8 };

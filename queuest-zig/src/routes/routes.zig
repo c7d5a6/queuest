@@ -5,8 +5,9 @@ const Context = @import("../middle/context.zig").Context;
 const collections = @import("../services/collections.zig");
 const items = @import("../services/items.zig");
 const Regex = @import("matcher.zig").Regex;
+const ControllerError = @import("router-errors.zig").ControllerError;
 
-pub const ControllerRequest = *const fn (std.mem.Allocator, zap.Request, *Context, anytype) void;
+pub const ControllerRequest = *const fn (std.mem.Allocator, zap.Request, *Context, anytype) ControllerError!void;
 pub const DispatchRoutes = *const fn (std.mem.Allocator, zap.Request, *Context) void;
 
 var arena: std.heap.ArenaAllocator = undefined;
@@ -146,7 +147,7 @@ fn getRouteParams(comptime T: type, comptime path: []const u8, url: []const u8) 
     return result;
 }
 
-fn on_request_verbose(a: std.mem.Allocator, r: zap.Request, c: *Context, params: anytype) void {
+fn on_request_verbose(a: std.mem.Allocator, r: zap.Request, c: *Context, params: anytype) ControllerError!void {
     _ = c;
     _ = params;
     _ = a;
@@ -164,7 +165,9 @@ pub fn dispatch_routes(a: std.mem.Allocator, r: zap.Request, c: *Context) void {
                     return;
                 }
                 const params = getRouteParams(route.methodType, route.path, path);
-                route.method(a, r, c, params);
+                route.method(a, r, c, params) catch |err| {
+                    r.sendError(err, null, 500);
+                };
                 return;
             }
         }
