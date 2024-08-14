@@ -16,15 +16,6 @@ pub const TransactionMiddleware = struct {
     const Self = @This();
 
     pub fn init(other: ?*Handler, allocator: Allocator, pool: *Pool) Self {
-        var conn = pool.acquire() catch |err| {
-            std.log.debug("Error in pool creation {}", .{err});
-            unreachable;
-        };
-        defer conn.release();
-
-        const items = ci.findAllForCollectionId(conn, allocator, 1) catch unreachable;
-        std.debug.print("Items: {any}", .{items.items});
-
         return .{
             .handler = Handler.init(onRequest, other),
             .allocator = allocator,
