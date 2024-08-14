@@ -11,12 +11,15 @@ const str = struct {
     two: u2,
 };
 
-const strP = packed struct {
+const strP = struct {
     // name: [2:0]u8,
-    a1: u8,
-    a2: u8,
-    yn: bool,
-    two: u2,
+    i: i64,
+    u: un,
+};
+
+const un = union {
+    i: i64,
+    u: u64,
 };
 
 fn getTypesInfo(T: type, pdn: comptime_int) !void {
@@ -52,6 +55,7 @@ fn printTypes() !void {
     try getTypesInfo(routes.Path, 0);
     try getTypesInfo(coll, 0);
     try getTypesInfo(usr, 0);
+    try getTypesInfo(strP, 0);
 
     // std.debug.print("\nTypes:\n{s}\n", .{list.items});
 }
