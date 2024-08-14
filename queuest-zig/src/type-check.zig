@@ -1,6 +1,7 @@
 const std = @import("std");
 const routes = @import("./routes/routes.zig");
 const coll = @import("./data/collection.zig").Collection;
+const Item = @import("./data/item.zig").CollectionItem;
 const usr = @import("./data/user.zig").User;
 
 const str = struct {
@@ -30,17 +31,31 @@ fn getTypesInfo(T: type, pdn: comptime_int) !void {
     std.debug.print(("\t" ** pdn) ++ "  align: {d}\n", .{@alignOf(T) * 8});
     // try std.debug.print(("\t" ** pdn) ++ "  align: {d}\n", .{@bitOffsetOf(T)});
     const info = @typeInfo(T);
-    if (info == .Struct) {
-        const fileds = std.meta.fields(T);
-        std.debug.print(("\t" ** pdn) ++ "  fields:\n", .{});
-        inline for (fileds) |field| {
-            std.debug.print(("\t" ** pdn) ++ "    {s}: {s}\n", .{ field.name, @typeName(field.type) });
-            std.debug.print(("\t" ** pdn) ++ "      off {d} align {d}\n", .{ @bitOffsetOf(T, field.name), field.alignment * 8 });
-        }
-        std.debug.print("\n", .{});
-        inline for (fileds) |field| {
-            try getTypesInfo(field.type, pdn + 1);
-        }
+    switch (info) {
+        .Struct => {
+            const fileds = std.meta.fields(T);
+            std.debug.print(("\t" ** pdn) ++ "  fields:\n", .{});
+            inline for (fileds) |field| {
+                std.debug.print(("\t" ** pdn) ++ "    {s}: {s}\n", .{ field.name, @typeName(field.type) });
+                std.debug.print(("\t" ** pdn) ++ "      off {d} align {d}\n", .{ @bitOffsetOf(T, field.name), field.alignment * 8 });
+            }
+            std.debug.print("\n", .{});
+            inline for (fileds) |field| {
+                try getTypesInfo(field.type, pdn + 1);
+            }
+        },
+        .Union => {
+            const fileds = std.meta.fields(T);
+            std.debug.print(("\t" ** pdn) ++ "  fields:\n", .{});
+            inline for (fileds) |field| {
+                std.debug.print(("\t" ** pdn) ++ "    {s}: {s}\n", .{ field.name, @typeName(field.type) });
+            }
+            std.debug.print("\n", .{});
+            inline for (fileds) |field| {
+                try getTypesInfo(field.type, pdn + 1);
+            }
+        },
+        else => {},
     }
 }
 
@@ -52,10 +67,10 @@ fn printTypes() !void {
 
     // try getTypesInfo([2]str, 0);
     // try getTypesInfo([2]strP, 0);
-    try getTypesInfo(routes.Path, 0);
-    try getTypesInfo(coll, 0);
-    try getTypesInfo(usr, 0);
-    try getTypesInfo(strP, 0);
+    // try getTypesInfo(routes.Path, 0);
+    // try getTypesInfo(coll, 0);
+    // try getTypesInfo(usr, 0);
+    try getTypesInfo(Item, 0);
 
     // std.debug.print("\nTypes:\n{s}\n", .{list.items});
 }
