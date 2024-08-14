@@ -3,6 +3,7 @@ const pg = @import("pg");
 const User = @import("user.zig").User;
 const Conn = pg.Conn;
 const utils = @import("utils.zig");
+const Id = utils.Id;
 const getSoloEntity = utils.getSoloEntity;
 const getList = utils.getList;
 
@@ -40,5 +41,14 @@ pub const Collection = struct {
         defer result.deinit();
 
         return getSoloEntity(Collection, result);
+    }
+
+    pub fn insertCollection(conn: *Conn, user_id: i64, name: []const u8) !?Id {
+        var result = try conn.queryOpts(
+            \\insert into collection_tbl(user_id, name) values ($1, $2) returning id
+        , .{ user_id, name }, .{ .column_names = true });
+        defer result.deinit();
+
+        return getSoloEntity(Id, result);
     }
 };

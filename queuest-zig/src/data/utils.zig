@@ -6,6 +6,10 @@ const DBError = error{
     NonSigleResult,
 };
 
+pub const Id = struct {
+    id: i64,
+};
+
 pub fn getSoloEntity(T: type, result: *Result) !?T {
     var e: ?T = null;
 

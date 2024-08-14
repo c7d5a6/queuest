@@ -33,7 +33,7 @@ const rt = [_]struct { Method, Access, [:0]const u8, type, ControllerRequest }{
     .{ .GET, .Authorized, "/collections", struct {}, collections.on_get_collections },
     .{ .GET, .Authorized, "/collections/fav", struct {}, collections.on_get_fav_collections },
     .{ .GET, .Authorized, "/collections/{collectionId}", struct { collectionId: i64 }, collections.on_get_collection },
-    // POST /collections
+    .{ .POST, .Authorized, "/collections", struct {}, collections.on_post_collection },
     // POST /collections/fav/{collectionId}
     // POST /collections/visit/{collectionId}
     // DELETE /collections/fav/{collectionId}

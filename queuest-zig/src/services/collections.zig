@@ -31,3 +31,17 @@ pub fn on_get_collection(a: Allocator, r: Request, c: *Context, params: anytype)
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
 }
+
+pub fn on_post_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
+    _ = params;
+    r.parseBody() catch return error.InternalError;
+    const body = r.body orelse return error.InternalError;
+
+    const CollectionCreate = struct { name: []const u8, favourite: bool };
+    const create = std.json.parseFromSlice(CollectionCreate, a, body, .{}) catch return error.InternalError;
+
+    const id = Collection.insertCollection(c.connection.?, c.user.?.id, create.value.name) catch unreachable orelse unreachable;
+    const json = std.json.stringifyAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+    r.setContentType(.JSON) catch return;
+    r.sendJson(json) catch return;
+}
