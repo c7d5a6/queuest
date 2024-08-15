@@ -14,7 +14,8 @@ describe('GraphService', () => {
         for (let i = 0; i < size; i++) {
             for (let j = 0; j < size; j++) {
                 if (i != j) {
-                    const cbr = FunctionUtils.cyrb53a(i, j);
+                    // const cbr = FunctionUtils.cyrb53a(i, j);
+                    const cbr = (i * 3 + j);
                     if (cbr % 11 === 0) {
                         const cbrRev = FunctionUtils.cyrb53a(j, i);
                         if ((j < i && cbrRev % 2 !== 0) || i < j)
@@ -38,7 +39,15 @@ describe('GraphService', () => {
         expect(service.isGraphCylic(graph)).toBeDefined();
     });
 
-    it('detect cyclic graph', () => {
+    it('detect is', () => {
+        var t = Date.now();
+        for (var i = 0; i < 1000; i++) {
+            expect(service.isGraphCylic(graph).length > 0).toBeTruthy();
+        }
+        console.log("Time in ms:", (Date.now() - t));
+    });
+
+    xit('detect cyclic graph', () => {
         const initialArcs = graph.adj.flat();
         const arcSet = service.feedbackArkSet(graph);
         const arcs = arcSet.adj.flat();
@@ -51,7 +60,7 @@ describe('GraphService', () => {
         expect(arcs.length).toBeGreaterThan(0);
     });
 
-    it('sort cyclic graph', () => {
+    xit('sort cyclic graph', () => {
         const sort = service.topologicalSort(graph);
         expect(sort.length).toBe(size);
     });

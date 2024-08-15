@@ -5,7 +5,7 @@ const gsize = usize;
 pub const Graph = struct {
     size: gsize,
     edges_size: usize,
-    edges: []const std.ArrayListUnmanaged(gsize),
+    edges: []std.ArrayListUnmanaged(gsize),
     a: std.mem.Allocator,
 
     pub fn init(a: std.mem.Allocator, size: gsize) Graph {
@@ -31,34 +31,35 @@ pub const Graph = struct {
 
     pub fn addEdge(self: *Graph, f: gsize, t: gsize) void {
         self.edges_size += 1;
-        try self.edges[f].append(self.a, t);
+        self.edges[f].append(self.a, t) catch unreachable;
     }
 
     pub fn isCyclic(self: *const Graph) !bool {
         const a = self.a;
         const visited: []bool = try a.alloc(bool, self.size);
         @memset(visited, false);
-        const stack = try std.ArrayListUnmanaged(gsize).initCapacity(a, self.size + self.edges_size);
+        var stack = try std.ArrayListUnmanaged(gsize).initCapacity(a, self.size + self.edges_size);
+        const in_stack: []bool = try a.alloc(bool, self.size);
+        @memset(in_stack, false);
         for (0..self.size) |i| {
-            if (!visited[i]) stack.append(i);
+            if (!visited[i]) try stack.append(a, i);
             while (stack.getLastOrNull()) |v| {
-                if (visited[i]) continue;
-                visited[v] = true;
+                in_stack[v] = true;
+                var added = false;
                 for (self.edges[v].items) |w| {
-                    stack.append(w);
+                    if (in_stack[w]) return true;
+                    if (!visited[w]) {
+                        try stack.append(a, w);
+                        added = true;
+                    }
+                }
+                if (!added) {
+                    const vv = stack.pop();
+                    in_stack[vv] = false;
+                    visited[vv] = true;
                 }
             }
-
-            // if (cyclic) return true;
         }
-        return false;
-    }
-
-    fn _isCyclic(self: *const Graph, i: usize, visited: []bool, r_stack: []bool) !bool {
-        _ = self;
-        _ = r_stack;
-        // if(!visited.*.[i])
-        visited[i] = true;
         return false;
     }
 };
@@ -75,4 +76,56 @@ test "create graph" {
     try expect(g.edges.len == 10);
     // (log2 10 = 3.3) + 2 = 5
     try expect(g.edges[0].capacity == 5);
+}
+
+test "is cyclic" {
+    var gpa = std.heap.GeneralPurposeAllocator(.{
+        .thread_safe = true,
+    }){};
+    const a = gpa.allocator();
+    var g: Graph = Graph.init(a, 9);
+
+    g.addEdge(1, 2);
+    g.addEdge(1, 5);
+    g.addEdge(1, 8);
+    g.addEdge(2, 3);
+    g.addEdge(3, 4);
+    // g.addEdge(4, 2);
+    g.addEdge(5, 6);
+    g.addEdge(6, 3);
+    g.addEdge(6, 7);
+    g.addEdge(6, 8);
+
+    try expect(g.edges.len == 9);
+    try expect(try g.isCyclic() == false);
+
+    g.addEdge(4, 2);
+    try expect(try g.isCyclic() == true);
+}
+
+test "cyclic 500" {
+    // var gpa = std.heap.GeneralPurposeAllocator(.{
+    //     .thread_safe = true,
+    // }){};
+    // const a = gpa.allocator();
+    const a = std.heap.c_allocator;
+    const size = 500;
+    const mil = std.time.microTimestamp();
+    var g: Graph = Graph.init(a, size);
+
+    for (0..size) |i| {
+        for (0..size) |j| {
+            if ((i * 3 + j) % 11 == 0) {
+                g.addEdge(i, j);
+            }
+        }
+    }
+    std.debug.print("\nTime to init: {d}\n", .{std.time.microTimestamp() - mil});
+
+    const mili = std.time.microTimestamp();
+    for (0..1000) |i| {
+        _ = i;
+        try expect(try g.isCyclic() == true);
+    }
+    std.debug.print("\nTime cyclic: {d}\n", .{std.time.microTimestamp() - mili});
 }
