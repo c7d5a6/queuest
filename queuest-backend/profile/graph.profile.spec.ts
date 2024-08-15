@@ -15,7 +15,7 @@ describe('GraphService', () => {
             for (let j = 0; j < size; j++) {
                 if (i != j) {
                     const cbr = FunctionUtils.cyrb53a(i, j);
-                    if (cbr % 2 === 0) {
+                    if (cbr % 11 === 0) {
                         const cbrRev = FunctionUtils.cyrb53a(j, i);
                         if ((j < i && cbrRev % 2 !== 0) || i < j)
                             graph.addEdge(i, j);

@@ -94,10 +94,15 @@ pub fn main() !void {
 }
 
 const expect = std.testing.expect;
+const g = @import("services/graph.zig");
 
 test {
     std.testing.refAllDeclsRecursive(@This());
     // or refAllDeclsRecursive
+}
+
+test "graph" {
+    _ = g.Graph;
 }
 
 test "always true" {
