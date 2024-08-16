@@ -1,4 +1,5 @@
-<a [routerLink]="['collection', collection.id]">
+<a (mousedown)="navigate(collection.id)" [routerLink]="['collection', collection.id]">
+<a (mousedown)="navigate(collection.id)">
   <div class="card">
     <div class="card-content">
       <div class="truncate"><b>{{collection.name}}</b></div>

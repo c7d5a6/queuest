@@ -14,12 +14,6 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { CalibrateItemComponent } from './components/calibrate-item/calibrate-item.component';
 import { CalibrateCollectionComponent } from './components/calibrate-collection/calibrate-collection.component';
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
-import {
-    getAnalytics,
-    provideAnalytics,
-    ScreenTrackingService,
-    UserTrackingService,
-} from '@angular/fire/analytics';
 import { getAuth, provideAuth } from '@angular/fire/auth';
 import { FireAuthService } from './services/fire-auth.service';
 import { FirebaseAuthInterceptor } from './interceptors/firebase-auth.interceptor';
@@ -64,7 +58,6 @@ import { TestPageComponent } from './pages/test-page/test-page.component';
             console.log('*********MODULE*********', environment.firebase);
             return initializeApp(environment.firebase);
         }),
-        provideAnalytics(() => getAnalytics()),
         provideAuth(() => getAuth()),
     ],
     providers: [
@@ -74,8 +67,6 @@ import { TestPageComponent } from './pages/test-page/test-page.component';
             useClass: FirebaseAuthInterceptor,
             multi: true,
         },
-        ScreenTrackingService,
-        UserTrackingService,
     ],
     bootstrap: [AppComponent],
 })

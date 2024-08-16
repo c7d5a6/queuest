@@ -18,7 +18,8 @@
 <div *ngIf="showFavourite && favCollections" class="collections-with-header">
   <div class="heading"><span class="text-heading">Favorites</span></div>
   <div class="collections-lines">
-    <a *ngFor="let collection of favCollections;" [routerLink]="['collection', collection.id]" class="card">
+    <!-- <a *ngFor="let collection of favCollections;" [routerLink]="['collection', collection.id]" class="card"> -->
+    <a *ngFor="let collection of favCollections;" (mousedown)="navigate(collection.id)" class="card">
       <div class="card-content">{{collection.name}}</div>
     </a>
   </div>

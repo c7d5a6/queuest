@@ -3,6 +3,7 @@ import {Collection} from '../../../api/models/collection';
 import {ItemsService} from "../../../api/services/items.service";
 import {Item} from "../../../api/models/item";
 import {CollectionsService} from "../../../api/services/collections.service";
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-collection-card',
@@ -14,7 +15,14 @@ export class CollectionCardComponent implements OnInit {
   @Input() collection!: Collection;
   items: Item[] = [];
 
-  constructor(private itemsService: ItemsService, ) {
+  constructor(
+    private itemsService: ItemsService,
+    private router: Router
+  ) {
+  }
+
+  navigate(collectionId: number | undefined): void {
+    this.router.navigate(['collection', collectionId]);
   }
 
   ngOnInit(): void {

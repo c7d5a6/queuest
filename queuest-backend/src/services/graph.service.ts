@@ -1,55 +1,9 @@
-import { Logger, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Graph } from '../models/graph';
 import cloneDeep from 'lodash.clonedeep';
 
 @Injectable()
 export class GraphService {
-    private readonly logger = new Logger(GraphService.name);
-
-    isGraphCylicx(g: Graph): number[] {
-        const q: number[] = [];
-        const map = new Map<number, number>();
-        const stack = new Set<number>();
-        const visited = new Set<number>();
-        let k = 0;
-        this.logger.log('start bfs', JSON.stringify(g));
-        while (visited.size < g.size) {
-            if (!visited.has(k)) {
-                q.push(k);
-                stack.add(k);
-            }
-            k++;
-            while (q.length != 0) {
-                const u = q[0];
-                q.shift();
-                visited.add(u);
-                stack.delete(u);
-                this.logger.log('step', u);
-                for (let i = 0; i < g.adj[u].length; i++) {
-                    const next = g.adj[u][i];
-                    this.logger.log('next', next);
-                    if (visited.has(next)) {
-                        this.logger.log('visited', next);
-                        const result: number[] = [];
-                        result.push(next);
-                        result.push(u);
-                        let n: number = u;
-                        while (map.has(n) && map.get(n) != next) {
-                            n = <number>map.get(n);
-                            result.push(n);
-                        }
-                        result.push(next);
-                        return result.reverse();
-                    } else if (!stack.has(next)) {
-                        q.push(next);
-                        stack.add(next);
-                        map.set(next, u);
-                    }
-                }
-            }
-        }
-        return [];
-    }
 
     isGraphCylic(g: Graph): number[] {
         const visited: boolean[] = new Array<boolean>(g.size);
