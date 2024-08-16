@@ -1,0 +1,23 @@
+Time for 1 size times 100000000 in ms: 0
+Time for 2 size times 6250000 in ms: 0
+Time for 4 size times 390625 in ms: 54_558
+Time for 8 size times 24414.0625 in ms: 10_484
+Time for 16 size times 1525.87890625 in ms: 1_493 
+Time for 32 size times 95.367431640625 in ms: 224
+Time for 64 size times 5.9604644775390625 in ms: 260
+Time for 128 size times 0.3725290298461914 in ms: 1_951
+Time for 256 size times 0.023283064365386963 in ms: 15_442
+Time for 512 size times 0.0014551915228366852 in ms: 124_896
+Time for 1024 size times 0.00009094947017729282 in ms: 1_005_053
+
+for 2 size times 6250000 in ms: 0
+for 4 size times 390625 in ms: 288.856
+for 8 size times 24414 in ms: 65.077
+for 16 size times 1525 in ms: 13.529
+for 32 size times 95 in ms: 3.658
+for 64 size times 5 in ms: 3.460
+for 128 size times 0 in ms: 20.471
+for 256 size times 0 in ms: 164.655
+for 512 size times 0 in ms: 1_349.431
+for 1024 size times 0 in ms: 10_775.043
+
