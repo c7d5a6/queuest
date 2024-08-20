@@ -90,33 +90,40 @@ pub const Graph = struct {
     }
 
     fn feedbackArk(self: *const Graph) !Graph {
-        var weight = undefined;
+        var weight: []?std.AutoHashMapUnmanaged(gsize, isize) = undefined;
+        weight = try self.a.alloc(std.AutoHashMapUnmanaged(gsize, isize), self.size);
         var g: Graph = undefined; // Clone deep;
-        var feedback: Graph = undefined;
+        var feedback: Graph = Graph.init(self.a, self.size);
 
-        while (try self.getCycle()) |cycle| {
+        while (try g.getCycle()) |cycle| {
             var e: ?gsize = null;
             for (0..cycle.len - 1) |i| {
-                const a = cycle[i];
-                const b = cycle[i + 1];
-                // ini(weight[a])
-                // init(weight[a][b]) with (graph.size + 1 - graph.adj[a].length)
-                if (e == null or w[a][b] < e.?)
-                    e = w[a][b];
+                const f = cycle[i];
+                const t = cycle[i + 1];
+                if (weight[f] == null)
+                    weight[f] = std.AutoHashMapUnmanaged(gsize, isize).init(self.a);
+                if (weight[f].?.get(t) == null) {
+                    weight[f].?.put(t, self.size + 1 - self.edges[f].items.len);
+                }
+                if (weight[f].?.get(t)) |w| {
+                    if (e == null or w < e.?)
+                        e = w;
+                }
             }
             if (e == null) e = 0;
             for (0..cycle.len - 1) |i| {
-                const a = cycle[i];
-                const b = cycle[i + 1];
-                w[a][b] = w[a][b] - e;
-                if (w[a][b] <= 0) {
-                    g.removeEdge(a, b);
-                    feedback.addEdge(a, b);
+                const f = cycle[i];
+                const t = cycle[i + 1];
+                if (weight[f].?.get(t)) |w| {
+                    const nw = w - e;
+                    weight[f].?.put(t, nw);
+                    if (nw <= 0) {
+                        g.removeEdge(f, t);
+                        feedback.addEdge(f, t);
+                    }
                 }
             }
         }
-
-
     }
 };
 
