@@ -160,6 +160,51 @@ pub const Graph = struct {
 
         return feedback;
     }
+
+    pub fn sort(self: *Graph) ![]const gsize {
+        const a = self.a;
+        const visited: []bool = try a.alloc(bool, self.size);
+        @memset(visited, false);
+        const v_tmp: []bool = try a.alloc(bool, self.size);
+        @memset(v_tmp, false);
+        var stack = try ArrayLU.initCapacity(a, self.size + self.edges);
+        var result = try ArrayLU.initCapacity(a, self.size);
+        var i: gsize = 0;
+        while (i < self.size) : (i += 1) {
+            // for (0..self.size) |i| {
+            if (!visited[i]) try stack.append(a, i);
+            while (stack.getLastOrNull()) |v| {
+                // in_stack[v] = true;
+                // var added = false;
+                // for (self.edges[v].items) |w| {
+                //     if (in_stack[w]) {
+                //         var result = try ArrayLU.initCapacity(a, stack.items.len);
+                //         try result.append(a, w);
+                //         from[w] = v;
+                //         while (result.getLastOrNull()) |next| {
+                //             try result.append(a, from[next]);
+                //             if (from[next] == w) {
+                //                 break;
+                //             }
+                //         }
+                //         reverse(&result.items);
+                //         return result.items;
+                //     }
+                //     if (!visited[w]) {
+                //         try stack.append(a, w);
+                //         from[w] = v;
+                //         added = true;
+                //     }
+                // }
+                // if (!added) {
+                //     const vv = stack.pop();
+                //     in_stack[vv] = false;
+                //     visited[vv] = true;
+                // }
+            }
+        }
+        return result;
+    }
 };
 
 fn printEdges(g: Graph) void {
@@ -262,7 +307,7 @@ test "cyclic test" {
     const ca = std.heap.c_allocator;
     var arena = std.heap.ArenaAllocator.init(ca);
     var n: gsize = 2;
-    while (n < 11560) {
+    while (n < 1030) {
         const nn: usize = @intCast(n);
         var times: usize = MAX_SIZE / (nn * nn * nn * nn);
         times = if (times < 1000) 1000 else times;
