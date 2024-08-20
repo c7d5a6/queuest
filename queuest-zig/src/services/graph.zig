@@ -35,6 +35,24 @@ pub const Graph = struct {
         self.edges[f].append(self.a, t) catch unreachable;
     }
 
+    pub fn removeEdge(self: *Graph, f: gsize, t: gsize) void {
+        for (self.edges[f].items, 0..) |to, i| {
+            if (to == t) {
+                _ = self.edges[f].swapRemove(i);
+                self.edges_size -= 1;
+                return;
+            }
+        }
+    }
+
+    pub fn clone(self: *const Graph, a: std.mem.Allocator) !Graph {
+        var g: Graph = Graph.init(a, self.size);
+        for (0..self.size) |i| {
+            g.edges[i] = try self.edges[i].clone(a);
+        }
+        return g;
+    }
+
     fn reverse(items: *[]gsize) void {
         var tmp: gsize = undefined;
         for (0..items.*.len / 2) |i| {
@@ -90,9 +108,9 @@ pub const Graph = struct {
     }
 
     fn feedbackArk(self: *const Graph) !Graph {
-        var weight: []?std.AutoHashMapUnmanaged(gsize, isize) = undefined;
-        weight = try self.a.alloc(std.AutoHashMapUnmanaged(gsize, isize), self.size);
-        var g: Graph = undefined; // Clone deep;
+        var weight: []?std.AutoHashMap(gsize, isize) = undefined;
+        weight = try self.a.alloc(?std.AutoHashMap(gsize, isize), self.size);
+        var g: Graph = try self.clone(self.a); // Clone deep;
         var feedback: Graph = Graph.init(self.a, self.size);
 
         while (try g.getCycle()) |cycle| {
@@ -101,13 +119,13 @@ pub const Graph = struct {
                 const f = cycle[i];
                 const t = cycle[i + 1];
                 if (weight[f] == null)
-                    weight[f] = std.AutoHashMapUnmanaged(gsize, isize).init(self.a);
+                    weight[f] = std.AutoHashMap(gsize, isize).init(self.a);
                 if (weight[f].?.get(t) == null) {
-                    weight[f].?.put(t, self.size + 1 - self.edges[f].items.len);
+                    try weight[f].?.put(t, @intCast(self.size + 1 - self.edges[f].items.len));
                 }
                 if (weight[f].?.get(t)) |w| {
                     if (e == null or w < e.?)
-                        e = w;
+                        e = @intCast(w);
                 }
             }
             if (e == null) e = 0;
@@ -115,8 +133,9 @@ pub const Graph = struct {
                 const f = cycle[i];
                 const t = cycle[i + 1];
                 if (weight[f].?.get(t)) |w| {
-                    const nw = w - e;
-                    weight[f].?.put(t, nw);
+                    var nw: isize = @intCast(w);
+                    nw -= @intCast(e.?);
+                    try weight[f].?.put(t, nw);
                     if (nw <= 0) {
                         g.removeEdge(f, t);
                         feedback.addEdge(f, t);
@@ -124,8 +143,32 @@ pub const Graph = struct {
                 }
             }
         }
+
+        for (0..g.size) |f| {
+            if (feedback.edges[f].items.len == 0)
+                continue;
+            const eds = try feedback.edges[f].clone(self.a);
+            for (eds.items) |t| {
+                g.addEdge(f, t);
+                if (try g.getCycle()) |_| {
+                    g.removeEdge(f, t);
+                } else {
+                    feedback.removeEdge(f, t);
+                }
+            }
+        }
+
+        return feedback;
     }
 };
+
+fn printEdges(g: Graph) void {
+    for (0..g.size) |f| {
+        for (g.edges[f].items) |t| {
+            std.debug.print("\t({d} -> {d})\n", .{ f, t });
+        }
+    }
+}
 
 const expect = std.testing.expect;
 
@@ -165,7 +208,11 @@ test "is cyclic" {
     g.addEdge(4, 2);
     const cycle = try g.getCycle();
     try expect(cycle != null);
-    std.debug.print("Cycle {any}", .{cycle});
+    std.debug.print("Cycle {any}\n", .{cycle});
+
+    const ark = try g.feedbackArk();
+    std.debug.print("Ark:\n", .{});
+    printEdges(ark);
 }
 
 test "cyclic 500" {
@@ -208,15 +255,18 @@ const MAX_SIZE = 1_000_000;
 //     t += Date.now() - date;
 // }
 // console.log(`Time for ${n} size created ${Date.now() - create - t} times ${Math.max(1000, times)} in ms: ${t}`);
+//
 
 test "cyclic test" {
+    std.debug.print("\n", .{});
     const ca = std.heap.c_allocator;
     var arena = std.heap.ArenaAllocator.init(ca);
     var n: gsize = 2;
-    while (n < 50) {
+    while (n < 11560) {
         const nn: usize = @intCast(n);
         var times: usize = MAX_SIZE / (nn * nn * nn * nn);
         times = if (times < 1000) 1000 else times;
+        times = 2;
         var t: i64 = 0;
         const create = std.time.microTimestamp();
         var del: gsize = 1;
@@ -226,13 +276,24 @@ test "cyclic test" {
             defer _ = arena.reset(.retain_capacity);
             const date = std.time.microTimestamp();
             for (0..times) |i| {
-                _ = i;
+                if (i == 1 and del == 1) {
+                    const as = arena.queryCapacity();
+                    const out: struct { t: []const u8, s: usize } =
+                        if (as < 1024)
+                        .{ .t = "b", .s = as }
+                    else if (as < 1024 * 1024)
+                        .{ .t = "Kb", .s = (as / 1024) }
+                    else
+                        .{ .t = "Mb", .s = (as / 1024 / 1024) };
+
+                    std.debug.print("\tFor graph({d}) Size of allocated mem: {d}{s}\n", .{ graph.size, out.s, out.t });
+                }
                 const tt = try graph.getCycle();
                 try expect(tt == null or tt.?.len >= 0);
             }
             t += std.time.microTimestamp() - date;
         }
-        std.debug.print("\nTime for {d} size created {d} times {d} in ms: {d}", .{ n, std.time.microTimestamp() - create - t, times, t });
+        std.debug.print("Time for {d} size created {d} times {d} in ms: {d}\n", .{ n, std.time.microTimestamp() - create - t, times, t });
         n *= 2;
     }
 }
