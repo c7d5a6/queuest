@@ -4,11 +4,19 @@ const coll = @import("./data/collection.zig").Collection;
 const Item = @import("./data/item.zig").CollectionItem;
 const usr = @import("./data/user.zig").User;
 
-const str = struct {
+const str = packed struct {
     // name: [2]u8,
     a1: u8,
     a2: u8,
     yn: bool,
+    two: u2,
+};
+
+const str2 = struct {
+    // name: [2]u8,
+    a1: u8,
+    a2: u8,
+    yn: [62]bool,
     two: u2,
 };
 
@@ -71,6 +79,9 @@ fn printTypes() !void {
     // try getTypesInfo(coll, 0);
     // try getTypesInfo(usr, 0);
     try getTypesInfo(Item, 0);
+    try getTypesInfo(str, 0);
+    try getTypesInfo(str2, 0);
+    try getTypesInfo([62]bool, 0);
 
     // std.debug.print("\nTypes:\n{s}\n", .{list.items});
 }

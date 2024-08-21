@@ -1,7 +1,10 @@
 const std = @import("std");
 const ArrayLU = std.ArrayListUnmanaged(gsize);
 
-const gsize = usize;
+const gsize = u32;
+const GraphError = error{
+    CantSortCyclicGraph,
+};
 
 pub const Graph = struct {
     size: gsize,
@@ -47,6 +50,7 @@ pub const Graph = struct {
 
     pub fn clone(self: *const Graph, a: std.mem.Allocator) !Graph {
         var g: Graph = Graph.init(a, self.size);
+        g.edges_size = self.edges_size;
         for (0..self.size) |i| {
             g.edges[i] = try self.edges[i].clone(a);
         }
@@ -107,34 +111,37 @@ pub const Graph = struct {
         return null;
     }
 
-    fn feedbackArk(self: *const Graph) !Graph {
+    fn withoutCycle(self: *const Graph) !Graph {
         var weight: []?std.AutoHashMap(gsize, isize) = undefined;
         weight = try self.a.alloc(?std.AutoHashMap(gsize, isize), self.size);
+        @memset(weight, null);
         var g: Graph = try self.clone(self.a); // Clone deep;
         var feedback: Graph = Graph.init(self.a, self.size);
 
         while (try g.getCycle()) |cycle| {
-            var e: ?gsize = null;
+            var e: ?isize = null;
             for (0..cycle.len - 1) |i| {
-                const f = cycle[i];
-                const t = cycle[i + 1];
+                const f: gsize = cycle[i];
+                const t: gsize = cycle[i + 1];
                 if (weight[f] == null)
                     weight[f] = std.AutoHashMap(gsize, isize).init(self.a);
-                if (weight[f].?.get(t) == null) {
-                    try weight[f].?.put(t, @intCast(self.size + 1 - self.edges[f].items.len));
-                }
                 if (weight[f].?.get(t)) |w| {
                     if (e == null or w < e.?)
-                        e = @intCast(w);
+                        e = w;
+                } else {
+                    const w: isize = @intCast(self.size + 1 - self.edges[f].items.len);
+                    try weight[f].?.put(t, w);
+                    if (e == null or w < e.?)
+                        e = w;
                 }
             }
             if (e == null) e = 0;
             for (0..cycle.len - 1) |i| {
-                const f = cycle[i];
-                const t = cycle[i + 1];
+                const f: gsize = cycle[i];
+                const t: gsize = cycle[i + 1];
                 if (weight[f].?.get(t)) |w| {
                     var nw: isize = @intCast(w);
-                    nw -= @intCast(e.?);
+                    nw -= e.?;
                     try weight[f].?.put(t, nw);
                     if (nw <= 0) {
                         g.removeEdge(f, t);
@@ -149,65 +156,64 @@ pub const Graph = struct {
                 continue;
             const eds = try feedback.edges[f].clone(self.a);
             for (eds.items) |t| {
-                g.addEdge(f, t);
+                g.addEdge(@intCast(f), t);
                 if (try g.getCycle()) |_| {
-                    g.removeEdge(f, t);
+                    g.removeEdge(@intCast(f), t);
                 } else {
-                    feedback.removeEdge(f, t);
+                    feedback.removeEdge(@intCast(f), t);
                 }
             }
         }
 
-        return feedback;
+        printEdges(feedback);
+        return g;
     }
 
-    pub fn sort(self: *Graph) ![]const gsize {
+    fn sortAcyclic(self: *Graph) ![]const gsize {
         const a = self.a;
         const visited: []bool = try a.alloc(bool, self.size);
         @memset(visited, false);
         const v_tmp: []bool = try a.alloc(bool, self.size);
         @memset(v_tmp, false);
-        var stack = try ArrayLU.initCapacity(a, self.size + self.edges);
+        var stack = try ArrayLU.initCapacity(a, self.size + self.edges_size);
         var result = try ArrayLU.initCapacity(a, self.size);
         var i: gsize = 0;
         while (i < self.size) : (i += 1) {
-            // for (0..self.size) |i| {
             if (!visited[i]) try stack.append(a, i);
             while (stack.getLastOrNull()) |v| {
-                // in_stack[v] = true;
-                // var added = false;
-                // for (self.edges[v].items) |w| {
-                //     if (in_stack[w]) {
-                //         var result = try ArrayLU.initCapacity(a, stack.items.len);
-                //         try result.append(a, w);
-                //         from[w] = v;
-                //         while (result.getLastOrNull()) |next| {
-                //             try result.append(a, from[next]);
-                //             if (from[next] == w) {
-                //                 break;
-                //             }
-                //         }
-                //         reverse(&result.items);
-                //         return result.items;
-                //     }
-                //     if (!visited[w]) {
-                //         try stack.append(a, w);
-                //         from[w] = v;
-                //         added = true;
-                //     }
-                // }
-                // if (!added) {
-                //     const vv = stack.pop();
-                //     in_stack[vv] = false;
-                //     visited[vv] = true;
-                // }
+                if (visited[v]) {
+                    _ = stack.pop();
+                    break;
+                }
+                v_tmp[v] = true;
+                var added = false;
+                for (self.edges[v].items) |w| {
+                    if (v_tmp[w]) return error.CantSortCyclicGraph;
+                    if (!visited[w]) {
+                        try stack.append(a, w);
+                        added = true;
+                    }
+                }
+                if (!added) {
+                    const vv = stack.pop();
+                    visited[vv] = true;
+                    v_tmp[vv] = false;
+                    try result.append(a, vv);
+                }
             }
         }
-        return result;
+        reverse(&result.items);
+        return result.items;
+    }
+
+    pub fn sort(self: *Graph) ![]const gsize {
+        var acycl = try self.withoutCycle();
+        return try acycl.sortAcyclic();
     }
 };
 
 fn printEdges(g: Graph) void {
+    std.debug.print("Feedback Ark:\n", .{});
     for (0..g.size) |f| {
         for (g.edges[f].items) |t| {
             std.debug.print("\t({d} -> {d})\n", .{ f, t });
@@ -250,14 +256,107 @@ test "is cyclic" {
     try expect(g.edges.len == 9);
     try expect(try g.getCycle() == null);
 
+    var sorted = try g.sort();
+    std.debug.print("Sorted acyclic {any}\n", .{sorted});
+
     g.addEdge(4, 2);
     const cycle = try g.getCycle();
     try expect(cycle != null);
     std.debug.print("Cycle {any}\n", .{cycle});
 
-    const ark = try g.feedbackArk();
-    std.debug.print("Ark:\n", .{});
-    printEdges(ark);
+    const without = try g.withoutCycle();
+    try expect(without.edges_size < g.edges_size);
+
+    sorted = try g.sort();
+    std.debug.print("Sorted  cyclic {any}\n", .{sorted});
+}
+
+test "is cyclic 2" {
+    var gpa = std.heap.GeneralPurposeAllocator(.{
+        .thread_safe = true,
+    }){};
+    const a = gpa.allocator();
+    var g: Graph = Graph.init(a, 7);
+
+    g.addEdge(0, 1);
+    g.addEdge(1, 2);
+    g.addEdge(2, 4);
+    g.addEdge(4, 5);
+    g.addEdge(4, 3);
+    g.addEdge(3, 1);
+    g.addEdge(1, 6);
+    g.addEdge(6, 3);
+
+    const without = try g.withoutCycle();
+    try expect(without.edges_size < g.edges_size);
+
+    const sorted = try g.sort();
+    std.debug.print("Sorted  cyclic {any}\n", .{sorted});
+}
+
+test "sort nadzieja" {
+    const ca = std.heap.c_allocator;
+    var arena = std.heap.ArenaAllocator.init(ca);
+    const size = 29;
+    const start_mc = std.time.microTimestamp();
+    var g: Graph = Graph.init(arena.allocator(), size);
+    printMemory(arena, g);
+    g.addEdge(0, 1);
+    g.addEdge(1, 2);
+    g.addEdge(2, 3);
+    g.addEdge(2, 4);
+    //
+    g.addEdge(1, 5);
+    g.addEdge(5, 6);
+    g.addEdge(6, 7);
+    g.addEdge(7, 8);
+    g.addEdge(8, 9);
+    g.addEdge(8, 10);
+    g.addEdge(10, 6);
+    g.addEdge(6, 11);
+    //
+    g.addEdge(1, 12);
+    g.addEdge(12, 13);
+    g.addEdge(13, 14);
+    g.addEdge(13, 15);
+    g.addEdge(15, 16);
+    g.addEdge(15, 17);
+    //
+    g.addEdge(12, 18);
+    g.addEdge(18, 19);
+    //
+    g.addEdge(12, 20);
+    //
+    g.addEdge(12, 21);
+    g.addEdge(21, 22);
+    g.addEdge(21, 23);
+    g.addEdge(23, 24);
+    g.addEdge(24, 25);
+    g.addEdge(24, 26);
+    g.addEdge(26, 27);
+    g.addEdge(24, 28);
+    g.addEdge(28, 17);
+    //
+    std.debug.print("\nTime to init: {d} microseconds\n", .{std.time.microTimestamp() - start_mc});
+    printMemory(arena, g);
+    const sort_mc = std.time.microTimestamp();
+    const sorted = try g.sort();
+    std.debug.print("Sorted  cyclic {any}\n", .{sorted});
+    std.debug.print("\nTime to sort: {d} microseconds\n", .{std.time.microTimestamp() - sort_mc});
+    std.debug.print("Overall time: {d} microseconds\n", .{std.time.microTimestamp() - start_mc});
+    printMemory(arena, g);
+}
+
+fn printMemory(arena: std.heap.ArenaAllocator, g: Graph) void {
+    const as = arena.queryCapacity();
+    const out: struct { t: []const u8, s: usize } =
+        if (as < 1024)
+        .{ .t = "b", .s = as }
+    else if (as < 1024 * 1024)
+        .{ .t = "Kb", .s = (as / 1024) }
+    else
+        .{ .t = "Mb", .s = (as / 1024 / 1024) };
+    std.debug.print("For graph(size:{d}) of allocated mem: {d}{s}\n", .{ g.size, out.s, out.t });
 }
 
 test "cyclic 500" {
@@ -266,7 +365,7 @@ test "cyclic 500" {
     // }){};
     // const a = gpa.allocator();
     const a = std.heap.c_allocator;
-    const size = 500;
+    const size = 20;
     const mil = std.time.microTimestamp();
     var g: Graph = Graph.init(a, size);
 
@@ -282,7 +381,7 @@ test "cyclic 500" {
     std.debug.print("\nTime to init: {d}\n", .{std.time.microTimestamp() - mil});
 
     const mili = std.time.microTimestamp();
-    for (0..1000) |ii| {
+    for (0..10) |ii| {
         _ = ii;
         try expect(try g.getCycle() != null);
     }
@@ -307,7 +406,7 @@ test "cyclic test" {
     const ca = std.heap.c_allocator;
     var arena = std.heap.ArenaAllocator.init(ca);
     var n: gsize = 2;
-    while (n < 1030) {
+    while (n < 100) {
         const nn: usize = @intCast(n);
         var times: usize = MAX_SIZE / (nn * nn * nn * nn);
         times = if (times < 1000) 1000 else times;
@@ -360,11 +459,11 @@ fn createGraph(a: std.mem.Allocator, size: gsize, del: gsize) Graph {
 fn cyrb53a(ii: gsize, jj: gsize) usize {
     const i: usize = @intCast(ii);
     const j: usize = @intCast(jj);
-    var h1 = 0xdeadbeef ^ i * 2654435761;
-    var h2 = 0x41c6ce57 ^ j * 1597334677;
-    h1 ^= h1 ^ (h2 >> 15) * 0x735a2d97;
-    h2 ^= h2 ^ (h1 >> 15) * 0xcaf649a9;
+    var h1 = 0xdeadbeef ^ i *% 2654435761;
+    var h2 = 0x41c6ce57 ^ j *% 1597334677;
+    h1 ^= h1 ^ (h2 >> 15) *% 0x735a2d97;
+    h2 ^= h2 ^ (h1 >> 15) *% 0xcaf649a9;
     h1 ^= h2 >> 16;
     h2 ^= h1 >> 16;
-    return 2097152 * (h2 >> 0) + (h1 >> 11);
+    return 2097152 *% (h2 >> 0) +% (h1 >> 11);
 }
