@@ -102,7 +102,7 @@ pub const Graph = struct {
                     }
                 }
                 if (!added) {
-                    const vv = stack.pop();
+                    const vv = stack.pop().?;
                     in_stack[vv] = false;
                     visited[vv] = true;
                 }
@@ -195,7 +195,7 @@ pub const Graph = struct {
                     }
                 }
                 if (!added) {
-                    const vv = stack.pop();
+                    const vv = stack.pop().?;
                     visited[vv] = true;
                     v_tmp[vv] = false;
                     try result.append(a, vv);
@@ -351,11 +351,11 @@ fn printMemory(arena: std.heap.ArenaAllocator, g: Graph) void {
     const as = arena.queryCapacity();
     const out: struct { t: []const u8, s: usize } =
         if (as < 1024)
-        .{ .t = "b", .s = as }
-    else if (as < 1024 * 1024)
-        .{ .t = "Kb", .s = (as / 1024) }
-    else
-        .{ .t = "Mb", .s = (as / 1024 / 1024) };
+            .{ .t = "b", .s = as }
+        else if (as < 1024 * 1024)
+            .{ .t = "Kb", .s = (as / 1024) }
+        else
+            .{ .t = "Mb", .s = (as / 1024 / 1024) };
     std.debug.print("For graph(size:{d}) of allocated mem: {d}{s}\n", .{ g.size, out.s, out.t });
 }
 
@@ -424,11 +424,11 @@ test "cyclic test" {
                     const as = arena.queryCapacity();
                     const out: struct { t: []const u8, s: usize } =
                         if (as < 1024)
-                        .{ .t = "b", .s = as }
-                    else if (as < 1024 * 1024)
-                        .{ .t = "Kb", .s = (as / 1024) }
-                    else
-                        .{ .t = "Mb", .s = (as / 1024 / 1024) };
+                            .{ .t = "b", .s = as }
+                        else if (as < 1024 * 1024)
+                            .{ .t = "Kb", .s = (as / 1024) }
+                        else
+                            .{ .t = "Mb", .s = (as / 1024 / 1024) };
 
                     std.debug.print("\tFor graph({d}) Size of allocated mem: {d}{s}\n", .{ graph.size, out.s, out.t });
                 }

@@ -24,21 +24,33 @@ pub const Collection = struct {
     visited_ts: i64 = 0,
 
     pub fn findAllForUserId(conn: *Conn, allocator: std.mem.Allocator, user_id: i64) !std.ArrayList(Collection) {
-        var result = try conn.queryOpts("select * from " ++ table_name ++ " where user_id = $1", .{user_id}, .{ .column_names = true });
+        var result = try conn.queryOpts(
+            "select * from " ++ table_name ++ " where user_id = $1 order by visited_ts desc",
+            .{user_id},
+            .{ .column_names = true },
+        );
         defer result.deinit();
 
         return getList(Collection, allocator, result);
     }
 
     pub fn findAllFavForUserId(conn: *Conn, allocator: std.mem.Allocator, user_id: i64) !std.ArrayList(Collection) {
-        var result = try conn.queryOpts("select * from " ++ table_name ++ " where user_id = $1 and favourite_yn", .{user_id}, .{ .column_names = true });
+        var result = try conn.queryOpts(
+            "select * from " ++ table_name ++ " where user_id = $1 and favourite_yn order by visited_ts desc",
+            .{user_id},
+            .{ .column_names = true },
+        );
         defer result.deinit();
 
         return getList(Collection, allocator, result);
     }
 
     pub fn findByIdAndUserId(conn: *Conn, id: i64, user_id: i64) !?Collection {
-        var result = try conn.queryOpts("select * from " ++ table_name ++ " where id = $1 and user_id = $2", .{ id, user_id }, .{ .column_names = true });
+        var result = try conn.queryOpts(
+            "select * from " ++ table_name ++ " where id = $1 and user_id = $2",
+            .{ id, user_id },
+            .{ .column_names = true },
+        );
         defer result.deinit();
 
         return getSoloEntity(Collection, result);
