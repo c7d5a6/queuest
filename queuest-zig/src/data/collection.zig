@@ -21,6 +21,7 @@ pub const Collection = struct {
     user_id: i64 = 0,
     name: []const u8 = "0",
     favourite_yn: bool = true,
+    visited_ts: i64 = 0,
 
     pub fn findAllForUserId(conn: *Conn, allocator: std.mem.Allocator, user_id: i64) !std.ArrayList(Collection) {
         var result = try conn.queryOpts("select * from " ++ table_name ++ " where user_id = $1", .{user_id}, .{ .column_names = true });
@@ -45,10 +46,31 @@ pub const Collection = struct {
 
     pub fn insertCollection(conn: *Conn, user_id: i64, name: []const u8) !?Id {
         var result = try conn.queryOpts(
-            \\insert into collection_tbl(user_id, name) values ($1, $2) returning id
+            \\insert into collection_tbl(user_id, name, visited_ts) values ($1, $2, now()) returning id
         , .{ user_id, name }, .{ .column_names = true });
         defer result.deinit();
 
         return getSoloEntity(Id, result);
+    }
+
+    pub fn updateCollection(conn: *Conn, collection: Collection) !?Id {
+        var result = try conn.queryOpts(
+            \\update collection_tbl set favourite_yn = $1, name = $2 where id = $3 and user_id = $4
+        , .{ collection.favourite_yn, collection.name, collection.id, collection.user_id }, .{ .column_names = true });
+        defer result.deinit();
+
+        return getSoloEntity(Id, result);
+    }
+
+    pub fn deleteCollection(conn: *Conn, id: i64, user_id: i64) !void {
+        _ = try conn.queryOpts(
+            \\delete from collection_tbl where id = $1 and user_id = $2
+        , .{ id, user_id }, .{});
+    }
+
+    pub fn visitCollection(conn: *Conn, collection: Collection) !void {
+        _ = try conn.queryOpts(
+            \\update collection_tbl set visited_ts = now() where id = $1 and user_id = $2
+        , .{ collection.id, collection.user_id }, .{});
     }
 };

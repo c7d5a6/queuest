@@ -22,7 +22,7 @@ pub const HeaderMiddleWare = struct {
     }
 
     // note that the first parameter is of type *Handler, not *Self !!!
-    pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) bool {
+    pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) !bool {
         r.setHeader("Access-Control-Allow-Origin", "*") catch unreachable;
         r.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PATCH, OPTIONS") catch unreachable;
         r.setHeader("Access-Control-Allow-Headers", "*") catch unreachable;

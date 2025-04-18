@@ -1,5 +1,5 @@
 .{
-    .name = "queuest-zig",
+    .name = .queuest_zig,
     // This is a [Semantic Version](https://semver.org/).
     // In a future version of Zig it will be used for package deduplication.
     .version = "0.0.0",
@@ -7,7 +7,8 @@
     // This field is optional.
     // This is currently advisory only; Zig does not yet do anything
     // with this value.
-    .minimum_zig_version = "0.13.0",
+    .minimum_zig_version = "0.14.0",
+    .fingerprint = 0x4384a559ece59c00,
 
     // This field is optional.
     // Each dependency must either provide a `url` and `hash`, or a `path`.
@@ -16,12 +17,12 @@
     // internet connectivity.
     .dependencies = .{
         .zap = .{
-            .url = "https://github.com/zigzap/zap/archive/refs/tags/v0.8.0.tar.gz",
-            .hash = "12209936c3333b53b53edcf453b1670babb9ae8c2197b1ca627c01e72670e20c1a21",
+            .url = "git+https://github.com/zigzap/zap?ref=v0.10.1#8d187310c7ee4f86faa7ef0ecdac0bf747216dea",
+            .hash = "zap-0.9.1-GoeB84M8JACjZKDNq2LA5hB24Z-ZrZ_HUKRXd8qxL2JW",
         },
         .pg = .{
-            .url = "git+https://github.com/karlseguin/pg.zig?ref=master#fe2965b7651462258bcdabbb9a5d3aa09a404746",
-            .hash = "12208adc9d7072c98cdfe9dba33d72430e95be1763b6bc4b1091148b997a9281741b",
+            .url = "git+https://github.com/karlseguin/pg.zig?ref=master#901c289368f0eae8e37ca90e3f806be9e3ff86f9",
+            .hash = "pg-0.0.0-Wp_7gRD-BQCbDvJEahLsdoxUdlR7BsmvPnQyYdGyQzEE",
         },
     },
     .paths = .{
