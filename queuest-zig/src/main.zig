@@ -104,7 +104,7 @@ const expect = std.testing.expect;
 const g = @import("services/graph.zig");
 
 test {
-    // std.testing.refAllDeclsRecursive(@This());
+    _ = @import("services/collections.zig");
     // or refAllDeclsRecursive
 }
 

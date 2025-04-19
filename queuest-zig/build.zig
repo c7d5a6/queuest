@@ -67,6 +67,23 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_exe_unit_tests.step);
 
+    // Run e2e tests
+    const e2e_tests = b.addTest(.{
+        .root_source_file = b.path("tests/e2e/main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    e2e_tests.linkLibrary(libC);
+    e2e_tests.addIncludePath(b.path("c-src"));
+    e2e_tests.linkLibC();
+    e2e_tests.root_module.addImport("zap", zap.module("zap"));
+    e2e_tests.linkLibrary(zap.artifact("facil.io"));
+    e2e_tests.root_module.addImport("pg", pg.module("pg"));
+
+    const run_e2e_tests = b.addRunArtifact(e2e_tests);
+    const e2e_test_step = b.step("e2e", "Run end-to-end tests");
+    e2e_test_step.dependOn(&run_e2e_tests.step);
+
     // ---
     // --- Debug informations step
     const exe_debug_step = b.addExecutable(.{
