@@ -44,7 +44,7 @@ pub const JWTMiddleware = struct {
         return &self.handler;
     }
 
-    pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) bool {
+    pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) !bool {
         const self: *Self = @fieldParentPtr("handler", handler);
         var arena = std.heap.ArenaAllocator.init(self.allocator);
         defer arena.deinit();

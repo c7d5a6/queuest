@@ -89,7 +89,7 @@ export class CollectionPageComponent implements OnInit {
   addToFavs() {
     this.collectionsService
       .collectionControllerAddCollectionToFav({collectionId: this.collection.id!})
-      .subscribe(() => this.collection.favourite = true);
+      .subscribe(() => this.collection.favourite_yn = true);
   }
 
   addItem(): void {
@@ -107,7 +107,7 @@ export class CollectionPageComponent implements OnInit {
   removeFromFavs() {
     this.collectionsService
       .collectionControllerRemoveCollectionFromFav({collectionId: this.collection.id!})
-      .subscribe(() => this.collection.favourite = false);
+      .subscribe(() => this.collection.favourite_yn = false);
   }
 
   private reload() {

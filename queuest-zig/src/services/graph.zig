@@ -102,7 +102,7 @@ pub const Graph = struct {
                     }
                 }
                 if (!added) {
-                    const vv = stack.pop();
+                    const vv = stack.pop().?;
                     in_stack[vv] = false;
                     visited[vv] = true;
                 }
@@ -195,7 +195,7 @@ pub const Graph = struct {
                     }
                 }
                 if (!added) {
-                    const vv = stack.pop();
+                    const vv = stack.pop().?;
                     visited[vv] = true;
                     v_tmp[vv] = false;
                     try result.append(a, vv);

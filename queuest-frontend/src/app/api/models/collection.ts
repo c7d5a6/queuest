@@ -1,7 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export interface Collection {
-  favourite?: boolean;
+  favourite_yn?: boolean;
   id?: number;
   name: string;
 }

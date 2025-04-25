@@ -28,6 +28,7 @@ pub fn on_get_collection(a: Allocator, r: Request, c: *Context, params: anytype)
     const collectionId = params.collectionId;
     const collection: Collection = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
     const json = std.json.stringifyAlloc(a, collection, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+    std.debug.print("collection: {s}\n", .{json});
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
 }
@@ -46,11 +47,32 @@ pub fn on_post_collection(a: Allocator, r: Request, c: *Context, params: anytype
     r.sendJson(json) catch return;
 }
 
-pub fn on_add_fav_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
+pub fn on_post_fav_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
+    var collection: Collection = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    collection.favourite_yn = true;
 
-    const id = Collection.setFav(c.connection.?, collectionId, c.user.?.id, true) catch unreachable orelse unreachable;
+    const id = Collection.updateCollection(c.connection.?, collection) catch unreachable;
     const json = std.json.stringifyAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
+}
+
+pub fn on_post_visit_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
+    _ = a;
+    const collectionId = params.collectionId;
+    const collection: Collection = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+
+    Collection.visitCollection(c.connection.?, collection) catch unreachable;
+
+    r.sendBody("") catch return;
+}
+
+pub fn on_delete_fav_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
+    _ = a;
+    const collectionId = params.collectionId;
+    Collection.deleteCollection(c.connection.?, collectionId, c.user.?.id) catch unreachable;
+
+    r.sendBody("") catch return;
 }

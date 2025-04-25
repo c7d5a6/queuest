@@ -28,7 +28,7 @@ pub const UserMiddleware = struct {
         return &self.handler;
     }
 
-    pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) bool {
+    pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) !bool {
         // const self: *Self = @fieldParentPtr("handler", handler);
         if (context.auth.?.uuid) |uuid| {
             var user = User.findByUID(context.connection.?, &uuid) catch unreachable;

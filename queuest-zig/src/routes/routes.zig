@@ -1,6 +1,6 @@
 const std = @import("std");
 const zap = @import("zap");
-const Method = zap.Method;
+const Method = zap.http.Method;
 const Context = @import("../middle/context.zig").Context;
 const collections = @import("../services/collections.zig");
 const items = @import("../services/items.zig");
@@ -34,10 +34,9 @@ const rt = [_]struct { Method, Access, [:0]const u8, type, ControllerRequest }{
     .{ .GET, .Authorized, "/collections/fav", struct {}, collections.on_get_fav_collections },
     .{ .GET, .Authorized, "/collections/{collectionId}", struct { collectionId: i64 }, collections.on_get_collection },
     .{ .POST, .Authorized, "/collections", struct {}, collections.on_post_collection },
-    .{ .POST, .Authorized, "/collections/fav/{collectionId}", struct {}, collections.on_add_fav_collection },
-    // POST /collections/visit/{collectionId}
-    // DELETE /collections/fav/{collectionId}
-    // DELETE /collections/{collectionId}
+    .{ .POST, .Authorized, "/collections/fav/{collectionId}", struct { collectionId: i64 }, collections.on_post_fav_collection },
+    .{ .POST, .Authorized, "/collections/visit/{collectionId}", struct { collectionId: i64 }, collections.on_post_visit_collection },
+    .{ .DELETE, .Authorized, "/collections/fav/{collectionId}", struct { collectionId: i64 }, collections.on_delete_fav_collection },
     // -- Items
     .{ .GET, .Authorized, "/collections/{collectionId}/items", struct { collectionId: i64 }, items.on_get_items },
     // GET /collections/{collectionId}/items/least-calibrated

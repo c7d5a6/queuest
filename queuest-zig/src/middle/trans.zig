@@ -27,7 +27,7 @@ pub const TransactionMiddleware = struct {
         return &self.handler;
     }
 
-    pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) bool {
+    pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) !bool {
         const self: *Self = @fieldParentPtr("handler", handler);
         const pool = self.pool;
         var conn = pool.acquire() catch |err| {
