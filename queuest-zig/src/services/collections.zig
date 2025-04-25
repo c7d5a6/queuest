@@ -45,3 +45,12 @@ pub fn on_post_collection(a: Allocator, r: Request, c: *Context, params: anytype
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
 }
+
+pub fn on_add_fav_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
+    const collectionId = params.collectionId;
+
+    const id = Collection.setFav(c.connection.?, collectionId, c.user.?.id, true) catch unreachable orelse unreachable;
+    const json = std.json.stringifyAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+    r.setContentType(.JSON) catch return;
+    r.sendJson(json) catch return;
+}

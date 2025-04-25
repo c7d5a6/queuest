@@ -51,4 +51,11 @@ pub const Collection = struct {
 
         return getSoloEntity(Id, result);
     }
+
+    pub fn setFav(conn: *Conn, id: i64, user_id: i64, fav: bool) !?Collection {
+        var result = try conn.queryOpts("update " ++ table_name ++ "set favourite_yn = $3 where id = $1 and user_id = $2", .{ id, user_id, fav }, .{ .column_names = true });
+        defer result.deinit();
+
+        return getSoloEntity(Collection, result);
+    }
 };
