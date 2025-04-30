@@ -33,9 +33,14 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    const sqlite = b.dependency("sqlite", .{
+        .target = target,
+        .optimize = optimize,
+    });
     exe.root_module.addImport("zap", zap.module("zap"));
     exe.linkLibrary(zap.artifact("facil.io"));
     exe.root_module.addImport("pg", pg.module("pg"));
+    exe.root_module.addImport("sqlite", sqlite.module("sqlite"));
 
     b.installArtifact(exe);
 
@@ -62,6 +67,7 @@ pub fn build(b: *std.Build) void {
     exe_unit_tests.root_module.addImport("zap", zap.module("zap"));
     exe_unit_tests.linkLibrary(zap.artifact("facil.io"));
     exe_unit_tests.root_module.addImport("pg", pg.module("pg"));
+    exe_unit_tests.root_module.addImport("sqlite", sqlite.module("sqlite"));
 
     const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
     const test_step = b.step("test", "Run unit tests");
@@ -79,6 +85,7 @@ pub fn build(b: *std.Build) void {
     e2e_tests.root_module.addImport("zap", zap.module("zap"));
     e2e_tests.linkLibrary(zap.artifact("facil.io"));
     e2e_tests.root_module.addImport("pg", pg.module("pg"));
+    e2e_tests.root_module.addImport("sqlite", sqlite.module("sqlite"));
 
     const run_e2e_tests = b.addRunArtifact(e2e_tests);
     const e2e_test_step = b.step("e2e", "Run end-to-end tests");
@@ -98,6 +105,7 @@ pub fn build(b: *std.Build) void {
     exe_debug_step.root_module.addImport("zap", zap.module("zap"));
     // exe_debug_step.linkLibrary(zap.artifact("facil.io"));
     exe_debug_step.root_module.addImport("pg", pg.module("pg"));
+    exe_debug_step.root_module.addImport("sqlite", sqlite.module("sqlite"));
 
     const run_exe_debug_step = b.addRunArtifact(exe_debug_step);
     const debug_step = b.step("debug", "Run debug info");

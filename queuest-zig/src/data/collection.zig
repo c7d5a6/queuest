@@ -57,7 +57,7 @@ pub const Collection = struct {
     }
 
     pub fn insertCollection(conn: *Conn, user_id: i64, name: []const u8) !?Id {
-        var result = try conn.qugeryOpts(
+        var result = try conn.queryOpts(
             \\insert into collection_tbl(user_id, name, visited_ts) values ($1, $2, now()) returning id
         , .{ user_id, name }, .{ .column_names = true });
         defer result.deinit();

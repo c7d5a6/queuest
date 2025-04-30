@@ -1,5 +1,6 @@
 const std = @import("std");
 const pg = @import("pg");
+const sqlite = @import("sqlite");
 const User = @import("../data/user.zig").User;
 const Conn = pg.Conn;
 
@@ -7,6 +8,7 @@ pub const Context = struct {
     auth: ?Auth = null,
     user: ?User = null,
     connection: ?*Conn = null,
+    db: ?*sqlite.Db = null,
     session: ?Session = null,
 };
 // note: it MUST have all default values!!!

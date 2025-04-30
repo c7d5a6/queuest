@@ -1,12 +1,14 @@
 const std = @import("std");
 const zap = @import("zap");
 const pg = @import("pg");
+const sqlite = @import("sqlite");
 const builtin = @import("builtin");
 const routes = @import("routes/routes.zig");
 const DispatchRoutes = routes.DispatchRoutes;
 const auth = @import("middle/auth.zig");
 const userMiddle = @import("middle/user.zig");
 const trans = @import("middle/trans.zig");
+const sqliteMiddle = @import("middle/sqlite.zig");
 const contextLib = @import("middle/context.zig");
 const controller = @import("middle/controller.zig");
 const header = @import("middle/header.zig");
@@ -47,6 +49,16 @@ pub fn main() !void {
             std.posix.exit(1);
         };
         defer pool.deinit();
+        // sqlite
+        var db = sqlite.Db.init(.{
+            .mode = sqlite.Db.Mode{ .File = "queuest.db" },
+            .open_flags = .{
+                .write = true,
+                .create = true,
+            },
+            .threading_mode = .MultiThread,
+        }) catch unreachable;
+        defer db.deinit();
 
         //
         // --- Routes
@@ -60,7 +72,8 @@ pub fn main() !void {
         var controllerHandler = controller.ControllerMiddleWare.init(null, routes.dispatch_routes, allocator);
         var userHandler = userMiddle.UserMiddleware.init(controllerHandler.getHandler(), allocator);
         var transactionHandler = trans.TransactionMiddleware.init(userHandler.getHandler(), allocator, pool);
-        var jwtHandler = auth.JWTMiddleware.init(transactionHandler.getHandler(), allocator);
+        var sqliteHandler = sqliteMiddle.SqliteMiddleware.init(transactionHandler.getHandler(), allocator, &db);
+        var jwtHandler = auth.JWTMiddleware.init(sqliteHandler.getHandler(), allocator);
         var headerHandler = header.HeaderMiddleWare.init(jwtHandler.getHandler());
 
         //
