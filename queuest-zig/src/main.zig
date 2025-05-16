@@ -22,7 +22,7 @@ const port = 3000;
 
 pub const std_options: std.Options = .{
     // general log level
-    .log_level = .info,
+    .log_level = .debug,
     .log_scope_levels = &[_]std.log.ScopeLevel{
         // log level specific to zap
         .{ .scope = .zap, .level = .debug },

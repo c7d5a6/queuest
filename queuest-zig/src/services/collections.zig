@@ -38,8 +38,9 @@ pub fn on_post_collection(a: Allocator, r: Request, c: *Context, params: anytype
     r.parseBody() catch return error.InternalError;
     const body = r.body orelse return error.InternalError;
 
-    const CollectionCreate = struct { name: []const u8, favourite: bool };
+    const CollectionCreate = struct { name: []const u8, favourite_yn: bool };
     const create = std.json.parseFromSlice(CollectionCreate, a, body, .{}) catch return error.InternalError;
+    std.debug.print("create: {s}\n", .{create.value.name});
 
     const id = Collection.insertCollection(c.connection.?, c.user.?.id, create.value.name) catch unreachable orelse unreachable;
     const json = std.json.stringifyAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
@@ -70,9 +71,13 @@ pub fn on_post_visit_collection(a: Allocator, r: Request, c: *Context, params: a
 }
 
 pub fn on_delete_fav_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
-    _ = a;
     const collectionId = params.collectionId;
-    Collection.deleteCollection(c.connection.?, collectionId, c.user.?.id) catch unreachable;
+    var collection: Collection = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    collection.favourite_yn = false;
 
-    r.sendBody("") catch return;
+    const id = Collection.updateCollection(c.connection.?, collection) catch unreachable;
+    const json = std.json.stringifyAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+
+    r.setContentType(.JSON) catch return;
+    r.sendJson(json) catch return;
 }

@@ -165,6 +165,7 @@ pub fn dispatch_routes(a: std.mem.Allocator, r: zap.Request, c: *Context) void {
                     return;
                 }
                 const params = getRouteParams(route.methodType, route.path, path);
+                std.debug.print("method: {any}, params: {any}\n", .{ httpMethod, params });
                 route.method(a, r, c, params) catch |err| {
                     r.sendError(err, null, 500);
                 };
