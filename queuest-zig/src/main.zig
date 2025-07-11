@@ -25,7 +25,7 @@ pub const std_options: std.Options = .{
     .log_level = .debug,
     .log_scope_levels = &[_]std.log.ScopeLevel{
         // log level specific to zap
-        .{ .scope = .zap, .level = .debug },
+        .{ .scope = .zap, .level = .info },
     },
 };
 pub fn main() !void {

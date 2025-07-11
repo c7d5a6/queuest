@@ -42,6 +42,7 @@ const rt = [_]struct { Method, Access, [:0]const u8, type, ControllerRequest }{
     // GET /collections/{collectionId}/items/least-calibrated
     // GET /collections/{collectionId}/items/{id}/bestpair/{strict}
     // POST /collections/{collectionId}/items
+    .{ .POST, .Authorized, "/collections/{collectionId}/items", struct { collectionId: i64 }, items.on_post_item },
     // DELETE /collections/{collectionId}/items/{collectionItemId}
     // -- ItemsRelation
     // POST /relations/{fromId}/{toId}
@@ -165,7 +166,7 @@ pub fn dispatch_routes(a: std.mem.Allocator, r: zap.Request, c: *Context) void {
                     return;
                 }
                 const params = getRouteParams(route.methodType, route.path, path);
-                std.debug.print("method: {any}, params: {any}\n", .{ httpMethod, params });
+                std.log.info("method: {any}, params: {any}\n", .{ httpMethod, params });
                 route.method(a, r, c, params) catch |err| {
                     r.sendError(err, null, 500);
                 };

@@ -10,6 +10,9 @@ pub const Graph = struct {
     size: gsize,
     edges_size: gsize,
     edges: []ArrayLU,
+    
+    // relations: Map<number, number[]>;
+    // relationsInverted: Map<number, number[]>;
     a: std.mem.Allocator,
 
     pub fn init(a: std.mem.Allocator, size: gsize) Graph {
@@ -26,7 +29,7 @@ pub const Graph = struct {
         };
     }
 
-    const Edge = packed struct { from: gsize, to: gsize };
+    const Edge = struct { from: gsize, to: gsize };
     pub fn addEdges(self: *Graph, edges: []const Edge) void {
         for (edges) |e| {
             self.addEdge(e.from, e.to);
