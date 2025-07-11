@@ -41,9 +41,8 @@ const rt = [_]struct { Method, Access, [:0]const u8, type, ControllerRequest }{
     .{ .GET, .Authorized, "/collections/{collectionId}/items", struct { collectionId: i64 }, items.on_get_items },
     // GET /collections/{collectionId}/items/least-calibrated
     // GET /collections/{collectionId}/items/{id}/bestpair/{strict}
-    // POST /collections/{collectionId}/items
     .{ .POST, .Authorized, "/collections/{collectionId}/items", struct { collectionId: i64 }, items.on_post_item },
-    // DELETE /collections/{collectionId}/items/{collectionItemId}
+    .{ .DELETE, .Authorized, "/collections/{collectionId}/items/{collectionItemId}", struct { collectionId: i64, collectionItemId: i64 }, items.on_delete_item },
     // -- ItemsRelation
     // POST /relations/{fromId}/{toId}
     // DELETE /relations/{itemAId}/{itemBId}

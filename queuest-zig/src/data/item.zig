@@ -96,4 +96,11 @@ pub const CollectionItem = struct {
 
         return getSoloEntity(Id, result);
     }
+
+    pub fn deleteItem(conn: *Conn, collection_item_id: i64) !void {
+        var result = try conn.queryOpts(
+            \\delete from collection_item_tbl where id = $1
+        , .{collection_item_id}, .{ .column_names = true });
+        defer result.deinit();
+    }
 };

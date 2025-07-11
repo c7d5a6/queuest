@@ -28,20 +28,29 @@ pub fn on_get_items(a: Allocator, r: Request, c: *Context, params: anytype) Cont
 }
 
 pub fn on_post_item(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
-    std.debug.print("on_post_item\n", .{});
     r.parseBody() catch return error.InternalError;
     const body = r.body orelse return error.InternalError;
-    std.debug.print("body: {s}\n", .{body});
 
     const collectionId = params.collectionId;
     _ = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
 
     const CreateItem = struct { name: []const u8 };
     const create = std.json.parseFromSlice(CreateItem, a, body, .{ .ignore_unknown_fields = true }) catch return error.InternalError;
-    std.debug.print("create: {s}\n", .{create.value.name});
     const id = Item.insertItem(c.connection.?, create.value.name, collectionId) catch unreachable;
+
     const json = std.json.stringifyAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
-    std.debug.print("json: {s}\n", .{json});
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
+}
+
+pub fn on_delete_item(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
+    _ = a;
+
+    const collectionId = params.collectionId;
+    const collectionItemId = params.collectionItemId;
+    _ = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+
+    Item.deleteItem(c.connection.?, collectionItemId) catch unreachable;
+
+    r.sendBody("") catch return;
 }
