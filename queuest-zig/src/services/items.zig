@@ -2,9 +2,12 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const zap = @import("zap");
 const Request = zap.Request;
+const Graph = @import("graph.zig").Graph;
+const gsize = @import("graph.zig").gsize;
 const Context = @import("../middle/context.zig").Context;
 const Item = @import("../data/item.zig").CollectionItem;
 const Collection = @import("../data/collection.zig").Collection;
+const ItemRelation = @import("../data/item_relations.zig").ItemRelation;
 const ControllerError = @import("../routes/router-errors.zig").ControllerError;
 
 pub fn on_get_items(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
@@ -20,11 +23,46 @@ pub fn on_get_items(a: Allocator, r: Request, c: *Context, params: anytype) Cont
         };
         result.append(It{ .id = item.id, .name = name }) catch unreachable;
     }
+    var graph: Graph = Graph.init(a, @intCast(items.items.len));
+    setGraphEdges(a, c, items.items, &graph) catch unreachable;
+    const sorted = graph.sort() catch unreachable;
+    var resultSorted = std.ArrayList(It).initCapacity(a, items.items.len) catch unreachable;
+    for (sorted) |i| {
+        resultSorted.append(result.items[i]) catch unreachable;
+    }
+
     const Result = struct { id: i64, items: []It, calibrated: f64 };
     const res = Result{ .id = collectionId, .items = result.items, .calibrated = 0.5 };
     const json = std.json.stringifyAlloc(a, res, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
+}
+
+fn setGraphEdges(a: Allocator, c: *Context, items: []Item, graph: *Graph) !void {
+    const relations = ItemRelation.findAllForItemIds(c.connection.?, a, items) catch unreachable;
+    for (relations.items) |rel| {
+        const from_id = rel.collection_item_from_id;
+        const to_id = rel.collection_item_to_id;
+        var from: ?usize = null;
+        var to: ?usize = null;
+        for (items, 0..) |item, i| {
+            if (item.id == from_id) {
+                from = i;
+            }
+            if (item.id == to_id) {
+                to = i;
+            }
+        }
+        if (from) |f| {
+            if (to) |t| {
+                graph.addEdge(@intCast(f), @intCast(t));
+            } else {
+                unreachable;
+            }
+        } else {
+            unreachable;
+        }
+    }
 }
 
 pub fn on_post_item(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {

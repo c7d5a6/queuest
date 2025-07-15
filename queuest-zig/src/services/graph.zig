@@ -1,7 +1,7 @@
 const std = @import("std");
 const ArrayLU = std.ArrayListUnmanaged(gsize);
 
-const gsize = u32;
+pub const gsize = u32;
 const GraphError = error{
     CantSortCyclicGraph,
 };
@@ -10,7 +10,7 @@ pub const Graph = struct {
     size: gsize,
     edges_size: gsize,
     edges: []ArrayLU,
-    
+
     // relations: Map<number, number[]>;
     // relationsInverted: Map<number, number[]>;
     a: std.mem.Allocator,

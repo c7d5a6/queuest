@@ -145,6 +145,7 @@ export class ItemsService extends BaseService {
    * This method doesn't expect any request body.
    */
   itemsControllerDeleteItemFromCollection$Response(params: {
+    collectionId: number;
     collectionItemId: number;
   },
   context?: HttpContext
@@ -154,6 +155,7 @@ export class ItemsService extends BaseService {
     const rb = new RequestBuilder(this.rootUrl, ItemsService.ItemsControllerDeleteItemFromCollectionPath, 'delete');
     if (params) {
       rb.path('collectionItemId', params.collectionItemId, {});
+      rb.path('collectionId', params.collectionId, {});
     }
 
     return this.http.request(rb.build({
@@ -175,6 +177,7 @@ export class ItemsService extends BaseService {
    * This method doesn't expect any request body.
    */
   itemsControllerDeleteItemFromCollection(params: {
+    collectionId: number;
     collectionItemId: number;
   },
   context?: HttpContext

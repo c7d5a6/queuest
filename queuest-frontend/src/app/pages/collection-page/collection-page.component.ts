@@ -80,8 +80,9 @@ export class CollectionPageComponent implements OnInit {
     if (!itemId) {
       return;
     }
+    console.log("deleteItem", itemId);
     this.itemService
-      .itemsControllerDeleteItemFromCollection({collectionItemId: itemId})
+      .itemsControllerDeleteItemFromCollection({collectionId: this.collection.id!, collectionItemId: itemId})
       .subscribe(() => this.reload());
 
   }
