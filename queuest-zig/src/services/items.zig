@@ -92,3 +92,64 @@ pub fn on_delete_item(a: Allocator, r: Request, c: *Context, params: anytype) Co
 
     r.sendBody("") catch return;
 }
+
+fn getBestPair(id: i64, itemList: std.ArrayList(i64), exclude: []const i64, edge: Edges) !?CollectionItem {
+    const itemPos = ip: {
+        for (itemList.items, 0..) |item, i| {
+            if (item == id) {
+                break :ip i;
+            }
+        }
+        return error.InternalError;
+    };
+
+    var positions = std.AutoHashMap(i64, i64).init(a);
+    defer positions.deinit();
+    for (itemList.items, 0..) |item, i| {
+        positions.put(item, @intCast(i)) catch unreachable;
+    }
+
+    const lastIdx = if (!edge.relations.has(id)) itemList.items.len - 1 else edge.relations.get(id).?.map((id) => positions.get(id).?).reduce((prevValue, currentValue) => std.math.min(prevValue, currentValue), itemList.items.len - 1);
+    const firstIdx = if (!edge.relationsInverted.has(id)) 0 else edge.relationsInverted.get(id).?.map((id) => positions.get(id).?).reduce((prevValue, currentValue) => std.math.max(prevValue, currentValue), 0);
+
+    const relationPosition = if (std.math.absInt(itemPos - firstIdx) > std.math.absInt(itemPos - lastIdx)) std.math.ceil(itemPos + firstIdx) / 2 else std.math.floor(itemPos + lastIdx) / 2;
+
+    var backupItem: ?i64 = null;
+    var resortItem: ?i64 = null;
+
+    for (0..itemList.items.len * 2) |i| {
+        const position = relationPosition + (2 * (i % 2) - 1) * std.math.ceil(i / 2);
+        if (position < 0 or position >= itemList.items.len) {
+            continue;
+        }
+        const itemForRelation = itemList.items[position];
+        if (!backupItem and itemForRelation != id and !exclude.contains(itemForRelation)) {
+            backupItem = itemForRelation;
+        }
+        if (!resortItem and itemForRelation != id) {
+            resortItem = itemForRelation;
+        }
+        if (itemForRelation == id or exclude.contains(itemForRelation)) {
+            continue;
+        }
+        if (!isThereRelation(id, itemForRelation, edge)) {
+            return itemForRelation;
+        }
+    }
+    if (backupItem) |b| {
+        return b;
+    }
+    if (resortItem) |r| {
+        return r;
+    }
+    return null;
+}
+
+fn isThereRelation(id: i64, itemForRelation: i64, edge: Edges) bool {
+    return isThereRelationFromTo(id, itemForRelation, edge) or isThereRelationFromTo(itemForRelation, id, edge);
+}
+
+fn isThereRelationFromTo(fromId: i64, toId: i64, edge: Edges) bool {
+    if (edge.relations.has(fromId)) return 0 <= edge.relations.get(fromId).?.find((idx) => idx == toId);
+    return false;
+}

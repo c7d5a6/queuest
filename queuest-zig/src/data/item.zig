@@ -64,6 +64,19 @@ pub const CollectionItem = struct {
         return value;
     }
 
+    pub fn findById(conn: *Conn, id: i64) !?CollectionItem {
+        var result = try conn.queryOpts(
+            \\select ci.*,it.name as item_name,cl.name as col_name  
+            \\ from collection_item_tbl as ci
+            \\ left join item_tbl as it on ci.item_id = it.id 
+            \\ left join collection_tbl as cl on ci.collection_subitem_id = cl.id
+            \\   where ci.id = $1
+        , .{id}, .{ .column_names = true });
+        defer result.deinit();
+
+        return getSoloEntity(CollectionItem, result);
+    }
+
     pub fn findAllForCollectionId(conn: *Conn, allocator: std.mem.Allocator, collection_id: i64) !std.ArrayList(CollectionItem) {
         var result = try conn.queryOpts(
             \\select ci.*,it.name as item_name,cl.name as col_name  

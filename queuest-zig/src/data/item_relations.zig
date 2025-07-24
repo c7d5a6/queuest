@@ -81,7 +81,9 @@ pub const ItemRelation = struct {
 
     pub fn deleteItemRelation(conn: *Conn, collection_item_from_id: i64, collection_item_to_id: i64) !void {
         var result = try conn.queryOpts(
-            \\delete from item_relation_tbl where collection_item_from_id = $1 and collection_item_to_id = $2
+            \\delete from item_relation_tbl where 
+            \\(collection_item_from_id = $1 and collection_item_to_id = $2) or
+            \\(collection_item_from_id = $2 and collection_item_to_id = $1)
         , .{ collection_item_from_id, collection_item_to_id }, .{ .column_names = true });
         defer result.deinit();
     }

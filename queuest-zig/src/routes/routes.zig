@@ -4,6 +4,7 @@ const Method = zap.http.Method;
 const Context = @import("../middle/context.zig").Context;
 const collections = @import("../services/collections.zig");
 const items = @import("../services/items.zig");
+const items_relations = @import("../services/items_relations.zig");
 const Regex = @import("matcher.zig").Regex;
 const ControllerError = @import("router-errors.zig").ControllerError;
 
@@ -44,8 +45,8 @@ const rt = [_]struct { Method, Access, [:0]const u8, type, ControllerRequest }{
     .{ .POST, .Authorized, "/collections/{collectionId}/items", struct { collectionId: i64 }, items.on_post_item },
     .{ .DELETE, .Authorized, "/collections/{collectionId}/items/{collectionItemId}", struct { collectionId: i64, collectionItemId: i64 }, items.on_delete_item },
     // -- ItemsRelation
-    // POST /relations/{fromId}/{toId}
-    // DELETE /relations/{itemAId}/{itemBId}
+    .{ .POST, .Authorized, "/relations/{fromId}/{toId}", struct { fromId: i64, toId: i64 }, items_relations.on_post_relation },
+    .{ .DELETE, .Authorized, "/relations/{itemAId}/{itemBId}", struct { itemAId: i64, itemBId: i64 }, items_relations.on_delete_relation },
 };
 const routes: [rt.len]Path = init_rts: {
     var initial: [rt.len]Path = undefined;
