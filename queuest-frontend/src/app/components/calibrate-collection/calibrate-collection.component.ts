@@ -45,11 +45,13 @@ export class CalibrateCollectionComponent implements OnInit {
     if (!this.collectionId) return;
     const ids: number[] = [];
     this.items.forEach((item) => ids.push(item.item2.id!));
+    console.log("calibrating collection",this.collectionId, ids);
     this.itemsService
       .itemsControllerGetLeastCalibratedItem({collectionId: this.collectionId})
       .subscribe((item) =>
         this.itemsService
           .itemsControllerGetBestPair({
+            collectionId: this.collectionId!,
             id: item.id!,
             exclude: ids,
             strict: false

@@ -15,6 +15,7 @@ import {ItemsRelationService} from "../../api/services/items-relation.service";
 export class CalibrateItemComponent implements OnInit {
 
   itemId: number | undefined;
+  collectionId: number | undefined;
   title: string = '';
   items: ItemPair[] = [];
   calibrated = true;
@@ -30,6 +31,9 @@ export class CalibrateItemComponent implements OnInit {
     }
     if (ref.data['itemId']) {
       this.itemId = ref.data['itemId']
+    }
+    if (ref.data['collectionId']) {
+      this.collectionId = ref.data['collectionId']
     }
   }
 
@@ -47,8 +51,10 @@ export class CalibrateItemComponent implements OnInit {
     const ids: number[] = [];
     ids.push(this.itemId!);
     this.items.forEach((item) => ids.push(item.item2.id!));
+    console.log("calibrating item",this.collectionId, this.itemId, ids);
     this.itemsService
       .itemsControllerGetBestPair({
+        collectionId: this.collectionId!,
         id: this.itemId!,
         exclude: ids,
         strict: true

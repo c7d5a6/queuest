@@ -254,6 +254,7 @@ export class ItemsService extends BaseService {
    * This method doesn't expect any request body.
    */
   itemsControllerGetBestPair$Response(params: {
+    collectionId: number;
     id: number;
     strict: boolean;
     exclude?: Array<number>;
@@ -264,6 +265,7 @@ export class ItemsService extends BaseService {
 
     const rb = new RequestBuilder(this.rootUrl, ItemsService.ItemsControllerGetBestPairPath, 'get');
     if (params) {
+      rb.path('collectionId', params.collectionId, {});
       rb.path('id', params.id, {});
       rb.path('strict', params.strict, {});
       rb.query('exclude', params.exclude, {});
@@ -288,6 +290,7 @@ export class ItemsService extends BaseService {
    * This method doesn't expect any request body.
    */
   itemsControllerGetBestPair(params: {
+    collectionId: number;
     id: number;
     strict: boolean;
     exclude?: Array<number>;

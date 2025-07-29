@@ -57,6 +57,7 @@ export class CollectionPageComponent implements OnInit {
         data: {
           title: `Calibrate`,
           itemId: id,
+          collectionId: this.collection.id,
         },
       })
       .afterClosed$.subscribe(() =>

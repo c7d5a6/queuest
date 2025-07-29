@@ -41,7 +41,7 @@ const rt = [_]struct { Method, Access, [:0]const u8, type, ControllerRequest }{
     // -- Items
     .{ .GET, .Authorized, "/collections/{collectionId}/items", struct { collectionId: i64 }, items.on_get_items },
     // GET /collections/{collectionId}/items/least-calibrated
-    // GET /collections/{collectionId}/items/{id}/bestpair/{strict}
+    .{ .GET, .Authorized, "/collections/{collectionId}/items/{collectionItemId}/bestpair/{strict}", struct { collectionId: i64, collectionItemId: i64, strict: bool }, items.on_get_best_pair },
     .{ .POST, .Authorized, "/collections/{collectionId}/items", struct { collectionId: i64 }, items.on_post_item },
     .{ .DELETE, .Authorized, "/collections/{collectionId}/items/{collectionItemId}", struct { collectionId: i64, collectionItemId: i64 }, items.on_delete_item },
     // -- ItemsRelation
@@ -138,9 +138,27 @@ fn getRouteParams(comptime T: type, comptime path: []const u8, url: []const u8) 
         const valueEnd = std.mem.indexOfScalarPos(u8, url[0..], valueStart, '/') orelse url.len;
         const paramName = path[pos + 1 .. end];
         const paramValue = url[valueStart..valueEnd];
-        std.log.debug("parse int param value: {s}", .{paramValue});
-        const value = std.fmt.parseInt(i64, paramValue, 10) catch unreachable;
-        @field(result, paramName) = value;
+        switch (@FieldType(T, paramName)) {
+            i64 => {
+                std.log.debug("parse int param value: {s}", .{paramValue});
+                const value = std.fmt.parseInt(i64, paramValue, 10) catch unreachable;
+                @field(result, paramName) = value;
+            },
+            bool => {
+                std.log.debug("parse bool param value: {s}", .{paramValue});
+
+                if (paramValue.len == 5 and std.mem.eql(u8, paramValue, "false")) {
+                    @field(result, paramName) = false;
+                    break;
+                }
+                if (paramValue.len == 4 and std.mem.eql(u8, paramValue, "true")) {
+                    @field(result, paramName) = true;
+                    break;
+                }
+                unreachable;
+            },
+            else => unreachable,
+        }
         start = end;
         valueStart = valueEnd - 1;
     }
