@@ -28,9 +28,12 @@ const AuthError = error{
     WrongAuthTime,
 };
 
+const log = std.log.scoped(.auth);
+
 pub const JWTMiddleware = struct {
     handler: Handler,
     allocator: Allocator,
+
     const Self = @This();
 
     pub fn init(other: ?*Handler, allocator: Allocator) Self {
@@ -59,8 +62,8 @@ pub const JWTMiddleware = struct {
                 .authenticated = true,
                 .uuid = sub,
             };
-            std.log.debug("\nSub: {s}\n", .{sub[0..28]});
-            std.log.debug("\nuuid: {s}\n", .{context.auth.?.uuid.?[0..28]});
+            log.debug("Sub: {s}\n", .{sub[0..28]});
+            log.debug("uuid: {s}\n", .{context.auth.?.uuid.?[0..28]});
         } else {
             context.auth = Auth{
                 .authenticated = false,
@@ -72,7 +75,7 @@ pub const JWTMiddleware = struct {
 };
 
 fn parseJWT(allocator: Allocator, jwt: []const u8) AuthError![28]u8 {
-    std.log.debug("JWT Middleware: set user in context {?s}\n\n", .{jwt});
+    log.debug("JWT Middleware: set user in context {?s}\n\n", .{jwt});
     const bearer = zap.Auth.AuthScheme.Bearer.str();
     const jwt_start = bearer.len + (mem.indexOfPos(u8, jwt, 0, bearer) orelse
         return error.ErrorParsingHeader);
@@ -83,7 +86,7 @@ fn parseJWT(allocator: Allocator, jwt: []const u8) AuthError![28]u8 {
 
     const key = try parseJWTHead(allocator, jwt[jwt_start..jwt_body_start]);
     const sub = try parseJWTBody(allocator, jwt[jwt_body_start + 1 .. jwt_sig_start]);
-    std.log.debug("\nSubject: {s}\n", .{sub});
+    log.debug("Subject: {s}\n", .{sub});
 
     const is_signature_ok = firebase.verifySignature(allocator, key[0..], jwt[jwt_start..jwt_sig_start], jwt[jwt_sig_start + 1 ..]) catch return error.SignatureDecodingError;
     if (!is_signature_ok)
@@ -96,7 +99,7 @@ fn parseJWTHead(allocator: Allocator, head_base: []const u8) AuthError![]const u
     const encoded = mem.trim(u8, head_base[0..], " \t\r\n");
     _ = base64Url.decode(buff, encoded) catch return error.ErrorParsingJWT;
     const head = json.parseFromSlice(json.Value, allocator, buff, .{}) catch return error.ErrorParsingJWT;
-    std.log.debug("\nJWT: {s}\n", .{buff});
+    log.debug("JWT: {s}\n", .{buff});
     var alg: bool = false;
     var key: bool = false;
     var typ: bool = false;
@@ -133,12 +136,12 @@ fn parseJWTHead(allocator: Allocator, head_base: []const u8) AuthError![]const u
 // auth_time   Authentication time     Must be in the past. The time when the user authenticated.
 fn parseJWTBody(allocator: Allocator, body_base: []const u8) AuthError![28]u8 {
     const now = std.time.timestamp();
-    std.log.debug("\nNow time {d}\n", .{now});
+    log.debug("Now time {d}\n", .{now});
     const buff = allocator.alloc(u8, body_base.len * 3 / 4) catch return error.ErrorParsingJWT;
     const encoded = mem.trim(u8, body_base[0..], " \t\r\n");
     _ = base64Url.decode(buff, encoded) catch return error.ErrorParsingJWT;
     const body = json.parseFromSlice(json.Value, allocator, buff, .{}) catch return error.ErrorParsingJWT;
-    std.log.debug("\nJWT: {s}\n", .{buff});
+    log.debug("JWT: {s}\n", .{buff});
     var exp: bool = false;
     var iat: bool = false;
     var aud: bool = false;
@@ -173,7 +176,7 @@ fn parseJWTBody(allocator: Allocator, body_base: []const u8) AuthError![28]u8 {
         if (mem.eql(u8, "auth_time", k)) {
             auth_time = true;
             const time = body.value.object.get(k).?.integer;
-            std.log.debug("\nauth time < now {d} < {d}\n", .{ time, now });
+            log.debug("auth time < now {d} < {d}\n", .{ time, now });
             if (time > now) return error.WrongAuthTime;
         }
         if (mem.eql(u8, "sub", k)) {
@@ -198,7 +201,7 @@ const test_jwt =
     "." ++ test_jwt_sig;
 
 test "print" {
-    std.log.debug("\nAuth print", .{});
+    std.log.debug("Auth print", .{});
     _ = firebase;
 }
 

@@ -74,7 +74,16 @@ pub const CollectionItem = struct {
         , .{id}, .{ .column_names = true });
         defer result.deinit();
 
-        return getSoloEntity(CollectionItem, result);
+        // return getSoloEntity(CollectionItem, result);
+        var e: ?CollectionItem = null;
+
+        if (try result.next()) |row| {
+            e = try toCollectionItem(row);
+        }
+        if (try result.next()) |_| {
+            return error.NonSigleResult;
+        }
+        return e;
     }
 
     pub fn findAllForCollectionId(conn: *Conn, allocator: std.mem.Allocator, collection_id: i64) !std.ArrayList(CollectionItem) {

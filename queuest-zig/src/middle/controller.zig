@@ -34,6 +34,7 @@ pub const ControllerMiddleWare = struct {
         // this is how we would get our self pointer
         const self: *Self = @fieldParentPtr("handler", handler);
         var arena = std.heap.ArenaAllocator.init(self.allocator);
+        // defer _ = arena.reset(.retain_capacity);
         defer arena.deinit();
 
         self.dispatch(arena.allocator(), r, context);

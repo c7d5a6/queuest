@@ -22,10 +22,11 @@ const port = 3000;
 
 pub const std_options: std.Options = .{
     // general log level
-    .log_level = .debug,
+    .log_level = if (builtin.mode == .Debug) .debug else .err,
     .log_scope_levels = &[_]std.log.ScopeLevel{
         // log level specific to zap
-        .{ .scope = .zap, .level = .info },
+        .{ .scope = .zap, .level = if (builtin.mode == .Debug) .info else .warn },
+        // .{ .scope = .auth, .level = if (builtin.mode == .Debug) .debug else .err },
     },
 };
 pub fn main() !void {
@@ -36,13 +37,18 @@ pub fn main() !void {
         //
         // --- Database
         //
+        // const port = std.posix.getenv("DB_PORT") orelse "5432";
+        const dbhost = std.posix.getenv("DB_HOST") orelse "127.0.0.1";
+        const dbuser = std.posix.getenv("DB_USERNAME") orelse "queuest";
+        const dbname = std.posix.getenv("DB_DATABASE") orelse "queuest";
+        const dbpass = std.posix.getenv("DB_PASSWORD") orelse "queuest";
         const pool = pg.Pool.init(allocator, .{ .size = 5, .connect = .{
             .port = 5432,
-            .host = "127.0.0.1",
+            .host = dbhost,
         }, .auth = .{
-            .username = "queuest",
-            .database = "queuest",
-            .password = "queuest",
+            .username = dbuser,
+            .database = dbname,
+            .password = dbpass,
             .timeout = 10_000,
         } }) catch |err| {
             std.log.debug("Failed to connect: {}", .{err});

@@ -25,7 +25,7 @@ pub const HeaderMiddleWare = struct {
     pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) !bool {
         r.setHeader("Access-Control-Allow-Origin", "*") catch unreachable;
         r.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PATCH, OPTIONS") catch unreachable;
-        r.setHeader("Access-Control-Allow-Headers", "*") catch unreachable;
+        r.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization") catch unreachable;
         r.setHeader("Expires", "0") catch unreachable;
         if (r.methodAsEnum() == .OPTIONS) {
             r.sendBody("") catch unreachable;

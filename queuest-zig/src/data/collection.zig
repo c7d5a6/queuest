@@ -75,15 +75,17 @@ pub const Collection = struct {
     }
 
     pub fn deleteCollection(conn: *Conn, id: i64, user_id: i64) !void {
-        _ = try conn.queryOpts(
+        const result = try conn.queryOpts(
             \\delete from collection_tbl where id = $1 and user_id = $2
         , .{ id, user_id }, .{});
+        defer result.deinit();
     }
 
     pub fn visitCollection(conn: *Conn, collection: Collection) !void {
-        _ = try conn.queryOpts(
+        const result = try conn.queryOpts(
             \\update collection_tbl set visited_ts = now() where id = $1 and user_id = $2
         , .{ collection.id, collection.user_id }, .{});
+        defer result.deinit();
     }
 
     pub fn setFav(conn: *Conn, id: i64, user_id: i64, fav: bool) !?Collection {

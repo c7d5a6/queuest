@@ -12,17 +12,9 @@ pub fn on_post_relation(a: Allocator, r: Request, c: *Context, params: anytype) 
     const fromId = params.fromId;
     const toId = params.toId;
 
-    const fromItem = Item.findById(c.connection.?, fromId) catch unreachable orelse unreachable;
-    const toItem = Item.findById(c.connection.?, toId) catch unreachable orelse unreachable;
-    if (fromItem.collection_id != toItem.collection_id) {
-        return ControllerError.BadRequest;
-    }
-    const collection = Collection.findById(c.connection.?, fromItem.collection_id) catch unreachable orelse unreachable;
-    if (collection.user_id != c.user.?.id) {
-        return ControllerError.BadRequest;
-    }
+    try assertItemsAccess(c, fromId, toId);
 
-    const id = ItemRelation.insertRelation(c.connection.?, fromId, toId) catch unreachable;
+    const id = ItemRelation.insertItemRelation(c.connection.?, fromId, toId) catch unreachable;
 
     const json = std.json.stringifyAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
     r.setContentType(.JSON) catch return;
@@ -34,16 +26,21 @@ pub fn on_delete_relation(a: Allocator, r: Request, c: *Context, params: anytype
     const itemAId = params.itemAId;
     const itemBId = params.itemBId;
 
-    const itemA = Item.findById(c.connection.?, itemAId) catch unreachable orelse unreachable;
-    const itemB = Item.findById(c.connection.?, itemBId) catch unreachable orelse unreachable;
-    if (itemA.collection_id != itemB.collection_id) {
-        return ControllerError.BadRequest;
-    }
-    const collection = Collection.findById(c.connection.?, itemA.collection_id) catch unreachable orelse unreachable;
-    if (collection.user_id != c.user.?.id) {
-        return ControllerError.BadRequest;
-    }
+    try assertItemsAccess(c, itemAId, itemBId);
+
     ItemRelation.deleteItemRelation(c.connection.?, itemAId, itemBId) catch unreachable;
 
     r.sendBody("") catch return;
+}
+
+fn assertItemsAccess(c: *Context, fromId: i64, toId: i64) ControllerError!void {
+    const fromItem = Item.findById(c.connection.?, fromId) catch unreachable orelse unreachable;
+    const toItem = Item.findById(c.connection.?, toId) catch unreachable orelse unreachable;
+    if (fromItem.collection_id != toItem.collection_id) {
+        return ControllerError.BadRequest;
+    }
+    const collection = Collection.findByIdAndUserId(c.connection.?, fromItem.collection_id, c.user.?.id) catch unreachable;
+    if (collection == null) {
+        return ControllerError.BadRequest;
+    }
 }

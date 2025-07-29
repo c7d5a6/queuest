@@ -14,14 +14,16 @@ pub fn on_get_items(a: Allocator, r: Request, c: *Context, params: anytype) Cont
     const collectionId = params.collectionId;
     _ = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
     const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch unreachable;
-    const It = struct { id: i64, name: []const u8 };
+    const It = struct { id: i64, name: [:0]const u8 };
     var result = std.ArrayList(It).initCapacity(a, items.items.len) catch unreachable;
     for (items.items) |item| {
         const name = switch (item.inner) {
             .collection => |cl| cl.name,
             .item => |it| it.name,
         };
-        result.append(It{ .id = item.id, .name = name }) catch unreachable;
+        const n = a.allocSentinel(u8, name.len, 0) catch unreachable;
+        @memcpy(n, name);
+        result.append(It{ .id = item.id, .name = n }) catch unreachable;
     }
     var graph: Graph = Graph.init(a, @intCast(items.items.len));
     setGraphEdges(a, c, items.items, &graph) catch unreachable;
@@ -33,7 +35,7 @@ pub fn on_get_items(a: Allocator, r: Request, c: *Context, params: anytype) Cont
 
     const Result = struct { id: i64, items: []It, calibrated: f64 };
     const res = Result{ .id = collectionId, .items = result.items, .calibrated = 0.5 };
-    const json = std.json.stringifyAlloc(a, res, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+    const json = std.json.stringifyAlloc(a, res, .{ .escape_unicode = true, .emit_null_optional_fields = false, .whitespace = .minified }) catch unreachable;
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
 }
@@ -93,63 +95,69 @@ pub fn on_delete_item(a: Allocator, r: Request, c: *Context, params: anytype) Co
     r.sendBody("") catch return;
 }
 
-fn getBestPair(id: i64, itemList: std.ArrayList(i64), exclude: []const i64, edge: Edges) !?CollectionItem {
-    const itemPos = ip: {
-        for (itemList.items, 0..) |item, i| {
-            if (item == id) {
-                break :ip i;
-            }
-        }
-        return error.InternalError;
-    };
-
-    var positions = std.AutoHashMap(i64, i64).init(a);
-    defer positions.deinit();
-    for (itemList.items, 0..) |item, i| {
-        positions.put(item, @intCast(i)) catch unreachable;
-    }
-
-    const lastIdx = if (!edge.relations.has(id)) itemList.items.len - 1 else edge.relations.get(id).?.map((id) => positions.get(id).?).reduce((prevValue, currentValue) => std.math.min(prevValue, currentValue), itemList.items.len - 1);
-    const firstIdx = if (!edge.relationsInverted.has(id)) 0 else edge.relationsInverted.get(id).?.map((id) => positions.get(id).?).reduce((prevValue, currentValue) => std.math.max(prevValue, currentValue), 0);
-
-    const relationPosition = if (std.math.absInt(itemPos - firstIdx) > std.math.absInt(itemPos - lastIdx)) std.math.ceil(itemPos + firstIdx) / 2 else std.math.floor(itemPos + lastIdx) / 2;
-
-    var backupItem: ?i64 = null;
-    var resortItem: ?i64 = null;
-
-    for (0..itemList.items.len * 2) |i| {
-        const position = relationPosition + (2 * (i % 2) - 1) * std.math.ceil(i / 2);
-        if (position < 0 or position >= itemList.items.len) {
-            continue;
-        }
-        const itemForRelation = itemList.items[position];
-        if (!backupItem and itemForRelation != id and !exclude.contains(itemForRelation)) {
-            backupItem = itemForRelation;
-        }
-        if (!resortItem and itemForRelation != id) {
-            resortItem = itemForRelation;
-        }
-        if (itemForRelation == id or exclude.contains(itemForRelation)) {
-            continue;
-        }
-        if (!isThereRelation(id, itemForRelation, edge)) {
-            return itemForRelation;
-        }
-    }
-    if (backupItem) |b| {
-        return b;
-    }
-    if (resortItem) |r| {
-        return r;
-    }
-    return null;
+// fn getBestPair(id: i64, itemList: std.ArrayList(i64), exclude: []const i64, edge: Edges) !?CollectionItem {
+//     const itemPos = ip: {
+//         for (itemList.items, 0..) |item, i| {
+//             if (item == id) {
+//                 break :ip i;
+//             }
+//         }
+//         return error.InternalError;
+//     };
+//
+//     var positions = std.AutoHashMap(i64, i64).init(a);
+//     defer positions.deinit();
+//     for (itemList.items, 0..) |item, i| {
+//         positions.put(item, @intCast(i)) catch unreachable;
+//     }
+//
+//     const lastIdx = if (!edge.relations.has(id)) itemList.items.len - 1 else edge.relations.get(id).?.map((id) => positions.get(id).?).reduce((prevValue, currentValue) => std.math.min(prevValue, currentValue), itemList.items.len - 1);
+//     // if not has edge
+//     // then last idx == length -1
+//     // else max idx relation
+//     const firstIdx = if (!edge.relationsInverted.has(id)) 0 else edge.relationsInverted.get(id).?.map((id) => positions.get(id).?).reduce((prevValue, currentValue) => std.math.max(prevValue, currentValue), 0);
+//
+//     const relationPosition = if (std.math.absInt(itemPos - firstIdx) > std.math.absInt(itemPos - lastIdx)) std.math.ceil(itemPos + firstIdx) / 2 else std.math.floor(itemPos + lastIdx) / 2;
+//
+//     var backupItem: ?i64 = null;
+//     var resortItem: ?i64 = null;
+//
+//     for (0..itemList.items.len * 2) |i| {
+//         const position = relationPosition + (2 * (i % 2) - 1) * std.math.ceil(i / 2);
+//         if (position < 0 or position >= itemList.items.len) {
+//             continue;
+//         }
+//         const itemForRelation = itemList.items[position];
+//         if (!backupItem and itemForRelation != id and !exclude.contains(itemForRelation)) {
+//             backupItem = itemForRelation;
+//         }
+//         if (!resortItem and itemForRelation != id) {
+//             resortItem = itemForRelation;
+//         }
+//         if (itemForRelation == id or exclude.contains(itemForRelation)) {
+//             continue;
+//         }
+//         if (!isThereRelation(id, itemForRelation, edge)) {
+//             return itemForRelation;
+//         }
+//     }
+//     if (backupItem) |b| {
+//         return b;
+//     }
+//     if (resortItem) |r| {
+//         return r;
+//     }
+//     return null;
+// }
+//
+fn isThereRelation(item: i64, relation: i64, relations: std.ArrayList(ItemRelation)) bool {
+    return isThereRelationFromTo(item, relation, relations) or isThereRelationFromTo(relation, item, relations);
 }
 
-fn isThereRelation(id: i64, itemForRelation: i64, edge: Edges) bool {
-    return isThereRelationFromTo(id, itemForRelation, edge) or isThereRelationFromTo(itemForRelation, id, edge);
-}
-
-fn isThereRelationFromTo(fromId: i64, toId: i64, edge: Edges) bool {
-    if (edge.relations.has(fromId)) return 0 <= edge.relations.get(fromId).?.find((idx) => idx == toId);
+fn isThereRelationFromTo(from: i64, to: i64, relations: std.ArrayList(ItemRelation)) bool {
+    for (relations.items) |r| {
+        if (r.collection_item_from_id == from and r.collection_item_to_id == to)
+            return true;
+    }
     return false;
 }
