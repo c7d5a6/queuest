@@ -253,6 +253,53 @@ fn getBestPair(a: Allocator, id: i64, item_list: std.ArrayList(Item), exclude: [
     return null;
 }
 
+pub fn on_get_least_calibrated_item(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
+    const collectionId = params.collectionId;
+    _ = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch unreachable;
+    var positions = std.AutoHashMap(i64, usize).init(a);
+    for (items.items, 0..) |item, i| {
+        positions.put(item.id, @intCast(i)) catch unreachable;
+    }
+    const relations = ItemRelation.findAllForItemIds(c.connection.?, a, items.items) catch unreachable;
+    const in = a.alloc(usize, items.items.len) catch unreachable;
+    const out = a.alloc(usize, items.items.len) catch unreachable;
+    @memset(in, 0);
+    @memset(out, 0);
+    for (relations.items) |rel| {
+        if (positions.get(rel.collection_item_from_id)) |p| {
+            in[p] += 1;
+        }
+        if (positions.get(rel.collection_item_to_id)) |p| {
+            out[p] += 1;
+        }
+    }
+    var result: ?Item = null;
+    var calibration: ?f64 = null;
+    for (items.items, 0..) |item, i| {
+        const insrt: f64 = @floatFromInt(in[i]);
+        const outst: f64 = @floatFromInt(out[i]);
+        const calvalue: f64 = std.math.sqrt(insrt) + std.math.sqrt(outst);
+        if (calibration) |cal| {
+            if (calvalue < cal) {
+                calibration = calvalue;
+                result = item;
+            }
+        } else {
+            calibration = calvalue;
+            result = item;
+        }
+    }
+    if (result) |res| {
+        const it = toIt(a, res);
+        const json = std.json.stringifyAlloc(a, it, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+        r.setContentType(.JSON) catch return;
+        r.sendJson(json) catch return;
+    } else {
+        r.sendBody("") catch return;
+    }
+}
+
 fn isThereRelation(item: i64, relation: i64, relations: std.ArrayList(ItemRelation)) bool {
     return isThereRelationFromTo(item, relation, relations) or isThereRelationFromTo(relation, item, relations);
 }

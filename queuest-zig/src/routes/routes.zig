@@ -40,7 +40,7 @@ const rt = [_]struct { Method, Access, [:0]const u8, type, ControllerRequest }{
     .{ .DELETE, .Authorized, "/collections/fav/{collectionId}", struct { collectionId: i64 }, collections.on_delete_fav_collection },
     // -- Items
     .{ .GET, .Authorized, "/collections/{collectionId}/items", struct { collectionId: i64 }, items.on_get_items },
-    // GET /collections/{collectionId}/items/least-calibrated
+    .{ .GET, .Authorized, "/collections/{collectionId}/items/least-calibrated", struct { collectionId: i64 }, items.on_get_least_calibrated_item },
     .{ .GET, .Authorized, "/collections/{collectionId}/items/{collectionItemId}/bestpair/{strict}", struct { collectionId: i64, collectionItemId: i64, strict: bool }, items.on_get_best_pair },
     .{ .POST, .Authorized, "/collections/{collectionId}/items", struct { collectionId: i64 }, items.on_post_item },
     .{ .DELETE, .Authorized, "/collections/{collectionId}/items/{collectionItemId}", struct { collectionId: i64, collectionItemId: i64 }, items.on_delete_item },
