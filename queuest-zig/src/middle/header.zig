@@ -23,7 +23,7 @@ pub const HeaderMiddleWare = struct {
 
     // note that the first parameter is of type *Handler, not *Self !!!
     pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) !bool {
-        r.setHeader("Access-Control-Allow-Origin", "localhost, queuest.c7d5a6.com, api.queuest.c7d5a6.com") catch unreachable;
+        r.setHeader("Access-Control-Allow-Origin", "queuest.c7d5a6.com") catch unreachable;
         r.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PATCH, OPTIONS") catch unreachable;
         r.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization") catch unreachable;
         r.setHeader("Expires", "0") catch unreachable;
