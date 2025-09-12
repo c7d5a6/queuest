@@ -46,7 +46,7 @@ pub fn build(b: *std.Build) void {
     const zap_art = zap.artifact("facil.io");
     // const sqlite_mod = sqlite.module("sqlite");
     configureArtifact(b, exe, libC, zap_mod, zap_art, pg_module);
-    exe.linkSystemLibrary("glib-2.0");
+    // exe.linkSystemLibrary("glib-2.0");
     exe.linkSystemLibrary("ssl");
     exe.linkSystemLibrary("crypto");
     b.installArtifact(exe);
