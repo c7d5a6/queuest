@@ -168,6 +168,7 @@ pub const Graph = struct {
             }
         }
 
+        printEdges(g);
         printEdges(feedback);
         return g;
     }
@@ -182,6 +183,7 @@ pub const Graph = struct {
         var result = try ArrayLU.initCapacity(a, self.size);
         var i: gsize = 0;
         while (i < self.size) : (i += 1) {
+            @memset(v_tmp, false);
             if (!visited[i]) try stack.append(a, i);
             while (stack.getLastOrNull()) |v| {
                 if (visited[v]) {
@@ -191,7 +193,9 @@ pub const Graph = struct {
                 v_tmp[v] = true;
                 var added = false;
                 for (self.edges[v].items) |w| {
-                    if (v_tmp[w]) return error.CantSortCyclicGraph;
+                    if (v_tmp[w]) {
+                        return error.CantSortCyclicGraph;
+                    }
                     if (!visited[w]) {
                         try stack.append(a, w);
                         added = true;
@@ -210,18 +214,21 @@ pub const Graph = struct {
     }
 
     pub fn sort(self: *Graph) ![]const gsize {
+        const start = std.time.microTimestamp();
+        defer std.debug.print("sorting graph in {d}mc", .{std.time.microTimestamp() - start});
         var acycl = try self.withoutCycle();
         return try acycl.sortAcyclic();
     }
 };
 
 fn printEdges(g: Graph) void {
-    std.debug.print("Feedback Ark:\n", .{});
-    for (0..g.size) |f| {
-        for (g.edges[f].items) |t| {
-            std.debug.print("\t({d} -> {d})\n", .{ f, t });
-        }
-    }
+    _ = g;
+    // std.debug.print("Feedback Ark:\n", .{});
+    // for (0..g.size) |f| {
+    //     for (g.edges[f].items) |t| {
+    //         std.debug.print("\t({d} -> {d})\n", .{ f, t });
+    //     }
+    // }
 }
 
 const expect = std.testing.expect;

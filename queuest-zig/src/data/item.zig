@@ -1,4 +1,5 @@
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 const pg = @import("pg");
 const User = @import("user.zig").User;
 const Conn = pg.Conn;
@@ -16,12 +17,12 @@ const ItemType = enum {
 
 const Item = struct {
     id: i64,
-    name: []const u8,
+    name: [:0]const u8,
 };
 
 const Collection = struct {
     id: i64,
-    name: []const u8,
+    name: [:0]const u8,
 };
 
 const InnerItem = union(ItemType) {
@@ -41,7 +42,7 @@ pub const CollectionItem = struct {
     collection_id: i64,
     inner: InnerItem,
 
-    fn toCollectionItem(row: pg.Row) !CollectionItem {
+    fn toCollectionItem(a: Allocator, row: pg.Row) !CollectionItem {
         var value: CollectionItem = undefined;
         // return try row.to(CollectionItem, .{ .map = .name });
         @field(value, "id") = row.getCol(i64, "id");
@@ -49,22 +50,43 @@ pub const CollectionItem = struct {
         const typeStr = row.getCol([]const u8, "type");
         const TypeStr = enum { ITEM, COLLECTION };
         const tp = std.meta.stringToEnum(TypeStr, typeStr) orelse unreachable;
-        const inner = switch (tp) {
+        const aname = switch (tp) {
+            .ITEM => row.getCol([]const u8, "item_name"),
+            .COLLECTION => row.getCol([]const u8, "col_name"),
+        };
+        const name = try a.allocSentinel(u8, aname.len, 0);
+        @memcpy(name, aname);
+        value.inner = switch (tp) {
             .ITEM => InnerItem{ .item = Item{
                 .id = row.getCol(i64, "item_id"),
-                .name = row.getCol([]const u8, "item_name"),
+                .name = name,
             } },
             .COLLECTION => InnerItem{ .collection = Collection{
                 .id = row.getCol(i64, "collection_subitem_id"),
-                .name = row.getCol([]const u8, "col_name"),
+                .name = name,
             } },
         };
-        @field(value, "inner") = inner;
 
         return value;
     }
 
-    pub fn findById(conn: *Conn, id: i64) !?CollectionItem {
+    pub fn findCollectionIdById(conn: *Conn, id: i64) !?i64 {
+        var result = try conn.queryOpts(
+            \\select ci.collection_id as collection_id
+            \\ from collection_item_tbl as ci
+            \\   where ci.id = $1
+        , .{id}, .{ .column_names = true });
+        defer result.deinit();
+
+        const Cid = struct { collection_id: ?i64 };
+        const ocid = try getSoloEntity(Cid, result);
+        if (ocid) |cid| {
+            return cid.collection_id;
+        }
+        return null;
+    }
+
+    pub fn findById(conn: *Conn, allocator: Allocator, id: i64) !?CollectionItem {
         var result = try conn.queryOpts(
             \\select ci.*,it.name as item_name,cl.name as col_name  
             \\ from collection_item_tbl as ci
@@ -78,7 +100,7 @@ pub const CollectionItem = struct {
         var e: ?CollectionItem = null;
 
         if (try result.next()) |row| {
-            e = try toCollectionItem(row);
+            e = try toCollectionItem(allocator, row);
         }
         if (try result.next()) |_| {
             return error.NonSigleResult;
@@ -99,7 +121,7 @@ pub const CollectionItem = struct {
         var array = std.ArrayList(CollectionItem).init(allocator);
 
         while (try result.next()) |row| {
-            const e = try toCollectionItem(row);
+            const e = try toCollectionItem(allocator, row);
             try array.append(e);
         }
 

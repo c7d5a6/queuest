@@ -1,7 +1,14 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    const target = b.standardTargetOptions(.{});
+    const target = b.standardTargetOptions(.{
+        .default_target = .{
+            // .cpu_arch = .x86_64,
+            // .os_tag = .linux,
+            // .abi = .gnu,
+            // .glibc_version = .{ .major = 2, .minor = 28, .patch = 0 },
+        },
+    });
     const optimize = b.standardOptimizeOption(.{});
 
     const exe = b.addExecutable(.{
@@ -10,10 +17,9 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-
     const libC = b.addStaticLibrary(.{
         .name = "regez",
-        .optimize = .Debug,
+        .optimize = optimize,
         .target = target,
     });
     libC.addIncludePath(b.path("c-src"));
@@ -21,27 +27,28 @@ pub fn build(b: *std.Build) void {
         .files = &.{"c-src/regez.c"},
     });
     libC.linkLibC();
-    exe.linkLibrary(libC);
-    exe.addIncludePath(b.path("c-src"));
-    exe.linkLibC();
-
     const zap = b.dependency("zap", .{
         .target = target,
         .optimize = optimize,
     });
-    const pg = b.dependency("pg", .{
+    const pg_module = b.dependency("pg", .{
         .target = target,
         .optimize = optimize,
-    });
-    const sqlite = b.dependency("sqlite", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    exe.root_module.addImport("zap", zap.module("zap"));
-    exe.linkLibrary(zap.artifact("facil.io"));
-    exe.root_module.addImport("pg", pg.module("pg"));
-    exe.root_module.addImport("sqlite", sqlite.module("sqlite"));
-
+        .openssl_lib_name = @as([]const u8, "ssl"), // usually enough
+        // .openssl_lib_path = std.Build.LazyPath{.cwd_relative = "/usr/lib"},   // only if non-standard
+        // .openssl_include_path = std.Build.LazyPath{.cwd_relative = "/usr/include"}, // only if non-standard
+    }).module("pg");
+    // const sqlite = b.dependency("sqlite", .{
+    //     .target = target,
+    //     .optimize = optimize,
+    // });
+    const zap_mod = zap.module("zap");
+    const zap_art = zap.artifact("facil.io");
+    // const sqlite_mod = sqlite.module("sqlite");
+    configureArtifact(b, exe, libC, zap_mod, zap_art, pg_module);
+    exe.linkSystemLibrary("glib-2.0");
+    exe.linkSystemLibrary("ssl");
+    exe.linkSystemLibrary("crypto");
     b.installArtifact(exe);
 
     // Run the main executable
@@ -61,14 +68,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    exe_unit_tests.linkLibrary(libC);
-    exe_unit_tests.addIncludePath(b.path("c-src"));
-    exe_unit_tests.linkLibC();
-    exe_unit_tests.root_module.addImport("zap", zap.module("zap"));
-    exe_unit_tests.linkLibrary(zap.artifact("facil.io"));
-    exe_unit_tests.root_module.addImport("pg", pg.module("pg"));
-    exe_unit_tests.root_module.addImport("sqlite", sqlite.module("sqlite"));
-
+    configureArtifact(b, exe_unit_tests, libC, zap_mod, zap_art, pg_module);
     const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_exe_unit_tests.step);
@@ -79,14 +79,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    e2e_tests.linkLibrary(libC);
-    e2e_tests.addIncludePath(b.path("c-src"));
-    e2e_tests.linkLibC();
-    e2e_tests.root_module.addImport("zap", zap.module("zap"));
-    e2e_tests.linkLibrary(zap.artifact("facil.io"));
-    e2e_tests.root_module.addImport("pg", pg.module("pg"));
-    e2e_tests.root_module.addImport("sqlite", sqlite.module("sqlite"));
-
+    configureArtifact(b, e2e_tests, libC, zap_mod, zap_art, pg_module);
     const run_e2e_tests = b.addRunArtifact(e2e_tests);
     const e2e_test_step = b.step("e2e", "Run end-to-end tests");
     e2e_test_step.dependOn(&run_e2e_tests.step);
@@ -99,15 +92,26 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    exe_debug_step.linkLibrary(libC);
-    exe_debug_step.addIncludePath(b.path("c-src"));
-    exe_debug_step.linkLibC();
-    exe_debug_step.root_module.addImport("zap", zap.module("zap"));
-    // exe_debug_step.linkLibrary(zap.artifact("facil.io"));
-    exe_debug_step.root_module.addImport("pg", pg.module("pg"));
-    exe_debug_step.root_module.addImport("sqlite", sqlite.module("sqlite"));
+    configureArtifact(b, exe_debug_step, libC, zap_mod, zap_art, pg_module);
 
     const run_exe_debug_step = b.addRunArtifact(exe_debug_step);
     const debug_step = b.step("debug", "Run debug info");
     debug_step.dependOn(&run_exe_debug_step.step);
+}
+
+fn configureArtifact(
+    b: *std.Build,
+    artifact: *std.Build.Step.Compile,
+    libC: *std.Build.Step.Compile,
+    zap_module: *std.Build.Module,
+    zap_facil: *std.Build.Step.Compile,
+    pg_module: *std.Build.Module,
+) void {
+    artifact.linkLibrary(libC);
+    artifact.addIncludePath(b.path("c-src"));
+    artifact.linkLibC();
+    artifact.root_module.addImport("zap", zap_module);
+    artifact.linkLibrary(zap_facil);
+    artifact.root_module.addImport("pg", pg_module);
+    // artifact.root_module.addImport("sqlite", sqlite_module);
 }

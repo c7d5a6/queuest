@@ -1,14 +1,14 @@
 const std = @import("std");
 const zap = @import("zap");
 const pg = @import("pg");
-const sqlite = @import("sqlite");
+// const sqlite = @import("sqlite");
 const builtin = @import("builtin");
 const routes = @import("routes/routes.zig");
 const DispatchRoutes = routes.DispatchRoutes;
 const auth = @import("middle/auth.zig");
 const userMiddle = @import("middle/user.zig");
 const trans = @import("middle/trans.zig");
-const sqliteMiddle = @import("middle/sqlite.zig");
+// const sqliteMiddle = @import("middle/sqlite.zig");
 const contextLib = @import("middle/context.zig");
 const controller = @import("middle/controller.zig");
 const header = @import("middle/header.zig");
@@ -18,15 +18,15 @@ const SharedAllocator = contextLib.SharedAllocator;
 
 const Handler = zap.Middleware.Handler(Context);
 
-const port = 3000;
+const port = 3002;
 
 pub const std_options: std.Options = .{
     // general log level
-    .log_level = if (builtin.mode == .Debug) .debug else .err,
+    .log_level = if (builtin.mode == .Debug) .info else .err,
     .log_scope_levels = &[_]std.log.ScopeLevel{
         // log level specific to zap
         .{ .scope = .zap, .level = if (builtin.mode == .Debug) .info else .warn },
-        // .{ .scope = .auth, .level = if (builtin.mode == .Debug) .debug else .err },
+        .{ .scope = .auth, .level = if (builtin.mode == .Debug) .info else .err },
     },
 };
 pub fn main() !void {
@@ -37,34 +37,40 @@ pub fn main() !void {
         //
         // --- Database
         //
-        // const port = std.posix.getenv("DB_PORT") orelse "5432";
-        const dbhost = std.posix.getenv("DB_HOST") orelse "127.0.0.1";
+        const dbport_s = std.posix.getenv("DATABASE_PORT") orelse "5432";
+        const dbport = try std.fmt.parseInt(u16, dbport_s, 10);
+        const dbhost = std.posix.getenv("DATABASE_HOST") orelse "127.0.0.1";
         const dbuser = std.posix.getenv("DB_USERNAME") orelse "queuest";
         const dbname = std.posix.getenv("DB_DATABASE") orelse "queuest";
-        const dbpass = std.posix.getenv("DB_PASSWORD") orelse "queuest";
-        const pool = pg.Pool.init(allocator, .{ .size = 5, .connect = .{
-            .port = 5432,
-            .host = dbhost,
-        }, .auth = .{
-            .username = dbuser,
-            .database = dbname,
-            .password = dbpass,
-            .timeout = 10_000,
-        } }) catch |err| {
+        const dbpass = std.posix.getenv("DATABASE_PASSWORD") orelse "queuest";
+        const pool = pg.Pool.init(allocator, .{
+            .size = 5,
+            .connect = .{
+                .port = dbport,
+                .host = dbhost,
+                .tls = .require,
+            },
+            .auth = .{
+                .username = dbuser,
+                .database = dbname,
+                .password = dbpass,
+                .timeout = 10_000,
+            },
+        }) catch |err| {
             std.log.debug("Failed to connect: {}", .{err});
             std.posix.exit(1);
         };
         defer pool.deinit();
         // sqlite
-        var db = sqlite.Db.init(.{
-            .mode = sqlite.Db.Mode{ .File = "queuest.db" },
-            .open_flags = .{
-                .write = true,
-                .create = true,
-            },
-            .threading_mode = .MultiThread,
-        }) catch unreachable;
-        defer db.deinit();
+        // var db = sqlite.Db.init(.{
+        //     .mode = sqlite.Db.Mode{ .File = "queuest.db" },
+        //     .open_flags = .{
+        //         .write = true,
+        //         .create = true,
+        //     },
+        //     .threading_mode = .MultiThread,
+        // }) catch unreachable;
+        // defer db.deinit();
 
         //
         // --- Routes
@@ -78,8 +84,8 @@ pub fn main() !void {
         var controllerHandler = controller.ControllerMiddleWare.init(null, routes.dispatch_routes, allocator);
         var userHandler = userMiddle.UserMiddleware.init(controllerHandler.getHandler(), allocator);
         var transactionHandler = trans.TransactionMiddleware.init(userHandler.getHandler(), allocator, pool);
-        var sqliteHandler = sqliteMiddle.SqliteMiddleware.init(transactionHandler.getHandler(), allocator, &db);
-        var jwtHandler = auth.JWTMiddleware.init(sqliteHandler.getHandler(), allocator);
+        // var sqliteHandler = sqliteMiddle.SqliteMiddleware.init(transactionHandler.getHandler(), allocator, &db);
+        var jwtHandler = auth.JWTMiddleware.init(transactionHandler.getHandler(), allocator);
         var headerHandler = header.HeaderMiddleWare.init(jwtHandler.getHandler());
 
         //

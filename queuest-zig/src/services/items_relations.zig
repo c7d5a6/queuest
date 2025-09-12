@@ -34,12 +34,12 @@ pub fn on_delete_relation(a: Allocator, r: Request, c: *Context, params: anytype
 }
 
 fn assertItemsAccess(c: *Context, fromId: i64, toId: i64) ControllerError!void {
-    const fromItem = Item.findById(c.connection.?, fromId) catch unreachable orelse unreachable;
-    const toItem = Item.findById(c.connection.?, toId) catch unreachable orelse unreachable;
-    if (fromItem.collection_id != toItem.collection_id) {
+    const fromItem = Item.findCollectionIdById(c.connection.?, fromId) catch unreachable orelse unreachable;
+    const toItem = Item.findCollectionIdById(c.connection.?, toId) catch unreachable orelse unreachable;
+    if (fromItem != toItem) {
         return ControllerError.BadRequest;
     }
-    const collection = Collection.findByIdAndUserId(c.connection.?, fromItem.collection_id, c.user.?.id) catch unreachable;
+    const collection = Collection.findByIdAndUserId(c.connection.?, fromItem, c.user.?.id) catch unreachable;
     if (collection == null) {
         return ControllerError.BadRequest;
     }
