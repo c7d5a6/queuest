@@ -45,24 +45,24 @@ pub const CollectionItem = struct {
     fn toCollectionItem(a: Allocator, row: pg.Row) !CollectionItem {
         var value: CollectionItem = undefined;
         // return try row.to(CollectionItem, .{ .map = .name });
-        @field(value, "id") = row.getCol(i64, "id");
-        @field(value, "collection_id") = row.getCol(i64, "collection_id");
-        const typeStr = row.getCol([]const u8, "type");
+        @field(value, "id") = try row.getCol(i64, "id");
+        @field(value, "collection_id") = try row.getCol(i64, "collection_id");
+        const typeStr = try row.getCol([]const u8, "type");
         const TypeStr = enum { ITEM, COLLECTION };
         const tp = std.meta.stringToEnum(TypeStr, typeStr) orelse unreachable;
         const aname = switch (tp) {
-            .ITEM => row.getCol([]const u8, "item_name"),
-            .COLLECTION => row.getCol([]const u8, "col_name"),
+            .ITEM => try row.getCol([]const u8, "item_name"),
+            .COLLECTION => try row.getCol([]const u8, "col_name"),
         };
         const name = try a.allocSentinel(u8, aname.len, 0);
         @memcpy(name, aname);
         value.inner = switch (tp) {
             .ITEM => InnerItem{ .item = Item{
-                .id = row.getCol(i64, "item_id"),
+                .id = try row.getCol(i64, "item_id"),
                 .name = name,
             } },
             .COLLECTION => InnerItem{ .collection = Collection{
-                .id = row.getCol(i64, "collection_subitem_id"),
+                .id = try row.getCol(i64, "collection_subitem_id"),
                 .name = name,
             } },
         };
@@ -118,11 +118,11 @@ pub const CollectionItem = struct {
         , .{collection_id}, .{ .column_names = true });
         defer result.deinit();
 
-        var array = std.ArrayList(CollectionItem).init(allocator);
+        var array = try std.ArrayList(CollectionItem).initCapacity(allocator, 0);
 
         while (try result.next()) |row| {
             const e = try toCollectionItem(allocator, row);
-            try array.append(e);
+            try array.append(allocator, e);
         }
 
         return array;

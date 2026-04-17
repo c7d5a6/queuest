@@ -16,7 +16,7 @@ pub fn on_post_relation(a: Allocator, r: Request, c: *Context, params: anytype) 
 
     const id = ItemRelation.insertItemRelation(c.connection.?, fromId, toId) catch unreachable;
 
-    const json = std.json.stringifyAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+    const json = std.json.Stringify.valueAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
 }

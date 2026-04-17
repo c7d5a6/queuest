@@ -57,17 +57,15 @@ fn checkAndReloadPK(allocator: Allocator) FirebaseError!void {
 }
 
 fn reloadPublicKeys(allocator: Allocator) FirebaseError!void {
-    var arrayList = ArrayList(u8).init(allocator);
-    arrayList.ensureTotalCapacity(4 * 1024) catch return error.CannotLoadPubKeys;
+    var response_body = std.Io.Writer.Allocating.initCapacity(allocator, 4 * 1024) catch return error.CannotLoadPubKeys;
+    defer response_body.deinit();
 
     var client: Client = .{ .allocator = allocator };
-    var server_header_buffer: [4 * 1024]u8 = undefined;
 
     const mili = std.time.microTimestamp();
     const response = client.fetch(.{
         .location = .{ .url = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com" },
-        .response_storage = .{ .dynamic = &arrayList },
-        .server_header_buffer = &server_header_buffer,
+        .response_writer = &response_body.writer,
     }) catch return error.ErrorLoadingPubKeys;
     std.log.debug("\nTime to load cert: {d}\n", .{std.time.microTimestamp() - mili});
 
@@ -75,10 +73,10 @@ fn reloadPublicKeys(allocator: Allocator) FirebaseError!void {
         return error.ErrorLoadingPubKeys;
     }
 
-    // Use the value of max-age in the Cache-Control header of the response from that endpoint to know when to refresh the public keys.
-    try updateCacheAge(server_header_buffer[0..]);
+    // Fetch API no longer exposes raw response headers directly; refresh keys hourly.
+    cache_time = std.time.timestamp() + 60 * 60;
 
-    const object = json.parseFromSlice(json.Value, allocator, arrayList.items, .{}) catch return error.CannotLoadPubKeys;
+    const object = json.parseFromSlice(json.Value, allocator, response_body.written(), .{}) catch return error.CannotLoadPubKeys;
     for (object.value.object.keys(), 0..) |key, i| {
         if (i >= goole_keys.len) {
             return error.TooManyGoolePubKeys;

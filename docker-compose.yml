@@ -1,10 +1,6 @@
-version: "3.3"
 networks:
   queuest-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.19.7.0/24
 
 services:
     postgres:
@@ -21,12 +17,11 @@ services:
       ports:
         - "5432:5432"
       networks:
-        queuest-network:
-          ipv4_address: 172.19.7.103
+        - queuest-network
     flyway:
       container_name: "queuest-flyway"
       image: flyway/flyway:7.2.0
-      command: -url=jdbc:postgresql://172.19.7.103:5432/queuest -user=queuest -password=queuest -connectRetries=60 -ignoreMissingMigrations=true migrate
+      command: -url=jdbc:postgresql://postgres:5432/queuest -user=queuest -password=queuest -connectRetries=60 -ignoreMissingMigrations=true migrate
       volumes:
         - ./setup/postgres/flyway-migration:/flyway/sql/flyway-migration
         - ./setup/postgres/flyway-migration-dev:/flyway/sql/flyway-migration-dev

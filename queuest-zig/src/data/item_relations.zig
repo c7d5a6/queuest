@@ -23,16 +23,16 @@ pub const ItemRelation = struct {
     fn toItemRelation(row: pg.Row) !ItemRelation {
         var value: ItemRelation = undefined;
         // return try row.to(CollectionItem, .{ .map = .name });
-        @field(value, "id") = row.getCol(i64, "id");
-        @field(value, "collection_item_from_id") = row.getCol(i64, "collection_item_from_id");
-        @field(value, "collection_item_to_id") = row.getCol(i64, "collection_item_to_id");
+        @field(value, "id") = try row.getCol(i64, "id");
+        @field(value, "collection_item_from_id") = try row.getCol(i64, "collection_item_from_id");
+        @field(value, "collection_item_to_id") = try row.getCol(i64, "collection_item_to_id");
 
         return value;
     }
 
     pub fn findAllForItemIds(conn: *Conn, allocator: std.mem.Allocator, items: []const CollectionItem) !std.ArrayList(ItemRelation) {
         if (items.len == 0) {
-            return std.ArrayList(ItemRelation).init(allocator);
+            return try std.ArrayList(ItemRelation).initCapacity(allocator, 0);
         }
 
         var item_ids: []i32 = try allocator.alloc(i32, items.len);
@@ -41,11 +41,11 @@ pub const ItemRelation = struct {
             item_ids[i] = @intCast(item.id);
         }
 
-        var ids_buf = std.ArrayList(u8).init(allocator);
-        defer ids_buf.deinit();
+        var ids_buf = try std.ArrayList(u8).initCapacity(allocator, 0);
+        defer ids_buf.deinit(allocator);
         for (item_ids, 0..) |id, i| {
-            if (i != 0) ids_buf.writer().print(", ", .{}) catch unreachable;
-            ids_buf.writer().print("{d}", .{id}) catch unreachable;
+            if (i != 0) ids_buf.writer(allocator).print(", ", .{}) catch unreachable;
+            ids_buf.writer(allocator).print("{d}", .{id}) catch unreachable;
         }
         const ids_str = ids_buf.items;
         std.log.info("ids_str: {s}\n", .{ids_str});
@@ -60,11 +60,11 @@ pub const ItemRelation = struct {
         var result = try conn.queryOpts(sql, .{}, .{ .column_names = true });
         defer result.deinit();
 
-        var array = std.ArrayList(ItemRelation).init(allocator);
+        var array = try std.ArrayList(ItemRelation).initCapacity(allocator, 0);
 
         while (try result.next()) |row| {
             const e = try toItemRelation(row);
-            try array.append(e);
+            try array.append(allocator, e);
         }
 
         return array;

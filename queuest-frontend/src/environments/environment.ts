@@ -12,6 +12,6 @@ export const environment: ApplicationEnvironment = {
     },
     production: false,
     application: {
-        apiUrl: 'http://localhost:3000',
+        apiUrl: 'http://localhost:3002',
     },
 };

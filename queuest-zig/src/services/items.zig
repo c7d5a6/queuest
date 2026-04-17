@@ -37,19 +37,19 @@ pub fn on_get_items(a: Allocator, r: Request, c: *Context, params: anytype) Cont
         };
         const n = a.allocSentinel(u8, name.len, 0) catch unreachable;
         @memcpy(n, name);
-        result.append(It{ .id = item.id, .name = n }) catch unreachable;
+        result.append(a, It{ .id = item.id, .name = n }) catch unreachable;
     }
     var graph: Graph = Graph.init(a, @intCast(items.items.len));
     setGraphEdges(a, c, items.items, &graph) catch unreachable;
     const sorted = graph.sort() catch unreachable;
     var resultSorted = std.ArrayList(It).initCapacity(a, items.items.len) catch unreachable;
     for (sorted) |i| {
-        resultSorted.append(result.items[i]) catch unreachable;
+        resultSorted.append(a, result.items[i]) catch unreachable;
     }
 
     const Result = struct { id: i64, items: []It, calibrated: f64 };
     const res = Result{ .id = collectionId, .items = resultSorted.items, .calibrated = 0.5 };
-    const json = std.json.stringifyAlloc(a, res, .{ .escape_unicode = true, .emit_null_optional_fields = false, .whitespace = .minified }) catch unreachable;
+    const json = std.json.Stringify.valueAlloc(a, res, .{ .escape_unicode = true, .emit_null_optional_fields = false, .whitespace = .minified }) catch unreachable;
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
 }
@@ -68,7 +68,7 @@ pub fn on_get_best_pair(a: Allocator, r: Request, c: *Context, params: anytype) 
     const relations = ItemRelation.findAllForItemIds(c.connection.?, a, items.items) catch unreachable;
     var items_sorted = std.ArrayList(Item).initCapacity(a, items.items.len) catch unreachable;
     for (sorted) |i| {
-        items_sorted.append(items.items[i]) catch unreachable;
+        items_sorted.append(a, items.items[i]) catch unreachable;
     }
 
     const pair = getBestPair(a, id, items_sorted, &.{}, relations) catch unreachable;
@@ -78,7 +78,7 @@ pub fn on_get_best_pair(a: Allocator, r: Request, c: *Context, params: anytype) 
         res = toItRel(item, p, relations);
     }
 
-    const json = std.json.stringifyAlloc(a, res, .{ .escape_unicode = true, .emit_null_optional_fields = false, .whitespace = .minified }) catch unreachable;
+    const json = std.json.Stringify.valueAlloc(a, res, .{ .escape_unicode = true, .emit_null_optional_fields = false, .whitespace = .minified }) catch unreachable;
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
 }
@@ -121,7 +121,7 @@ pub fn on_post_item(a: Allocator, r: Request, c: *Context, params: anytype) Cont
     const create = std.json.parseFromSlice(CreateItem, a, body, .{ .ignore_unknown_fields = true }) catch return error.InternalError;
     const id = Item.insertItem(c.connection.?, create.value.name, collectionId) catch unreachable;
 
-    const json = std.json.stringifyAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+    const json = std.json.Stringify.valueAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
 }
@@ -290,7 +290,7 @@ pub fn on_get_least_calibrated_item(a: Allocator, r: Request, c: *Context, param
     }
     if (result) |res| {
         const it = toIt(res);
-        const json = std.json.stringifyAlloc(a, it, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+        const json = std.json.Stringify.valueAlloc(a, it, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
         r.setContentType(.JSON) catch return;
         r.sendJson(json) catch return;
     } else {

@@ -87,7 +87,7 @@ fn runCollectionTests(allocator: Allocator, endpoint: TestServer.Endpoint) !void
     defer headers.deinit();
     try headers.append("Content-Type", "application/json");
 
-    const create_collection_body = try std.json.stringifyAlloc(allocator, .{
+    const create_collection_body = try std.json.Stringify.valueAlloc(allocator, .{
         .name = "Test Collection",
         .favourite = false,
     }, .{});

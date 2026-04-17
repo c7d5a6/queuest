@@ -11,16 +11,24 @@ pub fn build(b: *std.Build) void {
     });
     const optimize = b.standardOptimizeOption(.{});
 
-    const exe = b.addExecutable(.{
-        .name = "queuest-zig",
+    const exe_module = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
-    const libC = b.addStaticLibrary(.{
-        .name = "regez",
-        .optimize = optimize,
+    const exe = b.addExecutable(.{
+        .name = "queuest-zig",
+        .root_module = exe_module,
+    });
+
+    const regez_module = b.createModule(.{
         .target = target,
+        .optimize = optimize,
+    });
+    const libC = b.addLibrary(.{
+        .name = "regez",
+        .root_module = regez_module,
+        .linkage = .static,
     });
     libC.addIncludePath(b.path("c-src"));
     libC.addCSourceFiles(.{
@@ -63,10 +71,13 @@ pub fn build(b: *std.Build) void {
     run_step.dependOn(&run_cmd.step);
 
     // Run unit tests
-    const exe_unit_tests = b.addTest(.{
+    const exe_tests_module = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
+    });
+    const exe_unit_tests = b.addTest(.{
+        .root_module = exe_tests_module,
     });
     configureArtifact(b, exe_unit_tests, libC, zap_mod, zap_art, pg_module);
     const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
@@ -74,10 +85,13 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_exe_unit_tests.step);
 
     // Run e2e tests
-    const e2e_tests = b.addTest(.{
+    const e2e_tests_module = b.createModule(.{
         .root_source_file = b.path("tests/e2e/main.zig"),
         .target = target,
         .optimize = optimize,
+    });
+    const e2e_tests = b.addTest(.{
+        .root_module = e2e_tests_module,
     });
     configureArtifact(b, e2e_tests, libC, zap_mod, zap_art, pg_module);
     const run_e2e_tests = b.addRunArtifact(e2e_tests);
@@ -86,11 +100,14 @@ pub fn build(b: *std.Build) void {
 
     // ---
     // --- Debug informations step
-    const exe_debug_step = b.addExecutable(.{
-        .name = "queuest-zig-debug-info",
+    const debug_module = b.createModule(.{
         .root_source_file = b.path("src/type-check.zig"),
         .target = target,
         .optimize = optimize,
+    });
+    const exe_debug_step = b.addExecutable(.{
+        .name = "queuest-zig-debug-info",
+        .root_module = debug_module,
     });
     configureArtifact(b, exe_debug_step, libC, zap_mod, zap_art, pg_module);
 

@@ -23,11 +23,11 @@ pub fn getSoloEntity(T: type, result: *Result) !?T {
 }
 
 pub fn getList(T: type, allocator: std.mem.Allocator, result: *Result) !std.ArrayList(T) {
-    var array = std.ArrayList(T).init(allocator);
+    var array = try std.ArrayList(T).initCapacity(allocator, 0);
 
     while (try result.next()) |row| {
         const e = try row.to(T, .{ .map = .name });
-        try array.append(e);
+        try array.append(allocator, e);
     }
 
     return array;
