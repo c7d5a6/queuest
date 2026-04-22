@@ -245,7 +245,7 @@ export class ItemsService extends BaseService {
   /**
    * Path part for operation itemsControllerGetBestPair
    */
-  static readonly ItemsControllerGetBestPairPath = '/collections/{collectionId}/items/{id}/bestpair/{strict}';
+  static readonly ItemsControllerGetBestPairPath = '/collections/{collectionId}/items/{collectionItemId}/bestpair/{strict}';
 
   /**
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
@@ -255,7 +255,7 @@ export class ItemsService extends BaseService {
    */
   itemsControllerGetBestPair$Response(params: {
     collectionId: number;
-    id: number;
+    collectionItemId: number;
     strict: boolean;
     exclude?: Array<number>;
   },
@@ -266,7 +266,7 @@ export class ItemsService extends BaseService {
     const rb = new RequestBuilder(this.rootUrl, ItemsService.ItemsControllerGetBestPairPath, 'get');
     if (params) {
       rb.path('collectionId', params.collectionId, {});
-      rb.path('id', params.id, {});
+      rb.path('collectionItemId', params.collectionItemId, {});
       rb.path('strict', params.strict, {});
       rb.query('exclude', params.exclude, {});
     }
@@ -291,7 +291,7 @@ export class ItemsService extends BaseService {
    */
   itemsControllerGetBestPair(params: {
     collectionId: number;
-    id: number;
+    collectionItemId: number;
     strict: boolean;
     exclude?: Array<number>;
   },

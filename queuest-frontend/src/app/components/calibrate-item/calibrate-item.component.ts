@@ -29,11 +29,11 @@ export class CalibrateItemComponent implements OnInit {
     if (ref.data['title']) {
       this.title = ref.data['title']
     }
-    if (ref.data['itemId']) {
-      this.itemId = ref.data['itemId']
+    if ('itemId' in ref.data) {
+      this.itemId = this.toNumberOrUndefined(ref.data['itemId']);
     }
-    if (ref.data['collectionId']) {
-      this.collectionId = ref.data['collectionId']
+    if ('collectionId' in ref.data) {
+      this.collectionId = this.toNumberOrUndefined(ref.data['collectionId']);
     }
   }
 
@@ -48,14 +48,22 @@ export class CalibrateItemComponent implements OnInit {
   }
 
   getNextBestPair() {
+    if (this.collectionId === undefined || this.itemId === undefined) {
+      console.error('Invalid calibration request params', {
+        collectionId: this.collectionId,
+        itemId: this.itemId,
+        data: this.ref.data,
+      });
+      return;
+    }
     const ids: number[] = [];
-    ids.push(this.itemId!);
+    ids.push(this.itemId);
     this.items.forEach((item) => ids.push(item.item2.id!));
     console.log("calibrating item",this.collectionId, this.itemId, ids);
     this.itemsService
       .itemsControllerGetBestPair({
-        collectionId: this.collectionId!,
-        id: this.itemId!,
+        collectionId: this.collectionId,
+        collectionItemId: this.itemId,
         exclude: ids,
         strict: true
       })
@@ -110,5 +118,10 @@ export class CalibrateItemComponent implements OnInit {
           this.itemPressed(i);
         });
     }
+  }
+
+  private toNumberOrUndefined(value: unknown): number | undefined {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : undefined;
   }
 }
