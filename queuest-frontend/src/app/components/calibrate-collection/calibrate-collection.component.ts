@@ -52,7 +52,7 @@ export class CalibrateCollectionComponent implements OnInit {
         this.itemsService
           .itemsControllerGetBestPair({
             collectionId: this.collectionId!,
-            id: item.id!,
+            collectionItemId: item.id!,
             exclude: ids,
             strict: false
           })
