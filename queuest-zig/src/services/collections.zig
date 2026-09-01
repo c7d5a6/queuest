@@ -69,18 +69,15 @@ pub fn on_post_collection(a: Allocator, r: Request, c: *Context, params: anytype
 pub fn on_post_fav_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
     const user = c.user orelse return error.InternalError;
+    std.debug.assert(collectionId != 0);
+    std.debug.assert(user.id != 0);
     var collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
         return error.InternalError orelse return error.NotFound;
     collection.favourite_yn = true;
 
-    const id = Collection.updateCollection(c.connection.?, collection) catch return error.InternalError;
-    const json = std.json.Stringify.valueAlloc(a, id, .{
-        .escape_unicode = true,
-        .emit_null_optional_fields = false,
-    }) catch return error.InternalError;
+    _ = Collection.updateCollection(c.connection.?, collection) catch return error.InternalError;
 
-    r.setContentType(.JSON) catch return;
-    r.sendJson(json) catch return;
+    r.sendBody("") catch return;
 }
 
 pub fn on_post_visit_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
@@ -97,16 +94,13 @@ pub fn on_post_visit_collection(a: Allocator, r: Request, c: *Context, params: a
 pub fn on_delete_fav_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
     const user = c.user orelse return error.InternalError;
+    std.debug.assert(collectionId != 0);
+    std.debug.assert(user.id != 0);
     var collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
         return error.InternalError orelse return error.NotFound;
     collection.favourite_yn = false;
 
-    const id = Collection.updateCollection(c.connection.?, collection) catch return error.InternalError;
-    const json = std.json.Stringify.valueAlloc(a, id, .{
-        .escape_unicode = true,
-        .emit_null_optional_fields = false,
-    }) catch return error.InternalError;
+    _ = Collection.updateCollection(c.connection.?, collection) catch return error.InternalError;
 
-    r.setContentType(.JSON) catch return;
-    r.sendJson(json) catch return;
+    r.sendBody("") catch return;
 }
