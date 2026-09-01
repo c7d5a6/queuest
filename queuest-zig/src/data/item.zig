@@ -79,7 +79,7 @@ pub const CollectionItem = struct {
         defer result.deinit();
 
         const Cid = struct { collection_id: ?i64 };
-        const ocid = try getSoloEntity(Cid, result);
+        const ocid = try getSoloEntity(Cid, null, result);
         if (ocid) |cid| {
             return cid.collection_id;
         }
@@ -138,7 +138,7 @@ pub const CollectionItem = struct {
         , .{ name, collection_id, .ITEM }, .{ .column_names = true });
         defer result.deinit();
 
-        return getSoloEntity(Id, result);
+        return getSoloEntity(Id, null, result);
     }
 
     pub fn deleteItem(conn: *Conn, collection_item_id: i64) !void {

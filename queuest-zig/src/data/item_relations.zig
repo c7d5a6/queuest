@@ -76,7 +76,7 @@ pub const ItemRelation = struct {
         , .{ collection_item_from_id, collection_item_to_id }, .{ .column_names = true });
         defer result.deinit();
 
-        return getSoloEntity(Id, result);
+        return getSoloEntity(Id, null, result);
     }
 
     pub fn deleteItemRelation(conn: *Conn, collection_item_from_id: i64, collection_item_to_id: i64) !void {

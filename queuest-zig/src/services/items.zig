@@ -27,7 +27,7 @@ fn toIt(item: Item) It {
 
 pub fn on_get_items(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
-    _ = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
     const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch unreachable;
     var result = std.ArrayList(It).initCapacity(a, items.items.len) catch unreachable;
     for (items.items) |item| {
@@ -59,7 +59,7 @@ pub fn on_get_best_pair(a: Allocator, r: Request, c: *Context, params: anytype) 
     const id = params.collectionItemId;
     _ = params.strict;
 
-    _ = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
     const item = Item.findById(c.connection.?, a, id) catch unreachable orelse unreachable;
     const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch unreachable;
     var graph: Graph = Graph.init(a, @intCast(items.items.len));
@@ -115,7 +115,7 @@ pub fn on_post_item(a: Allocator, r: Request, c: *Context, params: anytype) Cont
     const body = r.body orelse return error.InternalError;
 
     const collectionId = params.collectionId;
-    _ = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
 
     const CreateItem = struct { name: []const u8 };
     const create = std.json.parseFromSlice(CreateItem, a, body, .{ .ignore_unknown_fields = true }) catch return error.InternalError;
@@ -127,11 +127,9 @@ pub fn on_post_item(a: Allocator, r: Request, c: *Context, params: anytype) Cont
 }
 
 pub fn on_delete_item(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
-    _ = a;
-
     const collectionId = params.collectionId;
     const collectionItemId = params.collectionItemId;
-    _ = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
 
     Item.deleteItem(c.connection.?, collectionItemId) catch unreachable;
 
@@ -253,7 +251,7 @@ fn getBestPair(a: Allocator, id: i64, item_list: std.ArrayList(Item), exclude: [
 
 pub fn on_get_least_calibrated_item(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
-    _ = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
     const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch unreachable;
     var positions = std.AutoHashMap(i64, usize).init(a);
     for (items.items, 0..) |item, i| {

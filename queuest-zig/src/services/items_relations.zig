@@ -12,7 +12,7 @@ pub fn on_post_relation(a: Allocator, r: Request, c: *Context, params: anytype) 
     const fromId = params.fromId;
     const toId = params.toId;
 
-    try assertItemsAccess(c, fromId, toId);
+    try assertItemsAccess(a, c, fromId, toId);
 
     const id = ItemRelation.insertItemRelation(c.connection.?, fromId, toId) catch unreachable;
 
@@ -22,24 +22,23 @@ pub fn on_post_relation(a: Allocator, r: Request, c: *Context, params: anytype) 
 }
 
 pub fn on_delete_relation(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
-    _ = a;
     const itemAId = params.itemAId;
     const itemBId = params.itemBId;
 
-    try assertItemsAccess(c, itemAId, itemBId);
+    try assertItemsAccess(a, c, itemAId, itemBId);
 
     ItemRelation.deleteItemRelation(c.connection.?, itemAId, itemBId) catch unreachable;
 
     r.sendBody("") catch return;
 }
 
-fn assertItemsAccess(c: *Context, fromId: i64, toId: i64) ControllerError!void {
+fn assertItemsAccess(a: Allocator, c: *Context, fromId: i64, toId: i64) ControllerError!void {
     const fromItem = Item.findCollectionIdById(c.connection.?, fromId) catch unreachable orelse unreachable;
     const toItem = Item.findCollectionIdById(c.connection.?, toId) catch unreachable orelse unreachable;
     if (fromItem != toItem) {
         return ControllerError.BadRequest;
     }
-    const collection = Collection.findByIdAndUserId(c.connection.?, fromItem, c.user.?.id) catch unreachable;
+    const collection = Collection.findByIdAndUserId(c.connection.?, a, fromItem, c.user.?.id) catch unreachable;
     if (collection == null) {
         return ControllerError.BadRequest;
     }

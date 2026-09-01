@@ -24,6 +24,7 @@ pub const Collection = struct {
     visited_ts: i64 = 0,
 
     pub fn findAllForUserId(conn: *Conn, allocator: std.mem.Allocator, user_id: i64) !std.ArrayList(Collection) {
+        std.debug.assert(user_id != 0);
         var result = try conn.queryOpts(
             "select * from " ++ table_name ++ " where user_id = $1 order by visited_ts desc",
             .{user_id},
@@ -35,6 +36,7 @@ pub const Collection = struct {
     }
 
     pub fn findAllFavForUserId(conn: *Conn, allocator: std.mem.Allocator, user_id: i64) !std.ArrayList(Collection) {
+        std.debug.assert(user_id != 0);
         var result = try conn.queryOpts(
             "select * from " ++ table_name ++ " where user_id = $1 and favourite_yn order by visited_ts desc",
             .{user_id},
@@ -45,7 +47,9 @@ pub const Collection = struct {
         return getList(Collection, allocator, result);
     }
 
-    pub fn findByIdAndUserId(conn: *Conn, id: i64, user_id: i64) !?Collection {
+    pub fn findByIdAndUserId(conn: *Conn, allocator: std.mem.Allocator, id: i64, user_id: i64) !?Collection {
+        std.debug.assert(id != 0);
+        std.debug.assert(user_id != 0);
         var result = try conn.queryOpts(
             "select * from " ++ table_name ++ " where id = $1 and user_id = $2",
             .{ id, user_id },
@@ -53,25 +57,29 @@ pub const Collection = struct {
         );
         defer result.deinit();
 
-        return getSoloEntity(Collection, result);
+        return getSoloEntity(Collection, allocator, result);
     }
 
     pub fn insertCollection(conn: *Conn, user_id: i64, name: []const u8) !?Id {
+        std.debug.assert(user_id != 0);
+        std.debug.assert(name.len > 0);
         var result = try conn.queryOpts(
             \\insert into collection_tbl(user_id, name, visited_ts) values ($1, $2, now()) returning id
         , .{ user_id, name }, .{ .column_names = true });
         defer result.deinit();
 
-        return getSoloEntity(Id, result);
+        return getSoloEntity(Id, null, result);
     }
 
     pub fn updateCollection(conn: *Conn, collection: Collection) !?Id {
+        std.debug.assert(collection.id != 0);
+        std.debug.assert(collection.user_id != 0);
         var result = try conn.queryOpts(
             \\update collection_tbl set favourite_yn = $1, name = $2 where id = $3 and user_id = $4
         , .{ collection.favourite_yn, collection.name, collection.id, collection.user_id }, .{ .column_names = true });
         defer result.deinit();
 
-        return getSoloEntity(Id, result);
+        return getSoloEntity(Id, null, result);
     }
 
     pub fn deleteCollection(conn: *Conn, id: i64, user_id: i64) !void {
@@ -88,10 +96,16 @@ pub const Collection = struct {
         defer result.deinit();
     }
 
-    pub fn setFav(conn: *Conn, id: i64, user_id: i64, fav: bool) !?Collection {
-        var result = try conn.queryOpts("update " ++ table_name ++ "set favourite_yn = $3 where id = $1 and user_id = $2", .{ id, user_id, fav }, .{ .column_names = true });
+    pub fn setFav(conn: *Conn, allocator: std.mem.Allocator, id: i64, user_id: i64, fav: bool) !?Collection {
+        std.debug.assert(id != 0);
+        std.debug.assert(user_id != 0);
+        var result = try conn.queryOpts(
+            "update " ++ table_name ++ "set favourite_yn = $3 where id = $1 and user_id = $2",
+            .{ id, user_id, fav },
+            .{ .column_names = true },
+        );
         defer result.deinit();
 
-        return getSoloEntity(Collection, result);
+        return getSoloEntity(Collection, allocator, result);
     }
 };

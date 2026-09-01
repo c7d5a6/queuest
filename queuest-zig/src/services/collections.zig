@@ -26,7 +26,7 @@ pub fn on_get_fav_collections(a: Allocator, r: Request, c: *Context, params: any
 
 pub fn on_get_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
-    const collection: Collection = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    const collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
     const json = std.json.Stringify.valueAlloc(a, collection, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
     std.debug.print("collection: {s}\n", .{json});
     r.setContentType(.JSON) catch return;
@@ -50,7 +50,7 @@ pub fn on_post_collection(a: Allocator, r: Request, c: *Context, params: anytype
 
 pub fn on_post_fav_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
-    var collection: Collection = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    var collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
     collection.favourite_yn = true;
 
     const id = Collection.updateCollection(c.connection.?, collection) catch unreachable;
@@ -61,9 +61,8 @@ pub fn on_post_fav_collection(a: Allocator, r: Request, c: *Context, params: any
 }
 
 pub fn on_post_visit_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
-    _ = a;
     const collectionId = params.collectionId;
-    const collection: Collection = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    const collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
 
     Collection.visitCollection(c.connection.?, collection) catch unreachable;
 
@@ -72,7 +71,7 @@ pub fn on_post_visit_collection(a: Allocator, r: Request, c: *Context, params: a
 
 pub fn on_delete_fav_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
-    var collection: Collection = Collection.findByIdAndUserId(c.connection.?, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    var collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
     collection.favourite_yn = false;
 
     const id = Collection.updateCollection(c.connection.?, collection) catch unreachable;

@@ -130,6 +130,7 @@ const g = @import("services/graph.zig");
 
 test {
     _ = @import("services/collections.zig");
+    _ = @import("data/utils.zig");
     // or refAllDeclsRecursive
 }
 
