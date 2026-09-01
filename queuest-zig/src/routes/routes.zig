@@ -180,7 +180,7 @@ pub fn dispatch_routes(a: std.mem.Allocator, r: zap.Request, c: *Context) void {
     const httpMethod = r.methodAsEnum();
     if (r.path) |path| {
         inline for (routes, 0..) |route, i| {
-            if (httpMethod == route.httpMethod and routesMatcher[i].matches(arena.allocator(), path) catch false) {
+            if (httpMethod == route.httpMethod and routesMatcher[i].matches(a, path) catch false) {
                 if (route.access == .Authorized and (c.auth == null or !c.auth.?.authenticated)) {
                     r.sendError(error.Error, null, 401);
                     return;

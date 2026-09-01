@@ -23,9 +23,14 @@ pub const Regex = struct {
     }
 
     pub fn matches(self: Regex, allocator: std.mem.Allocator, input: []const u8) !bool {
+        std.debug.assert(input.len < 1_000_000);
+
         const a_input: []u8 = try allocator.alloc(u8, input.len + 1);
+        defer allocator.free(a_input);
         @memcpy(a_input[0..input.len], input);
         a_input[input.len] = 0;
+        std.debug.assert(a_input[input.len] == 0);
+
         const c_input: [:0]const u8 = a_input[0..input.len :0];
         const match_size = 1;
         var pmatch: [match_size]regez.regmatch_t = undefined;
