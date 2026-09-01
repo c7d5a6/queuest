@@ -26,20 +26,19 @@ pub const std_options: std.Options = .{
         .{ .scope = .auth, .level = if (builtin.mode == .Debug) .info else .err },
     },
 };
-pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const allocator = if (builtin.mode == .Debug) gpa.allocator() else std.heap.c_allocator;
+pub fn main(init: std.process.Init) !void {
+    const allocator = init.gpa;
     SharedAllocator.init(allocator);
     {
-        const sqlite_path = db_open.pathFromEnv();
+        const sqlite_path = db_open.pathFromEnv(init.environ_map);
         var db = db_open.openFile(sqlite_path) catch |err| {
             std.log.err("Failed to open sqlite at {s}: {}", .{ sqlite_path, err });
-            std.posix.exit(1);
+            std.process.exit(1);
         };
         defer db.deinit();
         migrate.run(&db) catch |err| {
             std.log.err("Failed to migrate sqlite: {}", .{err});
-            std.posix.exit(1);
+            std.process.exit(1);
         };
 
         try routes.setup_routes(allocator);
@@ -71,12 +70,6 @@ pub fn main() !void {
             .threads = 1,
             .workers = 1,
         });
-    }
-
-    if (builtin.mode == .Debug) {
-        std.log.debug("\n\nSTOPPED!\n\n", .{});
-        const leaked = gpa.detectLeaks();
-        std.log.debug("Leaks detected: {}\n", .{leaked});
     }
 }
 

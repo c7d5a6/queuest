@@ -6,13 +6,13 @@ const max_path_len: usize = 4095;
 
 var path_buf: [max_path_len:0]u8 = [_:0]u8{0} ** max_path_len;
 
-pub fn pathFromEnv() [:0]const u8 {
-    const env = std.posix.getenv("SQLITE_PATH") orelse return default_path;
+pub fn pathFromEnv(environ: *const std.process.Environ.Map) [:0]const u8 {
+    const env = environ.get("SQLITE_PATH") orelse return default_path;
     if (env.len == 0) return default_path;
     std.debug.assert(env.len <= max_path_len);
     if (env.len > max_path_len) {
         std.log.err("SQLITE_PATH is longer than {d} bytes", .{max_path_len});
-        std.posix.exit(1);
+        std.process.exit(1);
     }
     @memcpy(path_buf[0..env.len], env);
     path_buf[env.len] = 0;
