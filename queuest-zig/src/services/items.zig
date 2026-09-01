@@ -60,7 +60,8 @@ pub fn on_get_items(a: Allocator, r: Request, c: *Context, params: anytype) Cont
 pub fn on_get_best_pair(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
     const id = params.collectionItemId;
-    _ = params.strict;
+    const strict: bool = params.strict;
+    const exclude = parseExcludeIds(a, r) catch return error.BadRequest;
 
     const user = c.user orelse return error.InternalError;
     _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
@@ -77,14 +78,35 @@ pub fn on_get_best_pair(a: Allocator, r: Request, c: *Context, params: anytype) 
         items_sorted.append(a, items.items[i]) catch return error.InternalError;
     }
 
-    const pair = getBestPair(a, id, items_sorted, &.{}, relations) catch return error.InternalError;
+    const item_index = indexOfItem(items_sorted.items, id) orelse return error.InternalError;
+    if (strict and isItemCalibrated(id, items_sorted.items, item_index, relations)) {
+        const json = std.json.Stringify.valueAlloc(a, @as(?ItRel, null), .{
+            .escape_unicode = true,
+            .emit_null_optional_fields = false,
+            .whitespace = .minified,
+        }) catch return error.InternalError;
+        r.setContentType(.JSON) catch return;
+        r.sendJson(json) catch return;
+        return;
+    }
+
+    const pair = getBestPair(a, id, items_sorted, exclude, relations) catch return error.InternalError;
 
     var res: ?ItRel = null;
     if (pair) |p| {
-        res = toItRel(item, p, relations);
+        if (!containsId(exclude, p.id)) {
+            const candidate = toItRel(item, p, relations);
+            if (candidate.relation == null) {
+                res = candidate;
+            }
+        }
     }
 
-    const json = std.json.Stringify.valueAlloc(a, res, .{ .escape_unicode = true, .emit_null_optional_fields = false, .whitespace = .minified }) catch return error.InternalError;
+    const json = std.json.Stringify.valueAlloc(a, res, .{
+        .escape_unicode = true,
+        .emit_null_optional_fields = false,
+        .whitespace = .minified,
+    }) catch return error.InternalError;
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
 }
@@ -168,101 +190,126 @@ fn toItRel(item: Item, pair: Item, relations: std.ArrayList(ItemRelation)) ItRel
     };
 }
 
-fn getBestPair(a: Allocator, id: i64, item_list: std.ArrayList(Item), exclude: []const i64, relations: std.ArrayList(ItemRelation)) !?Item {
-    _ = exclude;
-    const pos = ip: {
-        for (item_list.items, 0..) |item, i| {
-            if (item.id == id) {
-                break :ip i;
-            }
-        }
-        return error.InternalError;
-    };
+fn parseExcludeIds(a: Allocator, r: Request) ControllerError![]const i64 {
+    const raw = r.getParamSlice("exclude") orelse return &.{};
+    var list = std.ArrayList(i64).initCapacity(a, 0) catch return error.InternalError;
+    var it = std.mem.tokenizeScalar(u8, raw, ',');
+    while (it.next()) |s| {
+        if (s.len == 0) continue;
+        if (list.items.len >= 1024) return error.BadRequest;
+        const parsed = std.fmt.parseInt(i64, s, 10) catch return error.BadRequest;
+        list.append(a, parsed) catch return error.InternalError;
+    }
+    return list.items;
+}
 
-    var positions = std.AutoHashMap(i64, i64).init(a);
+fn containsId(ids: []const i64, id: i64) bool {
+    for (ids) |x| {
+        if (x == id) return true;
+    }
+    return false;
+}
+
+fn indexOfItem(items: []const Item, id: i64) ?usize {
+    for (items, 0..) |item, i| {
+        if (item.id == id) return i;
+    }
+    return null;
+}
+
+fn isItemCalibrated(
+    id: i64,
+    sorted: []const Item,
+    item_index: usize,
+    relations: std.ArrayList(ItemRelation),
+) bool {
+    if (sorted.len <= 1) return true;
+    std.debug.assert(item_index < sorted.len);
+    var out_n: usize = 0;
+    var in_n: usize = 0;
+    for (relations.items) |rel| {
+        if (rel.collection_item_from_id == id) out_n += 1;
+        if (rel.collection_item_to_id == id) in_n += 1;
+    }
+    if (out_n + in_n >= sorted.len - 1) return true;
+    if (item_index == 0) {
+        return isThereRelationFromTo(id, sorted[1].id, relations);
+    }
+    if (item_index == sorted.len - 1) {
+        return isThereRelationFromTo(sorted[sorted.len - 2].id, id, relations);
+    }
+    return isThereRelationFromTo(id, sorted[item_index + 1].id, relations) and
+        isThereRelationFromTo(sorted[item_index - 1].id, id, relations);
+}
+
+fn getBestPair(
+    a: Allocator,
+    id: i64,
+    item_list: std.ArrayList(Item),
+    exclude: []const i64,
+    relations: std.ArrayList(ItemRelation),
+) !?Item {
+    std.debug.assert(id != 0);
+    if (item_list.items.len == 0) return null;
+    const pos = indexOfItem(item_list.items, id) orelse return error.InternalError;
+
+    var positions = std.AutoHashMap(i64, usize).init(a);
     for (item_list.items, 0..) |item, i| {
-        try positions.put(item.id, @intCast(i));
+        try positions.put(item.id, i);
     }
 
-    const last_pos = last: {
-        var l = item_list.items.len - 1;
-        for (relations.items) |r| {
-            if (r.collection_item_to_id == id) {
-                if (positions.get(r.collection_item_from_id)) |p| {
-                    if (p < l) {
-                        l = @intCast(p);
-                    }
-                }
-            }
-            if (r.collection_item_from_id == id) {
-                if (positions.get(r.collection_item_to_id)) |p| {
-                    if (p < l) {
-                        l = @intCast(p);
-                    }
-                }
+    var last_idx: usize = item_list.items.len - 1;
+    var has_out = false;
+    var first_idx: usize = 0;
+    var has_in = false;
+    for (relations.items) |rel| {
+        if (rel.collection_item_from_id == id) {
+            if (positions.get(rel.collection_item_to_id)) |p| {
+                if (!has_out or p < last_idx) last_idx = p;
+                has_out = true;
             }
         }
-        break :last l;
-    };
-    const first_pos = first: {
-        var f: usize = 0;
-        for (relations.items) |r| {
-            if (r.collection_item_to_id == id) {
-                if (positions.get(r.collection_item_from_id)) |p| {
-                    if (p > f) {
-                        f = @intCast(p);
-                    }
-                }
-            }
-            if (r.collection_item_from_id == id) {
-                if (positions.get(r.collection_item_to_id)) |p| {
-                    if (p > f) {
-                        f = @intCast(p);
-                    }
-                }
+        if (rel.collection_item_to_id == id) {
+            if (positions.get(rel.collection_item_from_id)) |p| {
+                if (!has_in or p > first_idx) first_idx = p;
+                has_in = true;
             }
         }
-        break :first f;
-    };
+    }
+    if (!has_out) last_idx = item_list.items.len - 1;
+    if (!has_in) first_idx = 0;
 
-    std.debug.print("first_pos: {d}, last_pos: {d}, pos: {d}\n", .{ first_pos, last_pos, pos });
-    const isize_pos: isize = @intCast(pos);
-    const isize_first_pos: isize = @intCast(first_pos);
-    const isize_last_pos: isize = @intCast(last_pos);
-    const r_pos = if (@abs(isize_pos - isize_first_pos) > @abs(isize_pos - isize_last_pos)) @divFloor(pos + first_pos, 3) + @mod(pos + first_pos, 2) else @divFloor(pos + last_pos, 2);
+    const r_pos = if (@abs(@as(isize, @intCast(pos)) - @as(isize, @intCast(first_idx))) >
+        @abs(@as(isize, @intCast(pos)) - @as(isize, @intCast(last_idx))))
+        @divFloor(pos + first_idx + 1, 2)
+    else
+        @divFloor(pos + last_idx, 2);
 
     var backup: ?Item = null;
     var resort: ?Item = null;
-
+    const n: isize = @intCast(item_list.items.len);
     for (0..item_list.items.len * 2) |ui| {
         const i: isize = @intCast(ui);
-        var p: isize = (2 * @mod(i, 2) - 1) * (@divFloor(i, 2) + @mod(i, 2));
-        p += @intCast(r_pos);
-        if (p < 0 or p >= item_list.items.len) {
-            continue;
-        }
+        const step = @divFloor(i + 1, 2);
+        const sign: isize = 2 * @mod(i, 2) - 1;
+        const p = @as(isize, @intCast(r_pos)) + sign * step;
+        if (p < 0 or p >= n) continue;
         const r_item = item_list.items[@intCast(p)];
-        // if (backup == null and r_item.id != id  and !exclude.contains(r_item)) {
-        if (backup == null and r_item.id != id) {
+        if (backup == null and r_item.id != id and !containsId(exclude, r_item.id)) {
             backup = r_item;
         }
         if (resort == null and r_item.id != id) {
             resort = r_item;
         }
-        // if (r_item.id == id or exclude.contains(r_item)) {
-        if (r_item.id == id) {
+        if (r_item.id == id or containsId(exclude, r_item.id)) {
             continue;
         }
         if (!isThereRelation(id, r_item.id, relations)) {
             return r_item;
         }
     }
-    if (backup) |b| {
-        return b;
-    }
-    if (resort) |r| {
-        return r;
-    }
+    if (backup) |b| return b;
+    if (resort) |item| return item;
     return null;
 }
 
