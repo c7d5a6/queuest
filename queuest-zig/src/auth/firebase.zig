@@ -28,13 +28,22 @@ const GooglePubKey = struct {
     certificate: [1024]u8,
 };
 
-var goole_keys: [3]GooglePubKey = undefined;
+var goole_keys: [3]GooglePubKey = std.mem.zeroes([3]GooglePubKey);
 var cache_time: i64 = 0;
 
 pub fn verifySignature(allocator: Allocator, key: []const u8, msg: []const u8, sig_b64: []const u8) FirebaseError!bool {
     try checkAndReloadPK(allocator);
 
+    if (key.len != 40) {
+        return error.MissingCertificateMarkerInGooglePubKey;
+    }
+    std.debug.assert(key.len == 40);
+
+    const empty_kid = std.mem.zeroes([40]u8);
     for (goole_keys) |pk| {
+        if (mem.eql(u8, &pk.key, &empty_kid)) {
+            continue;
+        }
         if (mem.eql(u8, &pk.key, key)) {
             const parsed_cert = Certificate.parse(.{
                 .buffer = pk.certificate[0..],
@@ -73,15 +82,19 @@ fn reloadPublicKeys(allocator: Allocator) FirebaseError!void {
         return error.ErrorLoadingPubKeys;
     }
 
-    // Fetch API no longer exposes raw response headers directly; refresh keys hourly.
-    cache_time = std.time.timestamp() + 60 * 60;
-
     const object = json.parseFromSlice(json.Value, allocator, response_body.written(), .{}) catch return error.CannotLoadPubKeys;
-    for (object.value.object.keys(), 0..) |key, i| {
-        if (i >= goole_keys.len) {
+    var new_keys = std.mem.zeroes([3]GooglePubKey);
+    var stored: usize = 0;
+    for (object.value.object.keys()) |key| {
+        if (stored >= new_keys.len) {
             return error.TooManyGoolePubKeys;
         }
-        @memcpy(&goole_keys[i].key, key);
+        if (key.len != 40) {
+            return error.ErrorLoadingPubKeys;
+        }
+        std.debug.assert(key.len == 40);
+        std.debug.assert(stored < new_keys.len);
+        @memcpy(&new_keys[stored].key, key);
 
         const json_value = object.value.object.get(key).?.string;
         const size = std.mem.replacementSize(u8, json_value, "\\n", "\n");
@@ -101,9 +114,15 @@ fn reloadPublicKeys(allocator: Allocator) FirebaseError!void {
         var buff = allocator.alloc(u8, encoded_cert.len * 4 / 3) catch return error.CannotLoadPubKeys;
         const len = base64Std.decode(buff, encoded_cert) catch return error.ErrorLoadingPubKeys;
 
-        @memcpy(goole_keys[i].certificate[0..len], buff[0..len]);
-        @memset(goole_keys[i].certificate[len..], 0);
+        @memcpy(new_keys[stored].certificate[0..len], buff[0..len]);
+        @memset(new_keys[stored].certificate[len..], 0);
+        stored += 1;
     }
+    if (stored == 0) {
+        return error.CannotLoadPubKeys;
+    }
+    goole_keys = new_keys;
+    cache_time = std.time.timestamp() + 60 * 60;
 }
 
 fn updateCacheAge(headers: []u8) FirebaseError!void {
