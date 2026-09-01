@@ -62,8 +62,8 @@ pub const JWTMiddleware = struct {
                 .authenticated = true,
                 .uuid = sub,
             };
-            log.debug("Sub: {s}\n", .{sub[0..28]});
-            log.debug("uuid: {s}\n", .{context.auth.?.uuid.?[0..28]});
+            log.debug("Sub: {s}\n", .{sub});
+            log.debug("uuid: {s}\n", .{context.auth.?.uuid.?});
         } else {
             context.auth = Auth{
                 .authenticated = false,
@@ -74,7 +74,7 @@ pub const JWTMiddleware = struct {
     }
 };
 
-fn parseJWT(allocator: Allocator, jwt: []const u8) AuthError![28]u8 {
+fn parseJWT(allocator: Allocator, jwt: []const u8) AuthError![]const u8 {
     log.debug("JWT Middleware: set user in context {?s}\n\n", .{jwt});
     const bearer = zap.Auth.AuthScheme.Bearer.str();
     const jwt_start = bearer.len + (mem.indexOfPos(u8, jwt, 0, bearer) orelse
@@ -137,7 +137,7 @@ fn parseJWTHead(allocator: Allocator, head_base: []const u8) AuthError![]const u
 // iss     Issuer  Must be "https://securetoken.google.com/<projectId>", where <projectId> is the same project ID used for aud above.
 // sub     Subject     Must be a non-empty string and must be the uid of the user or device.
 // auth_time   Authentication time     Must be in the past. The time when the user authenticated.
-fn parseJWTBody(allocator: Allocator, body_base: []const u8) AuthError![28]u8 {
+fn parseJWTBody(allocator: Allocator, body_base: []const u8) AuthError![]const u8 {
     const now = std.time.timestamp();
     log.debug("Now time {d}\n", .{now});
     const buff = allocator.alloc(u8, body_base.len * 3 / 4) catch return error.ErrorParsingJWT;
@@ -153,7 +153,7 @@ fn parseJWTBody(allocator: Allocator, body_base: []const u8) AuthError![28]u8 {
     var aud: bool = false;
     var iss: bool = false;
     var auth_time: bool = false;
-    var sub: ?[28]u8 = null;
+    var sub: ?[]const u8 = null;
     for (body.value.object.keys()) |k| {
         if (mem.eql(u8, "exp", k)) {
             exp = true;
@@ -187,8 +187,9 @@ fn parseJWTBody(allocator: Allocator, body_base: []const u8) AuthError![28]u8 {
         }
         if (mem.eql(u8, "sub", k)) {
             const value = body.value.object.get(k).?.string;
-            sub = [_]u8{0} ** 28;
-            @memcpy(sub.?[0..28], value[0..28]);
+            if (value.len == 0) return error.NoSubject;
+            if (value.len > 256) return error.ErrorParsingJWT;
+            sub = allocator.dupe(u8, value) catch return error.ErrorParsingJWT;
         }
     }
     if (!(exp and iat and aud and iss and auth_time)) {
