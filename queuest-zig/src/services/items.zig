@@ -27,29 +27,32 @@ fn toIt(item: Item) It {
 
 pub fn on_get_items(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
-    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
-    const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch unreachable;
-    var result = std.ArrayList(It).initCapacity(a, items.items.len) catch unreachable;
+    const user = c.user orelse return error.InternalError;
+    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
+        return error.InternalError orelse return error.NotFound;
+    const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch
+        return error.InternalError;
+    var result = std.ArrayList(It).initCapacity(a, items.items.len) catch return error.InternalError;
     for (items.items) |item| {
         const name = switch (item.inner) {
             .collection => |cl| cl.name,
             .item => |it| it.name,
         };
-        const n = a.allocSentinel(u8, name.len, 0) catch unreachable;
+        const n = a.allocSentinel(u8, name.len, 0) catch return error.InternalError;
         @memcpy(n, name);
-        result.append(a, It{ .id = item.id, .name = n }) catch unreachable;
+        result.append(a, It{ .id = item.id, .name = n }) catch return error.InternalError;
     }
     var graph: Graph = Graph.init(a, @intCast(items.items.len));
-    setGraphEdges(a, c, items.items, &graph) catch unreachable;
-    const sorted = graph.sort() catch unreachable;
-    var resultSorted = std.ArrayList(It).initCapacity(a, items.items.len) catch unreachable;
+    setGraphEdges(a, c, items.items, &graph) catch return error.InternalError;
+    const sorted = graph.sort() catch return error.InternalError;
+    var resultSorted = std.ArrayList(It).initCapacity(a, items.items.len) catch return error.InternalError;
     for (sorted) |i| {
-        resultSorted.append(a, result.items[i]) catch unreachable;
+        resultSorted.append(a, result.items[i]) catch return error.InternalError;
     }
 
     const Result = struct { id: i64, items: []It, calibrated: f64 };
     const res = Result{ .id = collectionId, .items = resultSorted.items, .calibrated = 0.5 };
-    const json = std.json.Stringify.valueAlloc(a, res, .{ .escape_unicode = true, .emit_null_optional_fields = false, .whitespace = .minified }) catch unreachable;
+    const json = std.json.Stringify.valueAlloc(a, res, .{ .escape_unicode = true, .emit_null_optional_fields = false, .whitespace = .minified }) catch return error.InternalError;
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
 }
@@ -59,32 +62,35 @@ pub fn on_get_best_pair(a: Allocator, r: Request, c: *Context, params: anytype) 
     const id = params.collectionItemId;
     _ = params.strict;
 
-    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
-    const item = Item.findById(c.connection.?, a, id) catch unreachable orelse unreachable;
-    const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch unreachable;
+    const user = c.user orelse return error.InternalError;
+    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
+        return error.InternalError orelse return error.NotFound;
+    const item = Item.findById(c.connection.?, a, id) catch return error.InternalError orelse return error.NotFound;
+    const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch
+        return error.InternalError;
     var graph: Graph = Graph.init(a, @intCast(items.items.len));
-    setGraphEdges(a, c, items.items, &graph) catch unreachable;
-    const sorted = graph.sort() catch unreachable;
-    const relations = ItemRelation.findAllForItemIds(c.connection.?, a, items.items) catch unreachable;
-    var items_sorted = std.ArrayList(Item).initCapacity(a, items.items.len) catch unreachable;
+    setGraphEdges(a, c, items.items, &graph) catch return error.InternalError;
+    const sorted = graph.sort() catch return error.InternalError;
+    const relations = ItemRelation.findAllForItemIds(c.connection.?, a, items.items) catch return error.InternalError;
+    var items_sorted = std.ArrayList(Item).initCapacity(a, items.items.len) catch return error.InternalError;
     for (sorted) |i| {
-        items_sorted.append(a, items.items[i]) catch unreachable;
+        items_sorted.append(a, items.items[i]) catch return error.InternalError;
     }
 
-    const pair = getBestPair(a, id, items_sorted, &.{}, relations) catch unreachable;
+    const pair = getBestPair(a, id, items_sorted, &.{}, relations) catch return error.InternalError;
 
     var res: ?ItRel = null;
     if (pair) |p| {
         res = toItRel(item, p, relations);
     }
 
-    const json = std.json.Stringify.valueAlloc(a, res, .{ .escape_unicode = true, .emit_null_optional_fields = false, .whitespace = .minified }) catch unreachable;
+    const json = std.json.Stringify.valueAlloc(a, res, .{ .escape_unicode = true, .emit_null_optional_fields = false, .whitespace = .minified }) catch return error.InternalError;
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
 }
 
 fn setGraphEdges(a: Allocator, c: *Context, items: []Item, graph: *Graph) !void {
-    const relations = ItemRelation.findAllForItemIds(c.connection.?, a, items) catch unreachable;
+    const relations = ItemRelation.findAllForItemIds(c.connection.?, a, items) catch return error.InternalError;
     for (relations.items) |rel| {
         const from_id = rel.collection_item_from_id;
         const to_id = rel.collection_item_to_id;
@@ -102,10 +108,10 @@ fn setGraphEdges(a: Allocator, c: *Context, items: []Item, graph: *Graph) !void 
             if (to) |t| {
                 graph.addEdge(@intCast(f), @intCast(t));
             } else {
-                unreachable;
+                return error.InternalError;
             }
         } else {
-            unreachable;
+            return error.InternalError;
         }
     }
 }
@@ -115,13 +121,15 @@ pub fn on_post_item(a: Allocator, r: Request, c: *Context, params: anytype) Cont
     const body = r.body orelse return error.InternalError;
 
     const collectionId = params.collectionId;
-    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    const user = c.user orelse return error.InternalError;
+    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
+        return error.InternalError orelse return error.NotFound;
 
     const CreateItem = struct { name: []const u8 };
     const create = std.json.parseFromSlice(CreateItem, a, body, .{ .ignore_unknown_fields = true }) catch return error.InternalError;
-    const id = Item.insertItem(c.connection.?, create.value.name, collectionId) catch unreachable;
+    const id = Item.insertItem(c.connection.?, create.value.name, collectionId) catch return error.InternalError;
 
-    const json = std.json.Stringify.valueAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+    const json = std.json.Stringify.valueAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch return error.InternalError;
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
 }
@@ -129,9 +137,11 @@ pub fn on_post_item(a: Allocator, r: Request, c: *Context, params: anytype) Cont
 pub fn on_delete_item(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
     const collectionItemId = params.collectionItemId;
-    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    const user = c.user orelse return error.InternalError;
+    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
+        return error.InternalError orelse return error.NotFound;
 
-    Item.deleteItem(c.connection.?, collectionItemId) catch unreachable;
+    Item.deleteItem(c.connection.?, collectionItemId) catch return error.InternalError;
 
     r.sendBody("") catch return;
 }
@@ -164,7 +174,7 @@ fn getBestPair(a: Allocator, id: i64, item_list: std.ArrayList(Item), exclude: [
 
     var positions = std.AutoHashMap(i64, i64).init(a);
     for (item_list.items, 0..) |item, i| {
-        positions.put(item.id, @intCast(i)) catch unreachable;
+        try positions.put(item.id, @intCast(i));
     }
 
     const last_pos = last: {
@@ -251,15 +261,18 @@ fn getBestPair(a: Allocator, id: i64, item_list: std.ArrayList(Item), exclude: [
 
 pub fn on_get_least_calibrated_item(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
-    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
-    const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch unreachable;
+    const user = c.user orelse return error.InternalError;
+    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
+        return error.InternalError orelse return error.NotFound;
+    const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch
+        return error.InternalError;
     var positions = std.AutoHashMap(i64, usize).init(a);
     for (items.items, 0..) |item, i| {
-        positions.put(item.id, @intCast(i)) catch unreachable;
+        try positions.put(item.id, @intCast(i));
     }
-    const relations = ItemRelation.findAllForItemIds(c.connection.?, a, items.items) catch unreachable;
-    const in = a.alloc(usize, items.items.len) catch unreachable;
-    const out = a.alloc(usize, items.items.len) catch unreachable;
+    const relations = ItemRelation.findAllForItemIds(c.connection.?, a, items.items) catch return error.InternalError;
+    const in = a.alloc(usize, items.items.len) catch return error.InternalError;
+    const out = a.alloc(usize, items.items.len) catch return error.InternalError;
     @memset(in, 0);
     @memset(out, 0);
     for (relations.items) |rel| {
@@ -288,7 +301,7 @@ pub fn on_get_least_calibrated_item(a: Allocator, r: Request, c: *Context, param
     }
     if (result) |res| {
         const it = toIt(res);
-        const json = std.json.Stringify.valueAlloc(a, it, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+        const json = std.json.Stringify.valueAlloc(a, it, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch return error.InternalError;
         r.setContentType(.JSON) catch return;
         r.sendJson(json) catch return;
     } else {

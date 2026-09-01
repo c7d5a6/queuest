@@ -6,7 +6,9 @@ const collections = @import("../services/collections.zig");
 const items = @import("../services/items.zig");
 const items_relations = @import("../services/items_relations.zig");
 const Regex = @import("matcher.zig").Regex;
-const ControllerError = @import("router-errors.zig").ControllerError;
+const router_errors = @import("router-errors.zig");
+const ControllerError = router_errors.ControllerError;
+const httpStatus = router_errors.httpStatus;
 
 pub const ControllerRequest = *const fn (std.mem.Allocator, zap.Request, *Context, anytype) ControllerError!void;
 pub const DispatchRoutes = *const fn (std.mem.Allocator, zap.Request, *Context) void;
@@ -186,7 +188,7 @@ pub fn dispatch_routes(a: std.mem.Allocator, r: zap.Request, c: *Context) void {
                 const params = getRouteParams(route.methodType, route.path, path);
                 std.log.info("method: {any}, params: {any}\n", .{ httpMethod, params });
                 route.method(a, r, c, params) catch |err| {
-                    r.sendError(err, null, 500);
+                    r.sendError(err, null, httpStatus(err));
                 };
                 return;
             }

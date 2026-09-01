@@ -8,26 +8,39 @@ const ControllerError = @import("../routes/router-errors.zig").ControllerError;
 
 pub fn on_get_collections(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     _ = params;
-    const user_id = c.user.?.id;
-    const collections: std.ArrayList(Collection) = Collection.findAllForUserId(c.connection.?, a, user_id) catch unreachable;
-    const json = std.json.Stringify.valueAlloc(a, collections.items, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+    const user = c.user orelse return error.InternalError;
+    const collections: std.ArrayList(Collection) = Collection.findAllForUserId(c.connection.?, a, user.id) catch
+        return error.InternalError;
+    const json = std.json.Stringify.valueAlloc(a, collections.items, .{
+        .escape_unicode = true,
+        .emit_null_optional_fields = false,
+    }) catch return error.InternalError;
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
 }
 
 pub fn on_get_fav_collections(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     _ = params;
-    const user_id = c.user.?.id;
-    const collections: std.ArrayList(Collection) = Collection.findAllFavForUserId(c.connection.?, a, user_id) catch unreachable;
-    const json = std.json.Stringify.valueAlloc(a, collections.items, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+    const user = c.user orelse return error.InternalError;
+    const collections: std.ArrayList(Collection) = Collection.findAllFavForUserId(c.connection.?, a, user.id) catch
+        return error.InternalError;
+    const json = std.json.Stringify.valueAlloc(a, collections.items, .{
+        .escape_unicode = true,
+        .emit_null_optional_fields = false,
+    }) catch return error.InternalError;
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
 }
 
 pub fn on_get_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
-    const collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
-    const json = std.json.Stringify.valueAlloc(a, collection, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+    const user = c.user orelse return error.InternalError;
+    const collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
+        return error.InternalError orelse return error.NotFound;
+    const json = std.json.Stringify.valueAlloc(a, collection, .{
+        .escape_unicode = true,
+        .emit_null_optional_fields = false,
+    }) catch return error.InternalError;
     std.debug.print("collection: {s}\n", .{json});
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
@@ -42,19 +55,29 @@ pub fn on_post_collection(a: Allocator, r: Request, c: *Context, params: anytype
     const create = std.json.parseFromSlice(CollectionCreate, a, body, .{}) catch return error.InternalError;
     std.debug.print("create: {s}\n", .{create.value.name});
 
-    const id = Collection.insertCollection(c.connection.?, c.user.?.id, create.value.name) catch unreachable orelse unreachable;
-    const json = std.json.Stringify.valueAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+    const user = c.user orelse return error.InternalError;
+    const id = Collection.insertCollection(c.connection.?, user.id, create.value.name) catch
+        return error.InternalError orelse return error.InternalError;
+    const json = std.json.Stringify.valueAlloc(a, id, .{
+        .escape_unicode = true,
+        .emit_null_optional_fields = false,
+    }) catch return error.InternalError;
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
 }
 
 pub fn on_post_fav_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
-    var collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    const user = c.user orelse return error.InternalError;
+    var collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
+        return error.InternalError orelse return error.NotFound;
     collection.favourite_yn = true;
 
-    const id = Collection.updateCollection(c.connection.?, collection) catch unreachable;
-    const json = std.json.Stringify.valueAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+    const id = Collection.updateCollection(c.connection.?, collection) catch return error.InternalError;
+    const json = std.json.Stringify.valueAlloc(a, id, .{
+        .escape_unicode = true,
+        .emit_null_optional_fields = false,
+    }) catch return error.InternalError;
 
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
@@ -62,20 +85,27 @@ pub fn on_post_fav_collection(a: Allocator, r: Request, c: *Context, params: any
 
 pub fn on_post_visit_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
-    const collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    const user = c.user orelse return error.InternalError;
+    const collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
+        return error.InternalError orelse return error.NotFound;
 
-    Collection.visitCollection(c.connection.?, collection) catch unreachable;
+    Collection.visitCollection(c.connection.?, collection) catch return error.InternalError;
 
     r.sendBody("") catch return;
 }
 
 pub fn on_delete_fav_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
-    var collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, c.user.?.id) catch unreachable orelse unreachable;
+    const user = c.user orelse return error.InternalError;
+    var collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
+        return error.InternalError orelse return error.NotFound;
     collection.favourite_yn = false;
 
-    const id = Collection.updateCollection(c.connection.?, collection) catch unreachable;
-    const json = std.json.Stringify.valueAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch unreachable;
+    const id = Collection.updateCollection(c.connection.?, collection) catch return error.InternalError;
+    const json = std.json.Stringify.valueAlloc(a, id, .{
+        .escape_unicode = true,
+        .emit_null_optional_fields = false,
+    }) catch return error.InternalError;
 
     r.setContentType(.JSON) catch return;
     r.sendJson(json) catch return;
