@@ -100,7 +100,7 @@ pub const Collection = struct {
         std.debug.assert(id != 0);
         std.debug.assert(user_id != 0);
         var result = try conn.queryOpts(
-            "update " ++ table_name ++ "set favourite_yn = $3 where id = $1 and user_id = $2",
+            "update " ++ table_name ++ " set favourite_yn = $3 where id = $1 and user_id = $2",
             .{ id, user_id, fav },
             .{ .column_names = true },
         );
