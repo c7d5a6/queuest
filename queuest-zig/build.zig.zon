@@ -21,16 +21,16 @@
     // internet connectivity.
     .dependencies = .{
         .zap = .{
-            .url = "git+https://github.com/zigzap/zap#76679f308c702cd8880201e6e93914e1d836a54b",
-            .hash = "zap-0.10.6-GoeB8w-EJABTkxyoGH_Z8oMBYMxTBvn7YWk-DrJOHuDO",
+            .url = "git+https://github.com/zigzap/zap#f6099ecec496c7ec623c5913baa5b6b5da2e883d",
+            .hash = "zap-0.10.6-GoeB8y-IJAD3m9zkAkeTQalzU1NuvO072u8hA78Irdp8",
         },
         .pg = .{
-            .url = "git+https://github.com/karlseguin/pg.zig#9644e4ca89509e0160d7bcda6d9a22acc9456538",
-            .hash = "pg-0.0.0-Wp_7gV1pBgAN_atgbzpICLXPcJ0gJJxVfFmuaprjCUew",
+            .url = "git+https://github.com/karlseguin/pg.zig#f6442abf3fb0bbcf1007fac4799607f35688a89e",
+            .hash = "pg-0.0.0-Wp_7gVzCBgDIFbqjSA6I7bJQj0gh66KzpmDxvx1Nn4PV",
         },
         .sqlite = .{
-            .url = "git+https://github.com/vrischmann/zig-sqlite#fb73a6cca771c0c26fbab1a1f7689c23ec786257",
-            .hash = "sqlite-3.48.0-F2R_a8WODgDamFQx1fOrpgY7IdluD4Sr_P7G0UPxUUMr",
+            .url = "git+https://github.com/vrischmann/zig-sqlite#946d77c526258760b52836187af32d1a192c5d36",
+            .hash = "sqlite-3.48.0-F2R_azCQDgBGaWDIX4g2vxKpuqzYEQOOfAeJGMNocPu0",
         },
     },
     .paths = .{
