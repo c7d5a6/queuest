@@ -97,9 +97,12 @@ fn parseJWT(allocator: Allocator, jwt: []const u8) AuthError![28]u8 {
 fn parseJWTHead(allocator: Allocator, head_base: []const u8) AuthError![]const u8 {
     const buff = allocator.alloc(u8, head_base.len * 3 / 4) catch return error.ErrorParsingJWT;
     const encoded = mem.trim(u8, head_base[0..], " \t\r\n");
-    _ = base64Url.decode(buff, encoded) catch return error.ErrorParsingJWT;
-    const head = json.parseFromSlice(json.Value, allocator, buff, .{}) catch return error.ErrorParsingJWT;
-    log.debug("JWT: {s}\n", .{buff});
+    const decoded_len = base64Url.decode(buff, encoded) catch return error.ErrorParsingJWT;
+    std.debug.assert(decoded_len > 0);
+    std.debug.assert(decoded_len <= buff.len);
+    const decoded = buff[0..decoded_len];
+    const head = json.parseFromSlice(json.Value, allocator, decoded, .{}) catch return error.ErrorParsingJWT;
+    log.debug("JWT: {s}\n", .{decoded});
     var alg: bool = false;
     var key: bool = false;
     var typ: bool = false;
@@ -139,9 +142,12 @@ fn parseJWTBody(allocator: Allocator, body_base: []const u8) AuthError![28]u8 {
     log.debug("Now time {d}\n", .{now});
     const buff = allocator.alloc(u8, body_base.len * 3 / 4) catch return error.ErrorParsingJWT;
     const encoded = mem.trim(u8, body_base[0..], " \t\r\n");
-    _ = base64Url.decode(buff, encoded) catch return error.ErrorParsingJWT;
-    const body = json.parseFromSlice(json.Value, allocator, buff, .{}) catch return error.ErrorParsingJWT;
-    log.debug("JWT: {s}\n", .{buff});
+    const decoded_len = base64Url.decode(buff, encoded) catch return error.ErrorParsingJWT;
+    std.debug.assert(decoded_len > 0);
+    std.debug.assert(decoded_len <= buff.len);
+    const decoded = buff[0..decoded_len];
+    const body = json.parseFromSlice(json.Value, allocator, decoded, .{}) catch return error.ErrorParsingJWT;
+    log.debug("JWT: {s}\n", .{decoded});
     var exp: bool = false;
     var iat: bool = false;
     var aud: bool = false;
