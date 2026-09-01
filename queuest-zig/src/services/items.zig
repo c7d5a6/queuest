@@ -137,9 +137,16 @@ pub fn on_post_item(a: Allocator, r: Request, c: *Context, params: anytype) Cont
 pub fn on_delete_item(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
     const collectionItemId = params.collectionItemId;
+    std.debug.assert(collectionId != 0);
+    std.debug.assert(collectionItemId != 0);
     const user = c.user orelse return error.InternalError;
     _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
         return error.InternalError orelse return error.NotFound;
+    const item = Item.findById(c.connection.?, a, collectionItemId) catch
+        return error.InternalError orelse return error.NotFound;
+    if (item.collection_id != collectionId) {
+        return error.NotFound;
+    }
 
     Item.deleteItem(c.connection.?, collectionItemId) catch return error.InternalError;
 
