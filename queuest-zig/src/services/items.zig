@@ -64,9 +64,14 @@ pub fn on_get_best_pair(a: Allocator, r: Request, c: *Context, params: anytype) 
     const exclude = parseExcludeIds(a, r) catch return error.BadRequest;
 
     const user = c.user orelse return error.InternalError;
+    std.debug.assert(collectionId != 0);
+    std.debug.assert(id != 0);
     _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
         return error.InternalError orelse return error.NotFound;
     const item = Item.findById(c.connection.?, a, id) catch return error.InternalError orelse return error.NotFound;
+    if (item.collection_id != collectionId) {
+        return error.NotFound;
+    }
     const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch
         return error.InternalError;
     var graph: Graph = Graph.init(a, @intCast(items.items.len));
