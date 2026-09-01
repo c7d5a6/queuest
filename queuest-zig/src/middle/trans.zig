@@ -35,8 +35,7 @@ pub const TransactionMiddleware = struct {
             return false;
         };
         defer conn.release();
-
-        context.connection = conn;
+        _ = context;
 
         return handler.handleOther(r, context);
     }

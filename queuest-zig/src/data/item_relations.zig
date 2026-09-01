@@ -1,36 +1,20 @@
 const std = @import("std");
-const pg = @import("pg");
-const User = @import("user.zig").User;
-const Conn = pg.Conn;
+const sqlite = @import("sqlite");
+const Db = sqlite.Db;
 const utils = @import("utils.zig");
 const Id = utils.Id;
-const getSoloEntity = utils.getSoloEntity;
-const getList = utils.getList;
 const CollectionItem = @import("item.zig").CollectionItem;
 
-const table_name = "item_relation_tbl";
-
-// id                      | bigint                   |           | not null | nextval('pk_sequence'::regclass) | plain   |             |              |
-// createdwhen             | timestamp with time zone |           | not null | CURRENT_TIMESTAMP(6)             | plain   |             |              |
-// updatedwhen             | timestamp with time zone |           | not null | CURRENT_TIMESTAMP(6)             | plain   |             |              |
-// collection_item_from_id | bigint                   |           | not null |                                  | plain   |             |              |
-// collection_item_to_id   | bigint                   |           | not null |                                  | plain   |             |              |
 pub const ItemRelation = struct {
     id: i64,
     collection_item_from_id: i64,
     collection_item_to_id: i64,
 
-    fn toItemRelation(row: pg.Row) !ItemRelation {
-        var value: ItemRelation = undefined;
-        // return try row.to(CollectionItem, .{ .map = .name });
-        @field(value, "id") = try row.getCol(i64, "id");
-        @field(value, "collection_item_from_id") = try row.getCol(i64, "collection_item_from_id");
-        @field(value, "collection_item_to_id") = try row.getCol(i64, "collection_item_to_id");
-
-        return value;
-    }
-
-    pub fn findAllForItemIds(conn: *Conn, allocator: std.mem.Allocator, items: []const CollectionItem) !std.ArrayList(ItemRelation) {
+    pub fn findAllForItemIds(
+        db: *Db,
+        allocator: std.mem.Allocator,
+        items: []const CollectionItem,
+    ) !std.ArrayList(ItemRelation) {
         if (items.len == 0) {
             return try std.ArrayList(ItemRelation).initCapacity(allocator, 0);
         }
@@ -44,43 +28,66 @@ pub const ItemRelation = struct {
             try ids_buf.writer(allocator).print("{d}", .{item.id});
         }
         const ids_str = ids_buf.items;
-        std.log.info("ids_str: {s}\n", .{ids_str});
 
         const sql = try std.fmt.allocPrint(allocator,
-            \\SELECT * FROM item_relation_tbl
-            \\WHERE collection_item_from_id IN ({s}) OR collection_item_to_id IN ({s})
+            \\SELECT id, collection_item_from_id, collection_item_to_id
+            \\  FROM item_relation_tbl
+            \\ WHERE collection_item_from_id IN ({s})
+            \\    OR collection_item_to_id IN ({s})
         , .{ ids_str, ids_str });
         defer allocator.free(sql);
-        std.log.info("sql: {s}\n", .{sql});
 
-        var result = try conn.queryOpts(sql, .{}, .{ .column_names = true });
-        defer result.deinit();
+        var stmt = try db.prepareDynamic(sql);
+        defer stmt.deinit();
+        const rows = try stmt.all(ItemRelation, allocator, .{}, .{});
 
-        var array = try std.ArrayList(ItemRelation).initCapacity(allocator, 0);
-
-        while (try result.next()) |row| {
-            const e = try toItemRelation(row);
-            try array.append(allocator, e);
-        }
-
+        var array = try std.ArrayList(ItemRelation).initCapacity(allocator, rows.len);
+        try array.appendSlice(allocator, rows);
+        allocator.free(rows);
         return array;
     }
 
-    pub fn insertItemRelation(conn: *Conn, collection_item_from_id: i64, collection_item_to_id: i64) !?Id {
-        var result = try conn.queryOpts(
-            \\insert into item_relation_tbl(collection_item_from_id, collection_item_to_id) values ($1, $2) returning id
-        , .{ collection_item_from_id, collection_item_to_id }, .{ .column_names = true });
-        defer result.deinit();
-
-        return getSoloEntity(Id, null, result);
+    pub fn insertItemRelation(
+        db: *Db,
+        collection_item_from_id: i64,
+        collection_item_to_id: i64,
+    ) !?Id {
+        std.debug.assert(collection_item_from_id != 0);
+        std.debug.assert(collection_item_to_id != 0);
+        std.debug.assert(collection_item_from_id != collection_item_to_id);
+        const id = try db.one(
+            Id,
+            \\INSERT INTO item_relation_tbl(collection_item_from_id, collection_item_to_id)
+            \\VALUES (?, ?) RETURNING id
+        ,
+            .{},
+            .{ collection_item_from_id, collection_item_to_id },
+        );
+        if (id) |row| {
+            std.debug.assert(row.id != 0);
+        }
+        return id;
     }
 
-    pub fn deleteItemRelation(conn: *Conn, collection_item_from_id: i64, collection_item_to_id: i64) !void {
-        var result = try conn.queryOpts(
-            \\delete from item_relation_tbl where 
-            \\(collection_item_from_id = $1 and collection_item_to_id = $2) or
-            \\(collection_item_from_id = $2 and collection_item_to_id = $1)
-        , .{ collection_item_from_id, collection_item_to_id }, .{ .column_names = true });
-        defer result.deinit();
+    pub fn deleteItemRelation(
+        db: *Db,
+        collection_item_from_id: i64,
+        collection_item_to_id: i64,
+    ) !void {
+        std.debug.assert(collection_item_from_id != 0);
+        std.debug.assert(collection_item_to_id != 0);
+        try db.exec(
+            \\DELETE FROM item_relation_tbl WHERE
+            \\(collection_item_from_id = ? AND collection_item_to_id = ?) OR
+            \\(collection_item_from_id = ? AND collection_item_to_id = ?)
+        ,
+            .{},
+            .{
+                collection_item_from_id,
+                collection_item_to_id,
+                collection_item_to_id,
+                collection_item_from_id,
+            },
+        );
     }
 };

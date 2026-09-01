@@ -1,17 +1,16 @@
 const std = @import("std");
 const zap = @import("zap");
-const pg = @import("pg");
-// const sqlite = @import("sqlite");
 const builtin = @import("builtin");
 const routes = @import("routes/routes.zig");
 const DispatchRoutes = routes.DispatchRoutes;
 const auth = @import("middle/auth.zig");
 const userMiddle = @import("middle/user.zig");
-const trans = @import("middle/trans.zig");
-// const sqliteMiddle = @import("middle/sqlite.zig");
+const sqliteMiddle = @import("middle/sqlite.zig");
 const contextLib = @import("middle/context.zig");
 const controller = @import("middle/controller.zig");
 const header = @import("middle/header.zig");
+const db_open = @import("db/open.zig");
+const migrate = @import("db/migrate.zig");
 const Context = contextLib.Context;
 const Session = contextLib.Session;
 const SharedAllocator = contextLib.SharedAllocator;
@@ -21,10 +20,8 @@ const Handler = zap.Middleware.Handler(Context);
 const port = 3002;
 
 pub const std_options: std.Options = .{
-    // general log level
     .log_level = if (builtin.mode == .Debug) .info else .err,
     .log_scope_levels = &[_]std.log.ScopeLevel{
-        // log level specific to zap
         .{ .scope = .zap, .level = if (builtin.mode == .Debug) .info else .warn },
         .{ .scope = .auth, .level = if (builtin.mode == .Debug) .info else .err },
     },
@@ -34,69 +31,32 @@ pub fn main() !void {
     const allocator = if (builtin.mode == .Debug) gpa.allocator() else std.heap.c_allocator;
     SharedAllocator.init(allocator);
     {
-        //
-        // --- Database
-        //
-        const dbport_s = std.posix.getenv("DATABASE_PORT") orelse "5432";
-        const dbport = try std.fmt.parseInt(u16, dbport_s, 10);
-        const dbhost = std.posix.getenv("DATABASE_HOST") orelse "127.0.0.1";
-        const dbuser = std.posix.getenv("DB_USERNAME") orelse "queuest";
-        const dbname = std.posix.getenv("DB_DATABASE") orelse "queuest";
-        const dbpass = std.posix.getenv("DATABASE_PASSWORD") orelse "queuest";
-        const pool = pg.Pool.init(allocator, .{
-            .size = 5,
-            .connect = .{
-                .port = dbport,
-                .host = dbhost,
-                .tls = .require,
-            },
-            .auth = .{
-                .username = dbuser,
-                .database = dbname,
-                .password = dbpass,
-                .timeout = 10_000,
-            },
-        }) catch |err| {
-            std.log.debug("Failed to connect: {}", .{err});
+        const sqlite_path = db_open.pathFromEnv();
+        var db = db_open.openFile(sqlite_path) catch |err| {
+            std.log.err("Failed to open sqlite at {s}: {}", .{ sqlite_path, err });
             std.posix.exit(1);
         };
-        defer pool.deinit();
-        // sqlite
-        // var db = sqlite.Db.init(.{
-        //     .mode = sqlite.Db.Mode{ .File = "queuest.db" },
-        //     .open_flags = .{
-        //         .write = true,
-        //         .create = true,
-        //     },
-        //     .threading_mode = .MultiThread,
-        // }) catch unreachable;
-        // defer db.deinit();
+        defer db.deinit();
+        migrate.run(&db) catch |err| {
+            std.log.err("Failed to migrate sqlite: {}", .{err});
+            std.posix.exit(1);
+        };
 
-        //
-        // --- Routes
-        //
         try routes.setup_routes(allocator);
         defer routes.deinit();
 
-        //
-        // --- Handlers
-        //
         var controllerHandler = controller.ControllerMiddleWare.init(null, routes.dispatch_routes, allocator);
         var userHandler = userMiddle.UserMiddleware.init(controllerHandler.getHandler(), allocator);
-        var transactionHandler = trans.TransactionMiddleware.init(userHandler.getHandler(), allocator, pool);
-        // var sqliteHandler = sqliteMiddle.SqliteMiddleware.init(transactionHandler.getHandler(), allocator, &db);
-        var jwtHandler = auth.JWTMiddleware.init(transactionHandler.getHandler(), allocator);
+        var sqliteHandler = sqliteMiddle.SqliteMiddleware.init(userHandler.getHandler(), allocator, &db);
+        var jwtHandler = auth.JWTMiddleware.init(sqliteHandler.getHandler(), allocator);
         var headerHandler = header.HeaderMiddleWare.init(jwtHandler.getHandler());
 
-        //
-        // --- Listner with first middleware in line
-        //
         var listener = try zap.Middleware.Listener(Context).init(
             .{
                 .port = port,
                 .log = true,
-                .max_clients = 100000, // TODO: setup this number
-                .on_request = null, // must be null
+                .max_clients = 100000,
+                .on_request = null,
             },
             headerHandler.getHandler(),
             SharedAllocator.getAllocator,
@@ -107,13 +67,8 @@ pub fn main() !void {
         };
         std.log.debug("Listening on 0.0.0.0:{d}\n", .{port});
 
-        //
-        // --- Start worker threads
-        //
         zap.start(.{
-            // if all threads hang, your server will hang
             .threads = 1,
-            // workers share memory so do not share states if you have multiple workers
             .workers = 1,
         });
     }
@@ -131,7 +86,8 @@ const g = @import("services/graph.zig");
 test {
     _ = @import("services/collections.zig");
     _ = @import("data/utils.zig");
-    // or refAllDeclsRecursive
+    _ = @import("db/open.zig");
+    _ = @import("db/migrate.zig");
 }
 
 test "graph" {

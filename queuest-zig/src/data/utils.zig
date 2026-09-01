@@ -1,57 +1,50 @@
 const std = @import("std");
-const pg = @import("pg");
-const Result = pg.Result;
+const sqlite = @import("sqlite");
 const Allocator = std.mem.Allocator;
-
-const DBError = error{
-    NonSigleResult,
-};
 
 pub const Id = struct {
     id: i64,
 };
 
-fn typeHasTextSlice(comptime T: type) bool {
-    inline for (std.meta.fields(T)) |field| {
-        switch (field.type) {
-            []const u8, []u8, [:0]const u8, [:0]u8 => return true,
-            else => {},
-        }
-    }
-    return false;
+pub fn getSolo(
+    comptime T: type,
+    db: *sqlite.Db,
+    allocator: Allocator,
+    comptime query: []const u8,
+    values: anytype,
+) !?T {
+    comptime std.debug.assert(@typeInfo(T) == .@"struct");
+    std.debug.assert(@intFromPtr(db.db) != 0);
+    return db.oneAlloc(T, allocator, query, .{}, values);
 }
 
-pub fn getSoloEntity(T: type, allocator: ?Allocator, result: *Result) !?T {
+pub fn getSoloNoAlloc(
+    comptime T: type,
+    db: *sqlite.Db,
+    comptime query: []const u8,
+    values: anytype,
+) !?T {
     comptime std.debug.assert(@typeInfo(T) == .@"struct");
-    if (comptime typeHasTextSlice(T)) {
-        std.debug.assert(allocator != null);
-    }
-
-    var e: ?T = null;
-    if (try result.next()) |row| {
-        e = try row.to(T, .{ .map = .name, .allocator = allocator });
-    }
-    if (try result.next()) |_| {
-        return error.NonSigleResult;
-    }
-    return e;
+    std.debug.assert(@intFromPtr(db.db) != 0);
+    return db.one(T, query, .{}, values);
 }
 
-pub fn getList(T: type, allocator: Allocator, result: *Result) !std.ArrayList(T) {
+pub fn getList(
+    comptime T: type,
+    db: *sqlite.Db,
+    allocator: Allocator,
+    comptime query: []const u8,
+    values: anytype,
+) !std.ArrayList(T) {
     comptime std.debug.assert(@typeInfo(T) == .@"struct");
-    // Text columns are copied into `allocator` so they outlive Result.deinit.
+    std.debug.assert(@intFromPtr(db.db) != 0);
 
-    var array = try std.ArrayList(T).initCapacity(allocator, 0);
+    var stmt = try db.prepare(query);
+    defer stmt.deinit();
+    const rows = try stmt.all(T, allocator, .{}, values);
 
-    while (try result.next()) |row| {
-        const e = try row.to(T, .{ .map = .name, .allocator = allocator });
-        try array.append(allocator, e);
-    }
-
+    var array = try std.ArrayList(T).initCapacity(allocator, rows.len);
+    try array.appendSlice(allocator, rows);
+    allocator.free(rows);
     return array;
-}
-
-test "typeHasTextSlice distinguishes text structs" {
-    try std.testing.expect(typeHasTextSlice(struct { name: []const u8 }));
-    try std.testing.expect(!typeHasTextSlice(Id));
 }

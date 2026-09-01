@@ -30,13 +30,14 @@ pub const UserMiddleware = struct {
 
     pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) !bool {
         // const self: *Self = @fieldParentPtr("handler", handler);
+        std.debug.assert(context.db != null);
         if (context.auth.?.uuid) |uuid| {
-            var user = User.findByUID(context.connection.?, uuid) catch unreachable;
+            var user = User.findByUID(context.db.?, uuid) catch unreachable;
             if (user) |u| {
                 context.user = u;
             } else {
-                User.create(context.connection.?, uuid, "email") catch unreachable;
-                user = User.findByUID(context.connection.?, uuid) catch unreachable;
+                User.create(context.db.?, uuid, "email") catch unreachable;
+                user = User.findByUID(context.db.?, uuid) catch unreachable;
                 context.user = user orelse unreachable;
             }
         }

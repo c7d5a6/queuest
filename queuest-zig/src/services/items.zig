@@ -28,9 +28,9 @@ fn toIt(item: Item) It {
 pub fn on_get_items(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
     const user = c.user orelse return error.InternalError;
-    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
-        return error.InternalError orelse return error.NotFound;
-    const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch
+    _ = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
+        return error.InternalError) orelse return error.NotFound;
+    const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.db.?, a, collectionId) catch
         return error.InternalError;
     var result = std.ArrayList(It).initCapacity(a, items.items.len) catch return error.InternalError;
     for (items.items) |item| {
@@ -66,18 +66,18 @@ pub fn on_get_best_pair(a: Allocator, r: Request, c: *Context, params: anytype) 
     const user = c.user orelse return error.InternalError;
     std.debug.assert(collectionId != 0);
     std.debug.assert(id != 0);
-    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
-        return error.InternalError orelse return error.NotFound;
-    const item = Item.findById(c.connection.?, a, id) catch return error.InternalError orelse return error.NotFound;
+    _ = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
+        return error.InternalError) orelse return error.NotFound;
+    const item = (Item.findById(c.db.?, a, id) catch return error.InternalError) orelse return error.NotFound;
     if (item.collection_id != collectionId) {
         return error.NotFound;
     }
-    const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch
+    const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.db.?, a, collectionId) catch
         return error.InternalError;
     var graph: Graph = Graph.init(a, @intCast(items.items.len));
     setGraphEdges(a, c, items.items, &graph) catch return error.InternalError;
     const sorted = graph.sort() catch return error.InternalError;
-    const relations = ItemRelation.findAllForItemIds(c.connection.?, a, items.items) catch return error.InternalError;
+    const relations = ItemRelation.findAllForItemIds(c.db.?, a, items.items) catch return error.InternalError;
     var items_sorted = std.ArrayList(Item).initCapacity(a, items.items.len) catch return error.InternalError;
     for (sorted) |i| {
         items_sorted.append(a, items.items[i]) catch return error.InternalError;
@@ -117,7 +117,7 @@ pub fn on_get_best_pair(a: Allocator, r: Request, c: *Context, params: anytype) 
 }
 
 fn setGraphEdges(a: Allocator, c: *Context, items: []Item, graph: *Graph) !void {
-    const relations = ItemRelation.findAllForItemIds(c.connection.?, a, items) catch return error.InternalError;
+    const relations = ItemRelation.findAllForItemIds(c.db.?, a, items) catch return error.InternalError;
     for (relations.items) |rel| {
         const from_id = rel.collection_item_from_id;
         const to_id = rel.collection_item_to_id;
@@ -149,12 +149,12 @@ pub fn on_post_item(a: Allocator, r: Request, c: *Context, params: anytype) Cont
 
     const collectionId = params.collectionId;
     const user = c.user orelse return error.InternalError;
-    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
-        return error.InternalError orelse return error.NotFound;
+    _ = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
+        return error.InternalError) orelse return error.NotFound;
 
     const CreateItem = struct { name: []const u8 };
     const create = std.json.parseFromSlice(CreateItem, a, body, .{ .ignore_unknown_fields = true }) catch return error.InternalError;
-    const id = Item.insertItem(c.connection.?, create.value.name, collectionId) catch return error.InternalError;
+    const id = Item.insertItem(c.db.?, create.value.name, collectionId) catch return error.InternalError;
 
     const json = std.json.Stringify.valueAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch return error.InternalError;
     r.setContentType(.JSON) catch return;
@@ -167,15 +167,15 @@ pub fn on_delete_item(a: Allocator, r: Request, c: *Context, params: anytype) Co
     std.debug.assert(collectionId != 0);
     std.debug.assert(collectionItemId != 0);
     const user = c.user orelse return error.InternalError;
-    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
-        return error.InternalError orelse return error.NotFound;
-    const item = Item.findById(c.connection.?, a, collectionItemId) catch
-        return error.InternalError orelse return error.NotFound;
+    _ = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
+        return error.InternalError) orelse return error.NotFound;
+    const item = (Item.findById(c.db.?, a, collectionItemId) catch
+        return error.InternalError) orelse return error.NotFound;
     if (item.collection_id != collectionId) {
         return error.NotFound;
     }
 
-    Item.deleteItem(c.connection.?, collectionItemId) catch return error.InternalError;
+    Item.deleteItem(c.db.?, collectionItemId) catch return error.InternalError;
 
     r.sendBody("") catch return;
 }
@@ -321,15 +321,15 @@ fn getBestPair(
 pub fn on_get_least_calibrated_item(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
     const user = c.user orelse return error.InternalError;
-    _ = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
-        return error.InternalError orelse return error.NotFound;
-    const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.connection.?, a, collectionId) catch
+    _ = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
+        return error.InternalError) orelse return error.NotFound;
+    const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.db.?, a, collectionId) catch
         return error.InternalError;
     var positions = std.AutoHashMap(i64, usize).init(a);
     for (items.items, 0..) |item, i| {
-        try positions.put(item.id, @intCast(i));
+        positions.put(item.id, @intCast(i)) catch return error.InternalError;
     }
-    const relations = ItemRelation.findAllForItemIds(c.connection.?, a, items.items) catch return error.InternalError;
+    const relations = ItemRelation.findAllForItemIds(c.db.?, a, items.items) catch return error.InternalError;
     const in = a.alloc(usize, items.items.len) catch return error.InternalError;
     const out = a.alloc(usize, items.items.len) catch return error.InternalError;
     @memset(in, 0);

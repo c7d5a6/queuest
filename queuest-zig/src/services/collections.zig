@@ -9,7 +9,7 @@ const ControllerError = @import("../routes/router-errors.zig").ControllerError;
 pub fn on_get_collections(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     _ = params;
     const user = c.user orelse return error.InternalError;
-    const collections: std.ArrayList(Collection) = Collection.findAllForUserId(c.connection.?, a, user.id) catch
+    const collections: std.ArrayList(Collection) = Collection.findAllForUserId(c.db.?, a, user.id) catch
         return error.InternalError;
     const json = std.json.Stringify.valueAlloc(a, collections.items, .{
         .escape_unicode = true,
@@ -22,7 +22,7 @@ pub fn on_get_collections(a: Allocator, r: Request, c: *Context, params: anytype
 pub fn on_get_fav_collections(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     _ = params;
     const user = c.user orelse return error.InternalError;
-    const collections: std.ArrayList(Collection) = Collection.findAllFavForUserId(c.connection.?, a, user.id) catch
+    const collections: std.ArrayList(Collection) = Collection.findAllFavForUserId(c.db.?, a, user.id) catch
         return error.InternalError;
     const json = std.json.Stringify.valueAlloc(a, collections.items, .{
         .escape_unicode = true,
@@ -35,8 +35,8 @@ pub fn on_get_fav_collections(a: Allocator, r: Request, c: *Context, params: any
 pub fn on_get_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
     const user = c.user orelse return error.InternalError;
-    const collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
-        return error.InternalError orelse return error.NotFound;
+    const collection = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
+        return error.InternalError) orelse return error.NotFound;
     const json = std.json.Stringify.valueAlloc(a, collection, .{
         .escape_unicode = true,
         .emit_null_optional_fields = false,
@@ -56,8 +56,8 @@ pub fn on_post_collection(a: Allocator, r: Request, c: *Context, params: anytype
     std.debug.print("create: {s}\n", .{create.value.name});
 
     const user = c.user orelse return error.InternalError;
-    const id = Collection.insertCollection(c.connection.?, user.id, create.value.name) catch
-        return error.InternalError orelse return error.InternalError;
+    const id = (Collection.insertCollection(c.db.?, user.id, create.value.name) catch
+        return error.InternalError) orelse return error.InternalError;
     const json = std.json.Stringify.valueAlloc(a, id, .{
         .escape_unicode = true,
         .emit_null_optional_fields = false,
@@ -71,11 +71,11 @@ pub fn on_post_fav_collection(a: Allocator, r: Request, c: *Context, params: any
     const user = c.user orelse return error.InternalError;
     std.debug.assert(collectionId != 0);
     std.debug.assert(user.id != 0);
-    var collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
-        return error.InternalError orelse return error.NotFound;
+    var collection = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
+        return error.InternalError) orelse return error.NotFound;
     collection.favourite_yn = true;
 
-    _ = Collection.updateCollection(c.connection.?, collection) catch return error.InternalError;
+    _ = Collection.updateCollection(c.db.?, collection) catch return error.InternalError;
 
     r.sendBody("") catch return;
 }
@@ -83,10 +83,10 @@ pub fn on_post_fav_collection(a: Allocator, r: Request, c: *Context, params: any
 pub fn on_post_visit_collection(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
     const collectionId = params.collectionId;
     const user = c.user orelse return error.InternalError;
-    const collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
-        return error.InternalError orelse return error.NotFound;
+    const collection = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
+        return error.InternalError) orelse return error.NotFound;
 
-    Collection.visitCollection(c.connection.?, collection) catch return error.InternalError;
+    Collection.visitCollection(c.db.?, collection) catch return error.InternalError;
 
     r.sendBody("") catch return;
 }
@@ -96,11 +96,11 @@ pub fn on_delete_fav_collection(a: Allocator, r: Request, c: *Context, params: a
     const user = c.user orelse return error.InternalError;
     std.debug.assert(collectionId != 0);
     std.debug.assert(user.id != 0);
-    var collection: Collection = Collection.findByIdAndUserId(c.connection.?, a, collectionId, user.id) catch
-        return error.InternalError orelse return error.NotFound;
+    var collection = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
+        return error.InternalError) orelse return error.NotFound;
     collection.favourite_yn = false;
 
-    _ = Collection.updateCollection(c.connection.?, collection) catch return error.InternalError;
+    _ = Collection.updateCollection(c.db.?, collection) catch return error.InternalError;
 
     r.sendBody("") catch return;
 }
