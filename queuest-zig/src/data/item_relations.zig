@@ -34,18 +34,14 @@ pub const ItemRelation = struct {
         if (items.len == 0) {
             return try std.ArrayList(ItemRelation).initCapacity(allocator, 0);
         }
-
-        var item_ids: []i32 = try allocator.alloc(i32, items.len);
-        defer allocator.free(item_ids);
-        for (items, 0..) |item, i| {
-            item_ids[i] = @intCast(item.id);
-        }
+        std.debug.assert(items.len > 0);
 
         var ids_buf = try std.ArrayList(u8).initCapacity(allocator, 0);
         defer ids_buf.deinit(allocator);
-        for (item_ids, 0..) |id, i| {
-            if (i != 0) ids_buf.writer(allocator).print(", ", .{}) catch unreachable;
-            ids_buf.writer(allocator).print("{d}", .{id}) catch unreachable;
+        for (items, 0..) |item, i| {
+            std.debug.assert(item.id != 0);
+            if (i != 0) try ids_buf.writer(allocator).print(", ", .{});
+            try ids_buf.writer(allocator).print("{d}", .{item.id});
         }
         const ids_str = ids_buf.items;
         std.log.info("ids_str: {s}\n", .{ids_str});
