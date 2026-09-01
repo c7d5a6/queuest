@@ -5,8 +5,8 @@ pub fn build(b: *std.Build) void {
         .default_target = .{},
     });
     const optimize = b.standardOptimizeOption(.{});
-    // zig-sqlite 0.15 Debug codegen SIGSEGVs; keep the C lib and Zig wrapper in
-    // ReleaseFast while the rest of the app stays at `optimize`.
+    // zig-sqlite Debug codegen SIGSEGVs on some Zig backends; keep the C lib
+    // and Zig wrapper in ReleaseFast while the rest of the app stays Debug.
     const sqlite_optimize: std.builtin.OptimizeMode = switch (optimize) {
         .Debug => .ReleaseFast,
         else => optimize,
@@ -16,6 +16,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
     });
     const exe = b.addExecutable(.{
         .name = "queuest-zig",
@@ -25,17 +26,17 @@ pub fn build(b: *std.Build) void {
     const regez_module = b.createModule(.{
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
+    });
+    regez_module.addIncludePath(b.path("c-src"));
+    regez_module.addCSourceFiles(.{
+        .files = &.{"c-src/regez.c"},
     });
     const libC = b.addLibrary(.{
         .name = "regez",
         .root_module = regez_module,
         .linkage = .static,
     });
-    libC.addIncludePath(b.path("c-src"));
-    libC.addCSourceFiles(.{
-        .files = &.{"c-src/regez.c"},
-    });
-    libC.linkLibC();
     const zap = b.dependency("zap", .{
         .target = target,
         .optimize = optimize,
@@ -61,6 +62,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/lib.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
     });
     lib_mod.addImport("sqlite", sqlite_mod);
 
@@ -68,6 +70,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/pg_lib.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
     });
     pg_lib_mod.addImport("pg", pg_module);
 
@@ -85,6 +88,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
     });
     const exe_unit_tests = b.addTest(.{
         .root_module = exe_tests_module,
@@ -98,13 +102,13 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("tests/sqlite/main.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
     });
     sqlite_tests_module.addImport("queuest", lib_mod);
     sqlite_tests_module.addImport("sqlite", sqlite_mod);
     const sqlite_tests = b.addTest(.{
         .root_module = sqlite_tests_module,
     });
-    sqlite_tests.linkLibC();
     const run_sqlite_tests = b.addRunArtifact(sqlite_tests);
     const sqlite_test_step = b.step("test-sqlite", "Run SQLite integration tests");
     sqlite_test_step.dependOn(&run_sqlite_tests.step);
@@ -114,6 +118,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("tests/e2e/main.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
     });
     const e2e_tests = b.addTest(.{
         .root_module = e2e_tests_module,
@@ -127,6 +132,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("tests/parity/main.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
     });
     parity_tests_module.addImport("queuest", lib_mod);
     parity_tests_module.addImport("pg_data", pg_lib_mod);
@@ -135,7 +141,6 @@ pub fn build(b: *std.Build) void {
     const parity_tests = b.addTest(.{
         .root_module = parity_tests_module,
     });
-    parity_tests.linkLibC();
     linkOpenssl(parity_tests);
     const run_parity_tests = b.addRunArtifact(parity_tests);
     const parity_step = b.step("test-parity", "Compare SQLite and PostgreSQL repo results");
@@ -145,6 +150,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("tools/pg_to_sqlite.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
     });
     converter_module.addImport("queuest", lib_mod);
     converter_module.addImport("pg", pg_module);
@@ -153,7 +159,6 @@ pub fn build(b: *std.Build) void {
         .name = "pg-to-sqlite",
         .root_module = converter_module,
     });
-    converter.linkLibC();
     linkOpenssl(converter);
     const install_converter = b.addInstallArtifact(converter, .{});
     const converter_step = b.step("pg-to-sqlite", "Build the PostgreSQL to SQLite converter");
@@ -170,6 +175,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/type-check.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
     });
     const exe_debug_step = b.addExecutable(.{
         .name = "queuest-zig-debug-info",
@@ -183,9 +189,9 @@ pub fn build(b: *std.Build) void {
 }
 
 fn linkOpenssl(artifact: *std.Build.Step.Compile) void {
-    artifact.addLibraryPath(.{ .cwd_relative = "/usr/lib/x86_64-linux-gnu" });
-    artifact.linkSystemLibrary("ssl");
-    artifact.linkSystemLibrary("crypto");
+    artifact.root_module.addLibraryPath(.{ .cwd_relative = "/usr/lib/x86_64-linux-gnu" });
+    artifact.root_module.linkSystemLibrary("ssl", .{});
+    artifact.root_module.linkSystemLibrary("crypto", .{});
 }
 
 fn configureArtifact(
@@ -196,10 +202,10 @@ fn configureArtifact(
     zap_facil: *std.Build.Step.Compile,
     sqlite_module: *std.Build.Module,
 ) void {
-    artifact.linkLibrary(libC);
-    artifact.addIncludePath(b.path("c-src"));
-    artifact.linkLibC();
+    artifact.root_module.linkLibrary(libC);
+    artifact.root_module.addIncludePath(b.path("c-src"));
+    artifact.root_module.link_libc = true;
     artifact.root_module.addImport("zap", zap_module);
-    artifact.linkLibrary(zap_facil);
+    artifact.root_module.linkLibrary(zap_facil);
     artifact.root_module.addImport("sqlite", sqlite_module);
 }
