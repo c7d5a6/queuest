@@ -73,8 +73,8 @@ test "migrate applies 001_init once" {
     defer tmp.cleanup();
 
     var path_buf: [std.Io.Dir.max_path_bytes]u8 = undefined;
-    const n = try tmp.dir.realPath(io, &path_buf);
-    const path = try std.fs.path.joinZ(allocator, &.{ path_buf[0..n], "t.db" });
+    const path_len = try tmp.dir.realPath(io, &path_buf);
+    const path = try std.fs.path.joinZ(allocator, &.{ path_buf[0..path_len], "t.db" });
     defer allocator.free(path);
 
     var db = try open.openFile(path);
