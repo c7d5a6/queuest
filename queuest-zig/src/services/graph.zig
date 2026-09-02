@@ -214,8 +214,6 @@ pub const Graph = struct {
     }
 
     pub fn sort(self: *Graph) ![]const gsize {
-        const start = std.time.microTimestamp();
-        defer std.debug.print("sorting graph in {d}mc", .{std.time.microTimestamp() - start});
         var acycl = try self.withoutCycle();
         return try acycl.sortAcyclic();
     }
