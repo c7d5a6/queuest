@@ -231,8 +231,12 @@ fn printEdges(g: Graph) void {
 
 const expect = std.testing.expect;
 
+fn nowUs() i64 {
+    return std.Io.Clock.awake.now(std.testing.io).toMicroseconds();
+}
+
 test "create graph" {
-    var gpa = std.heap.GeneralPurposeAllocator(.{
+    var gpa = std.heap.DebugAllocator(.{
         .thread_safe = true,
     }){};
     const a = gpa.allocator();
@@ -244,7 +248,7 @@ test "create graph" {
 }
 
 test "is cyclic" {
-    var gpa = std.heap.GeneralPurposeAllocator(.{
+    var gpa = std.heap.DebugAllocator(.{
         .thread_safe = true,
     }){};
     const a = gpa.allocator();
@@ -280,7 +284,7 @@ test "is cyclic" {
 }
 
 test "is cyclic 2" {
-    var gpa = std.heap.GeneralPurposeAllocator(.{
+    var gpa = std.heap.DebugAllocator(.{
         .thread_safe = true,
     }){};
     const a = gpa.allocator();
@@ -306,7 +310,7 @@ test "sort nadzieja" {
     const ca = std.heap.c_allocator;
     var arena = std.heap.ArenaAllocator.init(ca);
     const size = 29;
-    const start_mc = std.time.microTimestamp();
+    const start_mc = nowUs();
     var g: Graph = Graph.init(arena.allocator(), size);
     printMemory(arena, g);
     g.addEdge(0, 1);
@@ -345,13 +349,13 @@ test "sort nadzieja" {
     g.addEdge(24, 28);
     g.addEdge(28, 17);
     //
-    std.debug.print("\nTime to init: {d} microseconds\n", .{std.time.microTimestamp() - start_mc});
+    std.debug.print("\nTime to init: {d} microseconds\n", .{nowUs() - start_mc});
     printMemory(arena, g);
-    const sort_mc = std.time.microTimestamp();
+    const sort_mc = nowUs();
     const sorted = try g.sort();
     std.debug.print("Sorted  cyclic {any}\n", .{sorted});
-    std.debug.print("\nTime to sort: {d} microseconds\n", .{std.time.microTimestamp() - sort_mc});
-    std.debug.print("Overall time: {d} microseconds\n", .{std.time.microTimestamp() - start_mc});
+    std.debug.print("\nTime to sort: {d} microseconds\n", .{nowUs() - sort_mc});
+    std.debug.print("Overall time: {d} microseconds\n", .{nowUs() - start_mc});
     printMemory(arena, g);
 }
 
@@ -368,13 +372,13 @@ fn printMemory(arena: std.heap.ArenaAllocator, g: Graph) void {
 }
 
 test "cyclic 500" {
-    // var gpa = std.heap.GeneralPurposeAllocator(.{
+    // var gpa = std.heap.DebugAllocator(.{
     //     .thread_safe = true,
     // }){};
     // const a = gpa.allocator();
     const a = std.heap.c_allocator;
     const size = 20;
-    const mil = std.time.microTimestamp();
+    const mil = nowUs();
     var g: Graph = Graph.init(a, size);
 
     var i: gsize = 0;
@@ -386,14 +390,14 @@ test "cyclic 500" {
             }
         }
     }
-    std.debug.print("\nTime to init: {d}\n", .{std.time.microTimestamp() - mil});
+    std.debug.print("\nTime to init: {d}\n", .{nowUs() - mil});
 
-    const mili = std.time.microTimestamp();
+    const mili = nowUs();
     for (0..10) |ii| {
         _ = ii;
         try expect(try g.getCycle() != null);
     }
-    std.debug.print("\nTime cyclic: {d}\n", .{std.time.microTimestamp() - mili});
+    std.debug.print("\nTime cyclic: {d}\n", .{nowUs() - mili});
 }
 
 const MAX_SIZE = 1_000_000;
@@ -420,13 +424,13 @@ test "cyclic test" {
         times = if (times < 1000) 1000 else times;
         times = 2;
         var t: i64 = 0;
-        const create = std.time.microTimestamp();
+        const create = nowUs();
         var del: gsize = 1;
         while (del < n) : (del += 1) {
             // for (2..n) |del| {
             var graph = createGraph(arena.allocator(), n, del);
             defer _ = arena.reset(.retain_capacity);
-            const date = std.time.microTimestamp();
+            const date = nowUs();
             for (0..times) |i| {
                 if (i == 1 and del == 1) {
                     const as = arena.queryCapacity();
@@ -443,9 +447,9 @@ test "cyclic test" {
                 const tt = try graph.getCycle();
                 try expect(tt == null or tt.?.len >= 0);
             }
-            t += std.time.microTimestamp() - date;
+            t += nowUs() - date;
         }
-        std.debug.print("Time for {d} size created {d} times {d} in ms: {d}\n", .{ n, std.time.microTimestamp() - create - t, times, t });
+        std.debug.print("Time for {d} size created {d} times {d} in ms: {d}\n", .{ n, nowUs() - create - t, times, t });
         n *= 2;
     }
 }
