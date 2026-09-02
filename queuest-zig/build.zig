@@ -5,12 +5,6 @@ pub fn build(b: *std.Build) void {
         .default_target = .{},
     });
     const optimize = b.standardOptimizeOption(.{});
-    // zig-sqlite Debug codegen SIGSEGVs on some Zig backends; keep the C lib
-    // and Zig wrapper in ReleaseFast while the rest of the app stays Debug.
-    const sqlite_optimize: std.builtin.OptimizeMode = switch (optimize) {
-        .Debug => .ReleaseFast,
-        else => optimize,
-    };
 
     const exe_module = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
@@ -48,10 +42,9 @@ pub fn build(b: *std.Build) void {
     }).module("pg");
     const sqlite_dep = b.dependency("sqlite", .{
         .target = target,
-        .optimize = sqlite_optimize,
+        .optimize = optimize,
     });
     const sqlite_mod = sqlite_dep.module("sqlite");
-    sqlite_mod.optimize = sqlite_optimize;
     sqlite_mod.resolved_target = target;
     const zap_mod = zap.module("zap");
     const zap_art = zap.artifact("facil.io");
