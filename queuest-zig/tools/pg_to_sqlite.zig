@@ -6,15 +6,14 @@ const queuest = @import("queuest");
 
 const us_per_s: i64 = 1_000_000;
 
-pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const allocator = init.gpa;
+    const io = init.io;
 
-    const out_path = try outputPath(allocator);
+    const out_path = try outputPath(allocator, init.minimal.args);
     defer allocator.free(out_path);
 
-    std.fs.cwd().deleteFile(out_path) catch |err| switch (err) {
+    std.Io.Dir.cwd().deleteFile(io, out_path) catch |err| switch (err) {
         error.FileNotFound => {},
         else => return err,
     };
@@ -23,7 +22,7 @@ pub fn main() !void {
     defer db.deinit();
     try queuest.migrate.run(&db);
 
-    const pool = try connectPg(allocator);
+    const pool = try connectPg(io, allocator, init.environ_map);
     defer pool.deinit();
     var conn = try pool.acquire();
     defer conn.release();
@@ -39,31 +38,34 @@ pub fn main() !void {
     std.log.info("wrote {s}", .{out_path});
 }
 
-fn outputPath(allocator: Allocator) ![:0]const u8 {
-    var args = try std.process.argsWithAllocator(allocator);
-    defer args.deinit();
-    _ = args.next();
-    if (args.next()) |p| {
+fn outputPath(allocator: Allocator, args: std.process.Args) ![:0]const u8 {
+    var it = args.iterate();
+    _ = it.next();
+    if (it.next()) |p| {
         std.debug.assert(p.len > 0);
         return try allocator.dupeZ(u8, p);
     }
     return try allocator.dupeZ(u8, "queuest-migrated.db");
 }
 
-fn connectPg(allocator: Allocator) !*pg.Pool {
-    const dbport_s = std.posix.getenv("DATABASE_PORT") orelse "5432";
+fn envOr(environ: *const std.process.Environ.Map, key: []const u8, default: []const u8) []const u8 {
+    return environ.get(key) orelse default;
+}
+
+fn connectPg(io: std.Io, allocator: Allocator, environ: *const std.process.Environ.Map) !*pg.Pool {
+    const dbport_s = envOr(environ, "DATABASE_PORT", "5432");
     const dbport = try std.fmt.parseInt(u16, dbport_s, 10);
-    const dbhost = std.posix.getenv("DATABASE_HOST") orelse "127.0.0.1";
-    const dbuser = std.posix.getenv("DB_USERNAME") orelse "queuest";
-    const dbname = std.posix.getenv("DB_DATABASE") orelse "queuest";
-    const dbpass = std.posix.getenv("DATABASE_PASSWORD") orelse "queuest";
-    const tls_s = std.posix.getenv("DATABASE_TLS") orelse "off";
+    const dbhost = envOr(environ, "DATABASE_HOST", "127.0.0.1");
+    const dbuser = envOr(environ, "DB_USERNAME", "queuest");
+    const dbname = envOr(environ, "DB_DATABASE", "queuest");
+    const dbpass = envOr(environ, "DATABASE_PASSWORD", "queuest");
+    const tls_s = envOr(environ, "DATABASE_TLS", "off");
     const tls: pg.Conn.Opts.TLS = if (std.mem.eql(u8, tls_s, "require"))
         .require
     else
         .off;
 
-    return pg.Pool.init(allocator, .{
+    return pg.Pool.init(io, allocator, .{
         .size = 1,
         .connect = .{
             .port = dbport,
@@ -263,16 +265,20 @@ fn verify(allocator: Allocator, db: *sqlite.Db) !void {
     };
     var stmt = try db.prepare("PRAGMA foreign_key_check");
     defer stmt.deinit();
-    const fails = try stmt.all(FkFail, allocator, .{}, .{});
+    var iter = try stmt.iteratorAlloc(FkFail, allocator, .{});
+    var fails: std.ArrayList(FkFail) = .empty;
     defer {
-        for (fails) |f| {
+        for (fails.items) |f| {
             allocator.free(f.table);
             allocator.free(f.parent);
         }
-        allocator.free(fails);
+        fails.deinit(allocator);
     }
-    if (fails.len != 0) {
-        std.log.err("foreign_key_check failed: {d} row(s)", .{fails.len});
+    while (try iter.nextAlloc(allocator, .{})) |row| {
+        try fails.append(allocator, row);
+    }
+    if (fails.items.len != 0) {
+        std.log.err("foreign_key_check failed: {d} row(s)", .{fails.items.len});
         return error.ForeignKeyCheckFailed;
     }
 }
