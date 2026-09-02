@@ -1,6 +1,8 @@
 
 # Testing
 
+Requires Zig 0.16.0.
+
 ```
 zig build test --summary all -freference-trace
 zig build test-sqlite
@@ -8,13 +10,12 @@ zig build test-parity
 ```
 
 `zig build test` includes unit tests and SQLite file-copy integration tests.
-`zig build` and `zig build test` compile as ReleaseSafe when you ask for Debug,
-because zig-sqlite 0.15 Debug codegen currently SIGSEGVs. Use
-`--release=safe` or `--release=fast` explicitly if you want a release binary.
 
 `zig build test-parity` needs a running Postgres (same env vars as before) and
 compares repository results on the same seed. Delete that step when Postgres
 is removed. It also needs OpenSSL headers (`libssl-dev`).
+
+`zig build e2e` currently skips; the Zap listener stub is unfinished.
 
 # SQLite
 
