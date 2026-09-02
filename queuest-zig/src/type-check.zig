@@ -40,19 +40,22 @@ fn getTypesInfo(T: type, pdn: comptime_int) !void {
     // try std.debug.print(("\t" ** pdn) ++ "  align: {d}\n", .{@bitOffsetOf(T)});
     const info = @typeInfo(T);
     switch (info) {
-        .Struct => {
+        .@"struct" => {
             const fileds = std.meta.fields(T);
             std.debug.print(("\t" ** pdn) ++ "  fields:\n", .{});
             inline for (fileds) |field| {
                 std.debug.print(("\t" ** pdn) ++ "    {s}: {s}\n", .{ field.name, @typeName(field.type) });
-                std.debug.print(("\t" ** pdn) ++ "      off {d} align {d}\n", .{ @bitOffsetOf(T, field.name), field.alignment * 8 });
+                std.debug.print(("\t" ** pdn) ++ "      off {d} align {d}\n", .{
+                    @bitOffsetOf(T, field.name),
+                    (field.alignment orelse @alignOf(field.type)) * 8,
+                });
             }
             std.debug.print("\n", .{});
             inline for (fileds) |field| {
                 try getTypesInfo(field.type, pdn + 1);
             }
         },
-        .Union => {
+        .@"union" => {
             const fileds = std.meta.fields(T);
             std.debug.print(("\t" ** pdn) ++ "  fields:\n", .{});
             inline for (fileds) |field| {
