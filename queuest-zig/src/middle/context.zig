@@ -19,14 +19,20 @@ pub const Session = struct {
 
 pub const SharedAllocator = struct {
     var allocator: std.mem.Allocator = undefined;
+    var io: std.Io = undefined;
 
     const Self = @This();
 
-    pub fn init(a: std.mem.Allocator) void {
+    pub fn init(a: std.mem.Allocator, i: std.Io) void {
         allocator = a;
+        io = i;
     }
 
     pub fn getAllocator() std.mem.Allocator {
         return allocator;
+    }
+
+    pub fn getIo() std.Io {
+        return io;
     }
 };

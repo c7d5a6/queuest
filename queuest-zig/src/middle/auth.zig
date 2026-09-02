@@ -54,7 +54,7 @@ pub const JWTMiddleware = struct {
         const authHeader = zap.Auth.extractAuthHeader(.Bearer, &r);
         if (authHeader != null) {
             const allocator = arena.allocator();
-            const sub = parseJWT(allocator, authHeader.?) catch |err| {
+            const sub = parseJWT(allocator, contextLib.SharedAllocator.getIo(), authHeader.?) catch |err| {
                 r.sendError(err, if (@errorReturnTrace()) |t| t.* else null, 401);
                 return false;
             };
@@ -74,7 +74,7 @@ pub const JWTMiddleware = struct {
     }
 };
 
-fn parseJWT(allocator: Allocator, jwt: []const u8) AuthError![]const u8 {
+fn parseJWT(allocator: Allocator, io: std.Io, jwt: []const u8) AuthError![]const u8 {
     log.debug("JWT Middleware: set user in context {?s}\n\n", .{jwt});
     const bearer = zap.Auth.AuthScheme.Bearer.str();
     const jwt_start = bearer.len + (mem.indexOfPos(u8, jwt, 0, bearer) orelse
@@ -85,10 +85,16 @@ fn parseJWT(allocator: Allocator, jwt: []const u8) AuthError![]const u8 {
         return error.ErrorParsingHeader;
 
     const key = try parseJWTHead(allocator, jwt[jwt_start..jwt_body_start]);
-    const sub = try parseJWTBody(allocator, jwt[jwt_body_start + 1 .. jwt_sig_start]);
+    const sub = try parseJWTBody(allocator, io, jwt[jwt_body_start + 1 .. jwt_sig_start]);
     log.debug("Subject: {s}\n", .{sub});
 
-    const is_signature_ok = firebase.verifySignature(allocator, key[0..], jwt[jwt_start..jwt_sig_start], jwt[jwt_sig_start + 1 ..]) catch return error.SignatureDecodingError;
+    const is_signature_ok = firebase.verifySignature(
+        allocator,
+        io,
+        key[0..],
+        jwt[jwt_start..jwt_sig_start],
+        jwt[jwt_sig_start + 1 ..],
+    ) catch return error.SignatureDecodingError;
     if (!is_signature_ok)
         return error.SignatureWrong;
     return sub;
@@ -137,8 +143,8 @@ fn parseJWTHead(allocator: Allocator, head_base: []const u8) AuthError![]const u
 // iss     Issuer  Must be "https://securetoken.google.com/<projectId>", where <projectId> is the same project ID used for aud above.
 // sub     Subject     Must be a non-empty string and must be the uid of the user or device.
 // auth_time   Authentication time     Must be in the past. The time when the user authenticated.
-fn parseJWTBody(allocator: Allocator, body_base: []const u8) AuthError![]const u8 {
-    const now = std.time.timestamp();
+fn parseJWTBody(allocator: Allocator, io: std.Io, body_base: []const u8) AuthError![]const u8 {
+    const now = std.Io.Clock.real.now(io).toSeconds();
     log.debug("Now time {d}\n", .{now});
     const buff = allocator.alloc(u8, body_base.len * 3 / 4) catch return error.ErrorParsingJWT;
     const encoded = mem.trim(u8, body_base[0..], " \t\r\n");
@@ -213,7 +219,7 @@ test "print" {
 }
 
 test "parse head" {
-    var gpa = std.heap.GeneralPurposeAllocator(.{
+    var gpa = std.heap.DebugAllocator(.{
         .thread_safe = true,
     }){};
     const allocator = gpa.allocator();
@@ -223,18 +229,18 @@ test "parse head" {
 }
 
 test "parse jwt" {
-    var gpa = std.heap.GeneralPurposeAllocator(.{ .thread_safe = true }){};
+    var gpa = std.heap.DebugAllocator(.{ .thread_safe = true }){};
     const allocator = gpa.allocator();
-    _ = parseJWT(allocator, test_jwt) catch |err| {
+    _ = parseJWT(allocator, std.testing.io, test_jwt) catch |err| {
         try std.testing.expectEqual(AuthError.TokenExpared, err);
     };
 }
 
 test "wrong signature" {
     const jwt = "Bearer " ++ "eyJhbGciOiJSUzI1NiIsImtpZCI6ImMxNTQwYWM3MWJiOTJhYTA2OTNjODI3MTkwYWNhYmU1YjA1NWNiZWMiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiYzdkNWE2IiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FBY0hUdGVVUTN3MHNsMWliajhMVjF4WU04TnMwLWJFd2k2MnlvMVZPNTFDdWc9czk2LWMiLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vcXVldWVzdC1jYjg4NSIsImF1ZCI6InF1ZXVlc3QtY2I4ODUiLCJhdXRoX3RpbWUiOjE3MTg3MTMxNDEsInVzZXJfaWQiOiJWV3RnZFNsZk91ZWJ2Mlh6YW5IRDRkb0tOZkQyIiwic3ViIjoiVld0Z2RTbGZPdWVidjJYemFuSEQ0ZG9LTmZEMiIsImlhdCI6MTcyMTQwMDE3OCwiZXhwIjo5NzIxNDAzNzc4LCJlbWFpbCI6ImdvZGluZnJvZ0BnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjEwMjk5NTk2MzcxMTIyODA2OTY5NiJdLCJlbWFpbCI6WyJnb2RpbmZyb2dAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.MNG6XZGnE13loqTWpTGu_ghCM8UlAjrWjfszRg6oVDSgZqGVn6501mxNh4qRMRIJ3BPz_Ty377gmJgA2ucJLCjgHyy3aApMPBE0DxjHVJ32Tyh88CbbGHjKoFfP9vwbXeatdk8B-ntVO8ZaggPz4vJiuCqlf8E1BipCj301QA7RQlVnDhUhUKnLSO_UnEKwHKyvPb473w4yq698AwbvQQ6_RFbmIe6ZLeH4Ef0ofcodqknHs8xefz_VUV32RDMVfgc8NWyAKEiYd7YYXQg9yu9kb-z6TwN3X-DmFY9cXUehhngsPDxutMkt44AwyWvs5VQ_fRmzrv9TTyiloPflCgg";
-    var gpa = std.heap.GeneralPurposeAllocator(.{ .thread_safe = true }){};
+    var gpa = std.heap.DebugAllocator(.{ .thread_safe = true }){};
     const allocator = gpa.allocator();
-    _ = parseJWT(allocator, jwt) catch |err| {
+    _ = parseJWT(allocator, std.testing.io, jwt) catch |err| {
         // Signature can't be decoded because test signature key are expared and google dropped it
         try std.testing.expectEqual(AuthError.SignatureDecodingError, err);
     };

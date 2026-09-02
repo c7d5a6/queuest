@@ -28,7 +28,7 @@ pub const std_options: std.Options = .{
 };
 pub fn main(init: std.process.Init) !void {
     const allocator = init.gpa;
-    SharedAllocator.init(allocator);
+    SharedAllocator.init(allocator, init.io);
     {
         const sqlite_path = db_open.pathFromEnv(init.environ_map);
         var db = db_open.openFile(sqlite_path) catch |err| {

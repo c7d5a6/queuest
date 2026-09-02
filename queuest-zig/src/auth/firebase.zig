@@ -31,8 +31,8 @@ const GooglePubKey = struct {
 var goole_keys: [3]GooglePubKey = std.mem.zeroes([3]GooglePubKey);
 var cache_time: i64 = 0;
 
-pub fn verifySignature(allocator: Allocator, key: []const u8, msg: []const u8, sig_b64: []const u8) FirebaseError!bool {
-    try checkAndReloadPK(allocator);
+pub fn verifySignature(allocator: Allocator, io: std.Io, key: []const u8, msg: []const u8, sig_b64: []const u8) FirebaseError!bool {
+    try checkAndReloadPK(allocator, io);
 
     if (key.len != 40) {
         return error.MissingCertificateMarkerInGooglePubKey;
@@ -58,25 +58,26 @@ pub fn verifySignature(allocator: Allocator, key: []const u8, msg: []const u8, s
     return error.MissingCertificateMarkerInGooglePubKey;
 }
 
-fn checkAndReloadPK(allocator: Allocator) FirebaseError!void {
-    const now = std.time.timestamp();
+fn checkAndReloadPK(allocator: Allocator, io: std.Io) FirebaseError!void {
+    const now = std.Io.Clock.real.now(io).toSeconds();
     if (now > cache_time) {
-        try reloadPublicKeys(allocator);
+        try reloadPublicKeys(allocator, io);
     }
 }
 
-fn reloadPublicKeys(allocator: Allocator) FirebaseError!void {
+fn reloadPublicKeys(allocator: Allocator, io: std.Io) FirebaseError!void {
     var response_body = std.Io.Writer.Allocating.initCapacity(allocator, 4 * 1024) catch return error.CannotLoadPubKeys;
     defer response_body.deinit();
 
-    var client: Client = .{ .allocator = allocator };
+    var client: Client = .{ .allocator = allocator, .io = io };
+    defer client.deinit();
 
-    const mili = std.time.microTimestamp();
+    const mili = std.Io.Clock.awake.now(io).toMicroseconds();
     const response = client.fetch(.{
         .location = .{ .url = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com" },
         .response_writer = &response_body.writer,
     }) catch return error.ErrorLoadingPubKeys;
-    std.log.debug("\nTime to load cert: {d}\n", .{std.time.microTimestamp() - mili});
+    std.log.debug("\nTime to load cert: {d}\n", .{std.Io.Clock.awake.now(io).toMicroseconds() - mili});
 
     if (response.status != .ok) {
         return error.ErrorLoadingPubKeys;
@@ -122,10 +123,10 @@ fn reloadPublicKeys(allocator: Allocator) FirebaseError!void {
         return error.CannotLoadPubKeys;
     }
     goole_keys = new_keys;
-    cache_time = std.time.timestamp() + 60 * 60;
+    cache_time = std.Io.Clock.real.now(io).toSeconds() + 60 * 60;
 }
 
-fn updateCacheAge(headers: []u8) FirebaseError!void {
+fn updateCacheAge(io: std.Io, headers: []u8) FirebaseError!void {
     const begin_marker = "Cache-Control";
     const cache_start = mem.indexOfPos(u8, headers, 0, begin_marker) orelse
         return error.MissingCertificateMarkerInGooglePubKey;
@@ -137,7 +138,7 @@ fn updateCacheAge(headers: []u8) FirebaseError!void {
         return error.MissingCertificateMarkerInGooglePubKey;
 
     const new_time = std.fmt.parseUnsigned(u32, headers[max_start..max_end], 10) catch return error.CannotLoadPubKeys;
-    cache_time = std.time.timestamp() + new_time;
+    cache_time = std.Io.Clock.real.now(io).toSeconds() + new_time;
 }
 
 //https://firebase.google.com/docs/auth/admin/verify-id-tokens
@@ -224,12 +225,13 @@ const jwt_base = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImMxNTQwYWM3MWJiOTJhYTA2OTNjODI3MT
 // }
 
 test "loading google" {
-    const mili = std.time.milliTimestamp();
-    var gpa = std.heap.GeneralPurposeAllocator(.{
+    const io = std.testing.io;
+    const mili = std.Io.Clock.awake.now(io).toMilliseconds();
+    var gpa = std.heap.DebugAllocator(.{
         .thread_safe = true,
     }){};
     const allocator = gpa.allocator();
-    try reloadPublicKeys(allocator);
+    try reloadPublicKeys(allocator, io);
     var cert_found = false;
     for (goole_keys) |pk| {
         if (mem.eql(u8, &pk.key, "d4269a1730e50719e6b1606e42c3ab32b1280449")) {
@@ -242,11 +244,11 @@ test "loading google" {
         }
     }
     try expect(cert_found);
-    std.log.debug("\nTime to load goole: {d}\n", .{std.time.milliTimestamp() - mili});
+    std.log.debug("\nTime to load goole: {d}\n", .{std.Io.Clock.awake.now(io).toMilliseconds() - mili});
 }
 
 test "can decode sample certificate" {
-    var gpa = std.heap.GeneralPurposeAllocator(.{
+    var gpa = std.heap.DebugAllocator(.{
         .thread_safe = true,
     }){};
     const allocator = gpa.allocator();

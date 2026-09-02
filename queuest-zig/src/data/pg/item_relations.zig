@@ -40,8 +40,8 @@ pub const ItemRelation = struct {
         defer ids_buf.deinit(allocator);
         for (items, 0..) |item, i| {
             std.debug.assert(item.id != 0);
-            if (i != 0) try ids_buf.writer(allocator).print(", ", .{});
-            try ids_buf.writer(allocator).print("{d}", .{item.id});
+            if (i != 0) try ids_buf.print(allocator, ", ", .{});
+            try ids_buf.print(allocator, "{d}", .{item.id});
         }
         const ids_str = ids_buf.items;
         std.log.info("ids_str: {s}\n", .{ids_str});
