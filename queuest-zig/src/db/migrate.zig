@@ -68,12 +68,13 @@ const open = @import("open.zig");
 
 test "migrate applies 001_init once" {
     const allocator = std.testing.allocator;
+    const io = std.testing.io;
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
 
-    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const dir_path = try tmp.dir.realpath(".", &path_buf);
-    const path = try std.fs.path.joinZ(allocator, &.{ dir_path, "t.db" });
+    var path_buf: [std.Io.Dir.max_path_bytes]u8 = undefined;
+    const n = try tmp.dir.realPath(io, &path_buf);
+    const path = try std.fs.path.joinZ(allocator, &.{ path_buf[0..n], "t.db" });
     defer allocator.free(path);
 
     var db = try open.openFile(path);
