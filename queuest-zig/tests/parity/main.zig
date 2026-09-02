@@ -11,8 +11,9 @@ test "same seed yields the same repo results on sqlite and pgsql" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
+    const io = std.testing.io;
 
-    const pool = connectPg(allocator) catch |err| {
+    const pool = connectPg(io, allocator) catch |err| {
         std.log.err("parity tests need postgres: {}", .{err});
         return err;
     };
@@ -25,14 +26,14 @@ test "same seed yields the same repo results on sqlite and pgsql" {
 
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
-    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const dir_path = try tmp.dir.realpath(".", &path_buf);
-    const sqlite_path = try std.fs.path.joinZ(allocator, &.{ dir_path, "parity.db" });
+    var path_buf: [std.Io.Dir.max_path_bytes]u8 = undefined;
+    const path_len = try tmp.dir.realPath(io, &path_buf);
+    const sqlite_path = try std.fs.path.joinZ(allocator, &.{ path_buf[0..path_len], "parity.db" });
     var db = try queuest.open.openFile(sqlite_path);
     defer db.deinit();
     try queuest.migrate.run(&db);
 
-    const seed = try insertParitySeed(allocator, conn, &db);
+    const seed = try insertParitySeed(allocator, io, conn, &db);
     try compareRepos(allocator, conn, &db, seed);
 }
 
@@ -51,20 +52,25 @@ const Seed = struct {
     rel_id: i64,
 };
 
-fn connectPg(allocator: Allocator) !*pg.Pool {
-    const dbport_s = std.posix.getenv("DATABASE_PORT") orelse "5432";
+fn envOr(key: [:0]const u8, default: []const u8) []const u8 {
+    const p = std.c.getenv(key) orelse return default;
+    return std.mem.span(p);
+}
+
+fn connectPg(io: std.Io, allocator: Allocator) !*pg.Pool {
+    const dbport_s = envOr("DATABASE_PORT", "5432");
     const dbport = try std.fmt.parseInt(u16, dbport_s, 10);
-    const dbhost = std.posix.getenv("DATABASE_HOST") orelse "127.0.0.1";
-    const dbuser = std.posix.getenv("DB_USERNAME") orelse "queuest";
-    const dbname = std.posix.getenv("DB_DATABASE") orelse "queuest";
-    const dbpass = std.posix.getenv("DATABASE_PASSWORD") orelse "queuest";
-    const tls_s = std.posix.getenv("DATABASE_TLS") orelse "off";
+    const dbhost = envOr("DATABASE_HOST", "127.0.0.1");
+    const dbuser = envOr("DB_USERNAME", "queuest");
+    const dbname = envOr("DB_DATABASE", "queuest");
+    const dbpass = envOr("DATABASE_PASSWORD", "queuest");
+    const tls_s = envOr("DATABASE_TLS", "off");
     const tls: pg.Conn.Opts.TLS = if (std.mem.eql(u8, tls_s, "require"))
         .require
     else
         .off;
 
-    return pg.Pool.init(allocator, .{
+    return pg.Pool.init(io, allocator, .{
         .size = 1,
         .connect = .{
             .port = dbport,
@@ -80,8 +86,8 @@ fn connectPg(allocator: Allocator) !*pg.Pool {
     });
 }
 
-fn insertParitySeed(allocator: Allocator, conn: *pg.Conn, db: *sqlite.Db) !Seed {
-    const stamp = std.time.milliTimestamp();
+fn insertParitySeed(allocator: Allocator, io: std.Io, conn: *pg.Conn, db: *sqlite.Db) !Seed {
+    const stamp = std.Io.Clock.real.now(io).toMilliseconds();
     const base: i64 = 2_000_000_000 + @mod(stamp, 1_000_000);
     const uid = try std.fmt.allocPrint(allocator, "parity-uid-{d}", .{stamp});
     const email = try std.fmt.allocPrint(allocator, "parity-{d}@example.test", .{stamp});
