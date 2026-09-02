@@ -114,10 +114,11 @@ pub const CollectionItem = struct {
         std.debug.assert(collection_id != 0);
         var stmt = try db.prepare(select_sql ++ " WHERE collection_id = ?");
         defer stmt.deinit();
-        const rows = try stmt.all(Row, allocator, .{}, .{collection_id});
+        var rows = try utils.collectAll(Row, &stmt, allocator, .{collection_id});
+        defer rows.deinit(allocator);
 
-        var array = try std.ArrayList(CollectionItem).initCapacity(allocator, rows.len);
-        for (rows) |row| {
+        var array = try std.ArrayList(CollectionItem).initCapacity(allocator, rows.items.len);
+        for (rows.items) |row| {
             try array.append(allocator, try toCollectionItem(allocator, row));
         }
         return array;

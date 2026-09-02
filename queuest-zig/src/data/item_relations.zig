@@ -39,12 +39,7 @@ pub const ItemRelation = struct {
 
         var stmt = try db.prepareDynamic(sql);
         defer stmt.deinit();
-        const rows = try stmt.all(ItemRelation, allocator, .{}, .{});
-
-        var array = try std.ArrayList(ItemRelation).initCapacity(allocator, rows.len);
-        try array.appendSlice(allocator, rows);
-        allocator.free(rows);
-        return array;
+        return utils.collectAll(ItemRelation, &stmt, allocator, .{});
     }
 
     pub fn insertItemRelation(

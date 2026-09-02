@@ -41,10 +41,22 @@ pub fn getList(
 
     var stmt = try db.prepare(query);
     defer stmt.deinit();
-    const rows = try stmt.all(T, allocator, .{}, values);
+    return collectAll(T, &stmt, allocator, values);
+}
 
-    var array = try std.ArrayList(T).initCapacity(allocator, rows.len);
-    try array.appendSlice(allocator, rows);
-    allocator.free(rows);
+/// zig-sqlite's `Statement.all` still initializes ArrayList with `.{}`, which
+/// is invalid in Zig 0.16. Iterate ourselves until upstream uses `.empty`.
+pub fn collectAll(
+    comptime T: type,
+    stmt: anytype,
+    allocator: Allocator,
+    values: anytype,
+) !std.ArrayList(T) {
+    var iter = try stmt.iteratorAlloc(T, allocator, values);
+    var array: std.ArrayList(T) = .empty;
+    errdefer array.deinit(allocator);
+    while (try iter.nextAlloc(allocator, .{})) |row| {
+        try array.append(allocator, row);
+    }
     return array;
 }
