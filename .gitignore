@@ -138,3 +138,19 @@ queuest-zig/zig-out/
 queuest-zig/.zig-cache/
 
 queuest-zig/zig-pkg/
+
+do_dump/
+
+q_do_dump.zip
+
+queuest-migrated.db
+
+queuest-migrated.db-shm
+
+queuest-migrated.db-wal
+
+queuest-zig/queuest.db
+
+queuest-zig/queuest.db-shm
+
+queuest-zig/queuest.db-wal

@@ -55,6 +55,7 @@ pub const JWTMiddleware = struct {
         if (authHeader != null) {
             const allocator = arena.allocator();
             const sub = parseJWT(allocator, contextLib.SharedAllocator.getIo(), authHeader.?) catch |err| {
+                log.err("JWT rejected: {}", .{err});
                 r.sendError(err, if (@errorReturnTrace()) |t| t.* else null, 401);
                 return false;
             };
@@ -94,7 +95,14 @@ fn parseJWT(allocator: Allocator, io: std.Io, jwt: []const u8) AuthError![]const
         key[0..],
         jwt[jwt_start..jwt_sig_start],
         jwt[jwt_sig_start + 1 ..],
-    ) catch return error.SignatureDecodingError;
+    ) catch |err| {
+        log.err("Firebase signature check failed: {}", .{err});
+        return switch (err) {
+            error.MissingCertificateMarkerInGooglePubKey => error.SignatureDecodingError,
+            error.ErrorVerifyingMessage => error.SignatureWrong,
+            else => error.SignatureDecodingError,
+        };
+    };
     if (!is_signature_ok)
         return error.SignatureWrong;
     return sub;

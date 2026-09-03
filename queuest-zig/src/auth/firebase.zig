@@ -28,7 +28,9 @@ const GooglePubKey = struct {
     certificate: [1024]u8,
 };
 
-var goole_keys: [3]GooglePubKey = std.mem.zeroes([3]GooglePubKey);
+const max_google_pub_keys = 8;
+
+var goole_keys: [max_google_pub_keys]GooglePubKey = std.mem.zeroes([max_google_pub_keys]GooglePubKey);
 var cache_time: i64 = 0;
 
 pub fn verifySignature(allocator: Allocator, io: std.Io, key: []const u8, msg: []const u8, sig_b64: []const u8) FirebaseError!bool {
@@ -84,7 +86,7 @@ fn reloadPublicKeys(allocator: Allocator, io: std.Io) FirebaseError!void {
     }
 
     const object = json.parseFromSlice(json.Value, allocator, response_body.written(), .{}) catch return error.CannotLoadPubKeys;
-    var new_keys = std.mem.zeroes([3]GooglePubKey);
+    var new_keys = std.mem.zeroes([max_google_pub_keys]GooglePubKey);
     var stored: usize = 0;
     for (object.value.object.keys()) |key| {
         if (stored >= new_keys.len) {
