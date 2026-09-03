@@ -9,6 +9,7 @@ const sqliteMiddle = @import("middle/sqlite.zig");
 const contextLib = @import("middle/context.zig");
 const controller = @import("middle/controller.zig");
 const header = @import("middle/header.zig");
+const dev = @import("dev.zig");
 const db_open = @import("db/open.zig");
 const migrate = @import("db/migrate.zig");
 const Context = contextLib.Context;
@@ -48,7 +49,8 @@ pub fn main(init: std.process.Init) !void {
         var userHandler = userMiddle.UserMiddleware.init(controllerHandler.getHandler(), allocator);
         var sqliteHandler = sqliteMiddle.SqliteMiddleware.init(userHandler.getHandler(), allocator, &db);
         var jwtHandler = auth.JWTMiddleware.init(sqliteHandler.getHandler(), allocator);
-        var headerHandler = header.HeaderMiddleWare.init(jwtHandler.getHandler());
+        const allow_localhost = dev.enabled(init.environ_map);
+        var headerHandler = header.HeaderMiddleWare.init(jwtHandler.getHandler(), allow_localhost);
 
         var listener = try zap.Middleware.Listener(Context).init(
             .{
@@ -81,6 +83,8 @@ test {
     _ = @import("data/utils.zig");
     _ = @import("db/open.zig");
     _ = @import("db/migrate.zig");
+    _ = @import("dev.zig");
+    _ = @import("middle/header.zig");
 }
 
 test "graph" {

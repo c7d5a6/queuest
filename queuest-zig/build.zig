@@ -35,11 +35,6 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    const pg_module = b.dependency("pg", .{
-        .target = target,
-        .optimize = optimize,
-        .openssl_lib_name = @as([]const u8, "ssl"),
-    }).module("pg");
     const sqlite_dep = b.dependency("sqlite", .{
         .target = target,
         .optimize = optimize,
@@ -58,14 +53,6 @@ pub fn build(b: *std.Build) void {
         .link_libc = true,
     });
     lib_mod.addImport("sqlite", sqlite_mod);
-
-    const pg_lib_mod = b.createModule(.{
-        .root_source_file = b.path("src/pg_lib.zig"),
-        .target = target,
-        .optimize = optimize,
-        .link_libc = true,
-    });
-    pg_lib_mod.addImport("pg", pg_module);
 
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
@@ -121,49 +108,6 @@ pub fn build(b: *std.Build) void {
     const e2e_test_step = b.step("e2e", "Run end-to-end tests");
     e2e_test_step.dependOn(&run_e2e_tests.step);
 
-    const parity_tests_module = b.createModule(.{
-        .root_source_file = b.path("tests/parity/main.zig"),
-        .target = target,
-        .optimize = optimize,
-        .link_libc = true,
-    });
-    parity_tests_module.addImport("queuest", lib_mod);
-    parity_tests_module.addImport("pg_data", pg_lib_mod);
-    parity_tests_module.addImport("pg", pg_module);
-    parity_tests_module.addImport("sqlite", sqlite_mod);
-    const parity_tests = b.addTest(.{
-        .root_module = parity_tests_module,
-    });
-    linkOpenssl(parity_tests);
-    const run_parity_tests = b.addRunArtifact(parity_tests);
-    const parity_step = b.step("test-parity", "Compare SQLite and PostgreSQL repo results");
-    parity_step.dependOn(&run_parity_tests.step);
-
-    const converter_module = b.createModule(.{
-        .root_source_file = b.path("tools/pg_to_sqlite.zig"),
-        .target = target,
-        .optimize = optimize,
-        .link_libc = true,
-    });
-    converter_module.addImport("queuest", lib_mod);
-    converter_module.addImport("pg", pg_module);
-    converter_module.addImport("sqlite", sqlite_mod);
-    const converter = b.addExecutable(.{
-        .name = "pg-to-sqlite",
-        .root_module = converter_module,
-    });
-    linkOpenssl(converter);
-    const install_converter = b.addInstallArtifact(converter, .{});
-    const converter_step = b.step("pg-to-sqlite", "Build the PostgreSQL to SQLite converter");
-    converter_step.dependOn(&install_converter.step);
-    const run_converter = b.addRunArtifact(converter);
-    run_converter.step.dependOn(&install_converter.step);
-    if (b.args) |args| {
-        run_converter.addArgs(args);
-    }
-    const run_converter_step = b.step("run-pg-to-sqlite", "Run the PostgreSQL to SQLite converter");
-    run_converter_step.dependOn(&run_converter.step);
-
     const debug_module = b.createModule(.{
         .root_source_file = b.path("src/type-check.zig"),
         .target = target,
@@ -179,12 +123,6 @@ pub fn build(b: *std.Build) void {
     const run_exe_debug_step = b.addRunArtifact(exe_debug_step);
     const debug_step = b.step("debug", "Run debug info");
     debug_step.dependOn(&run_exe_debug_step.step);
-}
-
-fn linkOpenssl(artifact: *std.Build.Step.Compile) void {
-    artifact.root_module.addLibraryPath(.{ .cwd_relative = "/usr/lib/x86_64-linux-gnu" });
-    artifact.root_module.linkSystemLibrary("ssl", .{});
-    artifact.root_module.linkSystemLibrary("crypto", .{});
 }
 
 fn configureArtifact(
