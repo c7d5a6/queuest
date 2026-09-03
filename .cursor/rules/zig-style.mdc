@@ -1,0 +1,20 @@
+---
+description: Follow STYLE.md for Zig; fmt, names, 100 cols, 70-line fns, asserts
+globs: "**/*.zig"
+alwaysApply: false
+---
+
+# Zig style
+
+Follow `STYLE.md` (repo root) for all new Zig and for lines you already touch. Do not restyle unrelated existing code.
+
+Must:
+
+- Run `zig fmt`. 4 spaces. Hard 100 columns. Soft 70 lines per function.
+- Names: `TitleCase` types, `camelCase` functions, `snake_case` vars/namespaces. Type files `TitleCase.zig`.
+- Prefer explicit widths. Use `usize` only for std lengths/indexes.
+- Assert args, returns, pre/postconditions, invariants. Average two asserts per function. Split compound asserts.
+- Handle every error. Recursion only with a hard depth or size limit.
+- Pass library options at the call site; do not rely on defaults.
+
+If STYLE.md and existing code disagree, keep the existing name/shape unless this change already has to rename that symbol.

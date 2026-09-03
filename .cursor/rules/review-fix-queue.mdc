@@ -1,0 +1,20 @@
+---
+description: Fix review findings one at a time; ask why and how before any edit
+alwaysApply: true
+---
+
+# Review-fix queue
+
+When working through phonological-rules review findings:
+
+1. Order is **critical bugs, then high bugs**. Do not start a later item until the current one is committed.
+2. **One finding per commit.** Do not mix refactors, extra files, or the next finding.
+3. **Do not edit code** until the user answers, for that finding:
+   - Why it might be designed this way (treat as possibly intentional, not a typo)
+   - Which approach to take (offer 2–3 options and consequences)
+4. After explicit approval: implement only that finding, commit it alone if the user asked for commits, then **stop and ask about the next item**.
+
+```text
+❌ BAD: fix destroyRule and the apply leak in one patch
+✅ GOOD: ask → approve → one commit → ask about the next finding
+```
