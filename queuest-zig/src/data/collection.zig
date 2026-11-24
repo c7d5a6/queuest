@@ -15,7 +15,11 @@ pub const Collection = struct {
     favourite_yn: bool = true,
     visited_ts: i64 = 0,
 
-    pub fn findAllForUserId(db: *Db, allocator: std.mem.Allocator, user_id: i64) !std.ArrayList(Collection) {
+    pub fn findAllForUserId(
+        db: *Db,
+        allocator: std.mem.Allocator,
+        user_id: i64,
+    ) !std.ArrayList(Collection) {
         std.debug.assert(user_id != 0);
         return getList(
             Collection,
@@ -27,7 +31,11 @@ pub const Collection = struct {
         );
     }
 
-    pub fn findAllFavForUserId(db: *Db, allocator: std.mem.Allocator, user_id: i64) !std.ArrayList(Collection) {
+    pub fn findAllFavForUserId(
+        db: *Db,
+        allocator: std.mem.Allocator,
+        user_id: i64,
+    ) !std.ArrayList(Collection) {
         std.debug.assert(user_id != 0);
         return getList(
             Collection,
@@ -67,7 +75,8 @@ pub const Collection = struct {
         std.debug.assert(name.len > 0);
         const id = try db.one(
             Id,
-            "INSERT INTO collection_tbl(user_id, name, visited_ts) VALUES (?, ?, unixepoch()) RETURNING id",
+            "INSERT INTO collection_tbl(user_id, name, visited_ts) " ++
+                "VALUES (?, ?, unixepoch()) RETURNING id",
             .{},
             .{ user_id, name },
         );

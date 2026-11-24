@@ -11,6 +11,8 @@ const Allocator = mem.Allocator;
 const digets_bits = 256;
 const base64Url = std.base64.url_safe.decoderWithIgnore(" \t\r\n");
 const base64Std = std.base64.standard.decoderWithIgnore(" \t\r\n");
+const google_certs_url =
+    "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com";
 const Modulus = std.crypto.ff.Modulus(4096);
 const Fe = Modulus.Fe;
 //
@@ -30,10 +32,17 @@ const GooglePubKey = struct {
 
 const max_google_pub_keys = 8;
 
-var goole_keys: [max_google_pub_keys]GooglePubKey = std.mem.zeroes([max_google_pub_keys]GooglePubKey);
+var goole_keys: [max_google_pub_keys]GooglePubKey =
+    std.mem.zeroes([max_google_pub_keys]GooglePubKey);
 var cache_time: i64 = 0;
 
-pub fn verifySignature(allocator: Allocator, io: std.Io, key: []const u8, msg: []const u8, sig_b64: []const u8) FirebaseError!bool {
+pub fn verifySignature(
+    allocator: Allocator,
+    io: std.Io,
+    key: []const u8,
+    msg: []const u8,
+    sig_b64: []const u8,
+) FirebaseError!bool {
     try checkAndReloadPK(allocator, io);
 
     if (key.len != 40) {
@@ -51,8 +60,12 @@ pub fn verifySignature(allocator: Allocator, io: std.Io, key: []const u8, msg: [
                 .buffer = pk.certificate[0..],
                 .index = 0,
             }) catch return error.ErrorVerifyingMessage;
-            const pk_components = PublicKey.parseDer(parsed_cert.pubKey()) catch return error.ErrorVerifyingMessage;
-            const public_key = PublicKey.fromBytes(pk_components.exponent, pk_components.modulus) catch return error.ErrorVerifyingMessage;
+            const pk_components = PublicKey.parseDer(parsed_cert.pubKey()) catch
+                return error.ErrorVerifyingMessage;
+            const public_key = PublicKey.fromBytes(
+                pk_components.exponent,
+                pk_components.modulus,
+            ) catch return error.ErrorVerifyingMessage;
             return verifyMessage(msg, sig_b64, public_key) catch return error.ErrorVerifyingMessage;
         }
     }
@@ -68,7 +81,8 @@ fn checkAndReloadPK(allocator: Allocator, io: std.Io) FirebaseError!void {
 }
 
 fn reloadPublicKeys(allocator: Allocator, io: std.Io) FirebaseError!void {
-    var response_body = std.Io.Writer.Allocating.initCapacity(allocator, 4 * 1024) catch return error.CannotLoadPubKeys;
+    var response_body = std.Io.Writer.Allocating.initCapacity(allocator, 4 * 1024) catch
+        return error.CannotLoadPubKeys;
     defer response_body.deinit();
 
     var client: Client = .{ .allocator = allocator, .io = io };
@@ -76,16 +90,19 @@ fn reloadPublicKeys(allocator: Allocator, io: std.Io) FirebaseError!void {
 
     const mili = std.Io.Clock.awake.now(io).toMicroseconds();
     const response = client.fetch(.{
-        .location = .{ .url = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com" },
+        .location = .{ .url = google_certs_url },
         .response_writer = &response_body.writer,
     }) catch return error.ErrorLoadingPubKeys;
-    std.log.debug("\nTime to load cert: {d}\n", .{std.Io.Clock.awake.now(io).toMicroseconds() - mili});
+    std.log.debug("\nTime to load cert: {d}\n", .{
+        std.Io.Clock.awake.now(io).toMicroseconds() - mili,
+    });
 
     if (response.status != .ok) {
         return error.ErrorLoadingPubKeys;
     }
 
-    const object = json.parseFromSlice(json.Value, allocator, response_body.written(), .{}) catch return error.CannotLoadPubKeys;
+    const object = json.parseFromSlice(json.Value, allocator, response_body.written(), .{}) catch
+        return error.CannotLoadPubKeys;
     var new_keys = std.mem.zeroes([max_google_pub_keys]GooglePubKey);
     var stored: usize = 0;
     for (object.value.object.keys()) |key| {
@@ -114,7 +131,8 @@ fn reloadPublicKeys(allocator: Allocator, io: std.Io) FirebaseError!void {
             return error.MissingCertificateMarkerInGooglePubKey;
         const encoded_cert = mem.trim(u8, cert[cert_start..cert_end], " \t\r\n");
 
-        var buff = allocator.alloc(u8, encoded_cert.len * 4 / 3) catch return error.CannotLoadPubKeys;
+        var buff = allocator.alloc(u8, encoded_cert.len * 4 / 3) catch
+            return error.CannotLoadPubKeys;
         const len = base64Std.decode(buff, encoded_cert) catch return error.ErrorLoadingPubKeys;
 
         @memcpy(new_keys[stored].certificate[0..len], buff[0..len]);
@@ -139,7 +157,8 @@ fn updateCacheAge(io: std.Io, headers: []u8) FirebaseError!void {
     const max_end = mem.indexOfPos(u8, headers, max_start, del_marker) orelse
         return error.MissingCertificateMarkerInGooglePubKey;
 
-    const new_time = std.fmt.parseUnsigned(u32, headers[max_start..max_end], 10) catch return error.CannotLoadPubKeys;
+    const new_time = std.fmt.parseUnsigned(u32, headers[max_start..max_end], 10) catch
+        return error.CannotLoadPubKeys;
     cache_time = std.Io.Clock.real.now(io).toSeconds() + new_time;
 }
 
@@ -246,7 +265,9 @@ test "loading google" {
         }
     }
     try expect(cert_found);
-    std.log.debug("\nTime to load goole: {d}\n", .{std.Io.Clock.awake.now(io).toMilliseconds() - mili});
+    std.log.debug("\nTime to load goole: {d}\n", .{
+        std.Io.Clock.awake.now(io).toMilliseconds() - mili,
+    });
 }
 
 test "can decode sample certificate" {
@@ -266,7 +287,8 @@ test "can decode sample certificate" {
 
     //Public +1key
     const pk_components = try PublicKey.parseDer(parsed_cert.pubKey());
-    const public_key = PublicKey.fromBytes(pk_components.exponent, pk_components.modulus) catch return error.CertificateSignatureInvalid;
+    const public_key = PublicKey.fromBytes(pk_components.exponent, pk_components.modulus) catch
+        return error.CertificateSignatureInvalid;
 
     try expect(try verifyMessage(jwt_base[0..], sig_base[0..], public_key));
 }

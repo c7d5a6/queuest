@@ -16,7 +16,10 @@ pub fn parseAs(comptime T: type, raw: ?[]const u8) ParamError!T {
         else
             error.BadRequest,
         .@"enum" => std.meta.stringToEnum(T, text) orelse error.BadRequest,
-        .pointer => if (T == []const u8) text else @compileError("unsupported param type " ++ @typeName(T)),
+        .pointer => if (T == []const u8)
+            text
+        else
+            @compileError("unsupported param type " ++ @typeName(T)),
         else => @compileError("unsupported param type " ++ @typeName(T)),
     };
 }

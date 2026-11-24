@@ -29,26 +29,47 @@ const authorized: Application.RouteOptions = .{
 pub fn register(app: *Application) !void {
     try app.route("GET", "/api/hello", hello);
     // -- Collections
-    try app.routeWith("GET", "/collections", collections.on_get_collections, authorized);
-    try app.routeWith("GET", "/collections/fav", collections.on_get_fav_collections, authorized);
-    try app.routeWith("GET", "/collections/:collectionId", collections.on_get_collection, authorized);
-    try app.routeWith("POST", "/collections", collections.on_post_collection, authorized);
-    try app.routeWith("POST", "/collections/fav/:collectionId", collections.on_post_fav_collection, authorized);
-    try app.routeWith("POST", "/collections/visit/:collectionId", collections.on_post_visit_collection, authorized);
-    try app.routeWith("DELETE", "/collections/fav/:collectionId", collections.on_delete_fav_collection, authorized);
+    try get(app, "/collections", collections.onGetCollections);
+    try get(app, "/collections/fav", collections.onGetFavCollections);
+    try get(app, "/collections/:collectionId", collections.onGetCollection);
+    try post(app, "/collections", collections.onPostCollection);
+    try post(app, "/collections/fav/:collectionId", collections.onPostFavCollection);
+    try post(app, "/collections/visit/:collectionId", collections.onPostVisitCollection);
+    try delete(app, "/collections/fav/:collectionId", collections.onDeleteFavCollection);
     // -- Items
-    try app.routeWith("GET", "/collections/:collectionId/items", items.on_get_items, authorized);
-    try app.routeWith("GET", "/collections/:collectionId/items/least-calibrated", items.on_get_least_calibrated_item, authorized);
-    try app.routeWith("GET", "/collections/:collectionId/items/:collectionItemId/bestpair/:strict", items.on_get_best_pair, authorized);
-    try app.routeWith("POST", "/collections/:collectionId/items", items.on_post_item, authorized);
-    try app.routeWith("DELETE", "/collections/:collectionId/items/:collectionItemId", items.on_delete_item, authorized);
+    const item_path = "/collections/:collectionId/items";
+    try get(app, item_path, items.onGetItems);
+    try get(app, item_path ++ "/least-calibrated", items.onGetLeastCalibratedItem);
+    try get(app, item_path ++ "/:collectionItemId/bestpair/:strict", items.onGetBestPair);
+    try post(app, item_path, items.onPostItem);
+    try delete(app, item_path ++ "/:collectionItemId", items.onDeleteItem);
     // -- ItemsRelation
-    try app.routeWith("POST", "/relations/:fromId/:toId", items_relations.on_post_relation, authorized);
-    try app.routeWith("DELETE", "/relations/:itemAId/:itemBId", items_relations.on_delete_relation, authorized);
+    try post(app, "/relations/:fromId/:toId", items_relations.onPostRelation);
+    try delete(app, "/relations/:itemAId/:itemBId", items_relations.onDeleteRelation);
+}
+
+fn get(app: *Application, comptime path: []const u8, comptime handler: Application.Handler) !void {
+    try app.routeWith("GET", path, handler, authorized);
+}
+
+fn post(app: *Application, comptime path: []const u8, comptime handler: Application.Handler) !void {
+    try app.routeWith("POST", path, handler, authorized);
+}
+
+fn delete(
+    app: *Application,
+    comptime path: []const u8,
+    comptime handler: Application.Handler,
+) !void {
+    try app.routeWith("DELETE", path, handler, authorized);
 }
 
 fn hello(ctx: *Context) !void {
-    return ctx.response.bytes(200, "text/html", "<html><body><h1>Hello from Baz!!!</h1></body></html>");
+    return ctx.response.bytes(
+        200,
+        "text/html",
+        "<html><body><h1>Hello from Baz!!!</h1></body></html>",
+    );
 }
 
 fn onError(ctx: *Context, err: anyerror) !void {

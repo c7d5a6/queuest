@@ -33,3 +33,12 @@ pub fn arena(ctx: *Context) std.mem.Allocator {
     std.debug.assert(ctx.locals.arena != null);
     return ctx.locals.arena.?.allocator();
 }
+
+/// Serializes `value` as the JSON response body with status 200.
+pub fn sendJson(ctx: *Context, value: anytype) !void {
+    const json = std.json.Stringify.valueAlloc(arena(ctx), value, .{
+        .escape_unicode = true,
+        .emit_null_optional_fields = false,
+    }) catch return error.InternalError;
+    try ctx.response.jsonBytes(200, json);
+}

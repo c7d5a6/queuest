@@ -26,7 +26,7 @@ fn toIt(item: Item) It {
     };
 }
 
-pub fn on_get_items(ctx: *Context) !void {
+pub fn onGetItems(ctx: *Context) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
     const collectionId = try params.paramAs(i64, ctx, "collectionId");
@@ -35,7 +35,8 @@ pub fn on_get_items(ctx: *Context) !void {
         return error.InternalError) orelse return error.NotFound;
     const items: std.ArrayList(Item) = Item.findAllForCollectionId(c.db.?, a, collectionId) catch
         return error.InternalError;
-    var result = std.ArrayList(It).initCapacity(a, items.items.len) catch return error.InternalError;
+    var result = std.ArrayList(It).initCapacity(a, items.items.len) catch
+        return error.InternalError;
     for (items.items) |item| {
         const name = switch (item.inner) {
             .collection => |cl| cl.name,
@@ -48,18 +49,18 @@ pub fn on_get_items(ctx: *Context) !void {
     var graph: Graph = Graph.init(a, @intCast(items.items.len));
     setGraphEdges(a, c, items.items, &graph) catch return error.InternalError;
     const sorted = graph.sort() catch return error.InternalError;
-    var resultSorted = std.ArrayList(It).initCapacity(a, items.items.len) catch return error.InternalError;
+    var resultSorted = std.ArrayList(It).initCapacity(a, items.items.len) catch
+        return error.InternalError;
     for (sorted) |i| {
         resultSorted.append(a, result.items[i]) catch return error.InternalError;
     }
 
     const Result = struct { id: i64, items: []It, calibrated: f64 };
     const res = Result{ .id = collectionId, .items = resultSorted.items, .calibrated = 0.5 };
-    const json = std.json.Stringify.valueAlloc(a, res, .{ .escape_unicode = true, .emit_null_optional_fields = false, .whitespace = .minified }) catch return error.InternalError;
-    try ctx.response.jsonBytes(200, json);
+    try request.sendJson(ctx, res);
 }
 
-pub fn on_get_best_pair(ctx: *Context) !void {
+pub fn onGetBestPair(ctx: *Context) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
     const collectionId = try params.paramAs(i64, ctx, "collectionId");
@@ -72,7 +73,8 @@ pub fn on_get_best_pair(ctx: *Context) !void {
     std.debug.assert(id != 0);
     _ = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
         return error.InternalError) orelse return error.NotFound;
-    const item = (Item.findById(c.db.?, a, id) catch return error.InternalError) orelse return error.NotFound;
+    const item = (Item.findById(c.db.?, a, id) catch
+        return error.InternalError) orelse return error.NotFound;
     if (item.collection_id != collectionId) {
         return error.NotFound;
     }
@@ -81,24 +83,22 @@ pub fn on_get_best_pair(ctx: *Context) !void {
     var graph: Graph = Graph.init(a, @intCast(items.items.len));
     setGraphEdges(a, c, items.items, &graph) catch return error.InternalError;
     const sorted = graph.sort() catch return error.InternalError;
-    const relations = ItemRelation.findAllForItemIds(c.db.?, a, items.items) catch return error.InternalError;
-    var items_sorted = std.ArrayList(Item).initCapacity(a, items.items.len) catch return error.InternalError;
+    const relations = ItemRelation.findAllForItemIds(c.db.?, a, items.items) catch
+        return error.InternalError;
+    var items_sorted = std.ArrayList(Item).initCapacity(a, items.items.len) catch
+        return error.InternalError;
     for (sorted) |i| {
         items_sorted.append(a, items.items[i]) catch return error.InternalError;
     }
 
     const item_index = indexOfItem(items_sorted.items, id) orelse return error.InternalError;
     if (strict and isItemCalibrated(id, items_sorted.items, item_index, relations)) {
-        const json = std.json.Stringify.valueAlloc(a, @as(?ItRel, null), .{
-            .escape_unicode = true,
-            .emit_null_optional_fields = false,
-            .whitespace = .minified,
-        }) catch return error.InternalError;
-        try ctx.response.jsonBytes(200, json);
+        try request.sendJson(ctx, @as(?ItRel, null));
         return;
     }
 
-    const pair = getBestPair(a, id, items_sorted, exclude, relations) catch return error.InternalError;
+    const pair = getBestPair(a, id, items_sorted, exclude, relations) catch
+        return error.InternalError;
 
     var res: ?ItRel = null;
     if (pair) |p| {
@@ -110,16 +110,12 @@ pub fn on_get_best_pair(ctx: *Context) !void {
         }
     }
 
-    const json = std.json.Stringify.valueAlloc(a, res, .{
-        .escape_unicode = true,
-        .emit_null_optional_fields = false,
-        .whitespace = .minified,
-    }) catch return error.InternalError;
-    try ctx.response.jsonBytes(200, json);
+    try request.sendJson(ctx, res);
 }
 
 fn setGraphEdges(a: Allocator, c: *Locals, items: []Item, graph: *Graph) !void {
-    const relations = ItemRelation.findAllForItemIds(c.db.?, a, items) catch return error.InternalError;
+    const relations = ItemRelation.findAllForItemIds(c.db.?, a, items) catch
+        return error.InternalError;
     for (relations.items) |rel| {
         const from_id = rel.collection_item_from_id;
         const to_id = rel.collection_item_to_id;
@@ -145,7 +141,7 @@ fn setGraphEdges(a: Allocator, c: *Locals, items: []Item, graph: *Graph) !void {
     }
 }
 
-pub fn on_post_item(ctx: *Context) !void {
+pub fn onPostItem(ctx: *Context) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
     const body = ctx.request.body().contiguous() orelse return error.BadRequest;
@@ -156,14 +152,17 @@ pub fn on_post_item(ctx: *Context) !void {
         return error.InternalError) orelse return error.NotFound;
 
     const CreateItem = struct { name: []const u8 };
-    const create = std.json.parseFromSlice(CreateItem, a, body, .{ .ignore_unknown_fields = true }) catch return error.BadRequest;
-    const id = Item.insertItem(c.db.?, create.value.name, collectionId) catch return error.InternalError;
+    const create = std.json.parseFromSlice(CreateItem, a, body, .{
+        .ignore_unknown_fields = true,
+    }) catch
+        return error.BadRequest;
+    const id = Item.insertItem(c.db.?, create.value.name, collectionId) catch
+        return error.InternalError;
 
-    const json = std.json.Stringify.valueAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch return error.InternalError;
-    try ctx.response.jsonBytes(200, json);
+    try request.sendJson(ctx, id);
 }
 
-pub fn on_delete_item(ctx: *Context) !void {
+pub fn onDeleteItem(ctx: *Context) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
     const collectionId = try params.paramAs(i64, ctx, "collectionId");
@@ -323,7 +322,7 @@ fn getBestPair(
     return null;
 }
 
-pub fn on_get_least_calibrated_item(ctx: *Context) !void {
+pub fn onGetLeastCalibratedItem(ctx: *Context) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
     const collectionId = try params.paramAs(i64, ctx, "collectionId");
@@ -336,7 +335,8 @@ pub fn on_get_least_calibrated_item(ctx: *Context) !void {
     for (items.items, 0..) |item, i| {
         positions.put(item.id, @intCast(i)) catch return error.InternalError;
     }
-    const relations = ItemRelation.findAllForItemIds(c.db.?, a, items.items) catch return error.InternalError;
+    const relations = ItemRelation.findAllForItemIds(c.db.?, a, items.items) catch
+        return error.InternalError;
     const in = a.alloc(usize, items.items.len) catch return error.InternalError;
     const out = a.alloc(usize, items.items.len) catch return error.InternalError;
     @memset(in, 0);
@@ -367,15 +367,15 @@ pub fn on_get_least_calibrated_item(ctx: *Context) !void {
     }
     if (result) |res| {
         const it = toIt(res);
-        const json = std.json.Stringify.valueAlloc(a, it, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch return error.InternalError;
-        try ctx.response.jsonBytes(200, json);
+        try request.sendJson(ctx, it);
     } else {
         try ctx.response.text(200, "");
     }
 }
 
 fn isThereRelation(item: i64, relation: i64, relations: std.ArrayList(ItemRelation)) bool {
-    return isThereRelationFromTo(item, relation, relations) or isThereRelationFromTo(relation, item, relations);
+    return isThereRelationFromTo(item, relation, relations) or
+        isThereRelationFromTo(relation, item, relations);
 }
 
 fn isThereRelationFromTo(from: i64, to: i64, relations: std.ArrayList(ItemRelation)) bool {

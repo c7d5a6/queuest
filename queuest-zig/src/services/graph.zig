@@ -410,7 +410,6 @@ const MAX_SIZE = 1_000_000;
 //     }
 //     t += Date.now() - date;
 // }
-// console.log(`Time for ${n} size created ${Date.now() - create - t} times ${Math.max(1000, times)} in ms: ${t}`);
 //
 
 test "cyclic test" {
@@ -442,14 +441,20 @@ test "cyclic test" {
                         else
                             .{ .t = "Mb", .s = (as / 1024 / 1024) };
 
-                    std.debug.print("\tFor graph({d}) Size of allocated mem: {d}{s}\n", .{ graph.size, out.s, out.t });
+                    std.debug.print(
+                        "\tFor graph({d}) Size of allocated mem: {d}{s}\n",
+                        .{ graph.size, out.s, out.t },
+                    );
                 }
                 const tt = try graph.getCycle();
                 try expect(tt == null or tt.?.len >= 0);
             }
             t += nowUs() - date;
         }
-        std.debug.print("Time for {d} size created {d} times {d} in ms: {d}\n", .{ n, nowUs() - create - t, times, t });
+        std.debug.print(
+            "Time for {d} size created {d} times {d} in ms: {d}\n",
+            .{ n, nowUs() - create - t, times, t },
+        );
         n *= 2;
     }
 }

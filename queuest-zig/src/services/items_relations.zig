@@ -9,7 +9,7 @@ const ItemRelation = @import("../data/item_relations.zig").ItemRelation;
 const ControllerError = @import("../routes/router-errors.zig").ControllerError;
 const request = @import("../middle/context.zig");
 
-pub fn on_post_relation(ctx: *Context) !void {
+pub fn onPostRelation(ctx: *Context) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
     const fromId = try params.paramAs(i64, ctx, "fromId");
@@ -17,16 +17,13 @@ pub fn on_post_relation(ctx: *Context) !void {
 
     try assertItemsAccess(a, c, fromId, toId);
 
-    const id = ItemRelation.insertItemRelation(c.db.?, fromId, toId) catch return error.InternalError;
+    const id = ItemRelation.insertItemRelation(c.db.?, fromId, toId) catch
+        return error.InternalError;
 
-    const json = std.json.Stringify.valueAlloc(a, id, .{
-        .escape_unicode = true,
-        .emit_null_optional_fields = false,
-    }) catch return error.InternalError;
-    try ctx.response.jsonBytes(200, json);
+    try request.sendJson(ctx, id);
 }
 
-pub fn on_delete_relation(ctx: *Context) !void {
+pub fn onDeleteRelation(ctx: *Context) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
     const itemAId = try params.paramAs(i64, ctx, "itemAId");

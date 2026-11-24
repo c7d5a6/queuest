@@ -88,7 +88,8 @@ fn parseJWTHead(allocator: Allocator, head_base: []const u8) AuthError![]const u
     std.debug.assert(decoded_len > 0);
     std.debug.assert(decoded_len <= buff.len);
     const decoded = buff[0..decoded_len];
-    const head = json.parseFromSlice(json.Value, allocator, decoded, .{}) catch return error.ErrorParsingJWT;
+    const head = json.parseFromSlice(json.Value, allocator, decoded, .{}) catch
+        return error.ErrorParsingJWT;
     log.debug("JWT: {s}\n", .{decoded});
     var alg: bool = false;
     var key: bool = false;
@@ -118,10 +119,10 @@ fn parseJWTHead(allocator: Allocator, head_base: []const u8) AuthError![]const u
     }
     return kid orelse error.ErrorParsingJWT;
 }
-// exp     Expiration time     Must be in the future. The time is measured in seconds since the UNIX epoch.
-// iat     Issued-at time  Must be in the past. The time is measured in seconds since the UNIX epoch.
-// aud     Audience    Must be your Firebase project ID, the unique identifier for your Firebase project, which can be found in the URL of that project's console.
-// iss     Issuer  Must be "https://securetoken.google.com/<projectId>", where <projectId> is the same project ID used for aud above.
+// exp         Expiration time. Must be in the future, in seconds since the UNIX epoch.
+// iat         Issued-at time. Must be in the past, in seconds since the UNIX epoch.
+// aud         Audience. Must be the Firebase project ID.
+// iss         Issuer. Must be "https://securetoken.google.com/<projectId>" with the aud project ID.
 // sub     Subject     Must be a non-empty string and must be the uid of the user or device.
 // auth_time   Authentication time     Must be in the past. The time when the user authenticated.
 fn parseJWTBody(allocator: Allocator, io: std.Io, body_base: []const u8) AuthError![]const u8 {
@@ -133,7 +134,8 @@ fn parseJWTBody(allocator: Allocator, io: std.Io, body_base: []const u8) AuthErr
     std.debug.assert(decoded_len > 0);
     std.debug.assert(decoded_len <= buff.len);
     const decoded = buff[0..decoded_len];
-    const body = json.parseFromSlice(json.Value, allocator, decoded, .{}) catch return error.ErrorParsingJWT;
+    const body = json.parseFromSlice(json.Value, allocator, decoded, .{}) catch
+        return error.ErrorParsingJWT;
     log.debug("JWT: {s}\n", .{decoded});
     var exp: bool = false;
     var iat: bool = false;
