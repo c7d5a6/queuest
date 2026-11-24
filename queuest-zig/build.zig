@@ -66,4 +66,10 @@ pub fn build(b: *std.Build) void {
     const sqlite_test_step = b.step("test-sqlite", "Run SQLite integration tests");
     sqlite_test_step.dependOn(&run_sqlite_tests.step);
     test_step.dependOn(&run_sqlite_tests.step);
+
+    const fmt_step = b.step("fmt", "Check formatting with zig fmt");
+    fmt_step.dependOn(&b.addFmt(.{
+        .paths = &.{ b.path("src"), b.path("tests"), b.path("build.zig") },
+        .check = true,
+    }).step);
 }
