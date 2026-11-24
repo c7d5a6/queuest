@@ -34,3 +34,24 @@ The API always allows `https://queuest.c7d5a6.com`. It also allows
 
 Backup: `PRAGMA wal_checkpoint(TRUNCATE)` then copy the `.db` file. Also copy
 `-wal` / `-shm` if a checkpoint was not done.
+
+# Deploy
+
+`deploy/deploy.sh` is the standard owl deploy script (same file as in phonological-rules);
+`deploy/deploy.conf` holds the project settings. It builds locally against the server's
+glibc, ships a release directory over rsync, switches the `current` symlink, restarts the
+systemd unit `owl-queuest` and rolls back on a failed health check (`/api/hello`).
+
+```
+./deploy/deploy.sh init       # first time: server folders, .env, systemd unit, Caddy site
+./deploy/deploy.sh            # build, ship, switch, restart, health check
+./deploy/deploy.sh rollback   # previous release
+./deploy/deploy.sh status
+./deploy/deploy.sh logs
+./deploy/deploy.sh build      # build only, no server needed
+```
+
+First time: point DNS for `api.queuest.c7d5a6.com` at the server, run `init`, edit
+`~/queuest/shared/.env` (template: `.env.example`), copy the existing SQLite file to
+`~/queuest/shared/data/queuest.db` (stop the service first, checkpoint WAL as described
+below), then deploy. A fresh empty database is created and migrated if none is there.
