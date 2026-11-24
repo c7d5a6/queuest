@@ -2,8 +2,8 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const sqlite = @import("sqlite");
 const Db = sqlite.Db;
-const utils = @import("utils.zig");
-const Id = utils.Id;
+const query = @import("query.zig");
+const Id = query.Id;
 
 const ItemType = enum {
     item,
@@ -114,7 +114,7 @@ pub const CollectionItem = struct {
         std.debug.assert(collection_id != 0);
         var stmt = try db.prepare(select_sql ++ " WHERE collection_id = ?");
         defer stmt.deinit();
-        var rows = try utils.collectAll(Row, &stmt, allocator, .{collection_id});
+        var rows = try query.collectAll(Row, &stmt, allocator, .{collection_id});
         defer rows.deinit(allocator);
 
         var array = try std.ArrayList(CollectionItem).initCapacity(allocator, rows.items.len);

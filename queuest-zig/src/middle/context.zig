@@ -26,16 +26,16 @@ pub const Auth = struct {
 };
 
 pub const Application = web.AppWithLocals(Shared, Locals);
-pub const Context = Application.Context;
+pub const Exchange = Application.Context;
 
 /// Request-scoped allocator. Freed by `cleanup` of the `arena` middleware.
-pub fn arena(ctx: *Context) std.mem.Allocator {
+pub fn arena(ctx: *Exchange) std.mem.Allocator {
     std.debug.assert(ctx.locals.arena != null);
     return ctx.locals.arena.?.allocator();
 }
 
 /// Serializes `value` as the JSON response body with status 200.
-pub fn sendJson(ctx: *Context, value: anytype) !void {
+pub fn sendJson(ctx: *Exchange, value: anytype) !void {
     const json = std.json.Stringify.valueAlloc(arena(ctx), value, .{
         .escape_unicode = true,
         .emit_null_optional_fields = false,

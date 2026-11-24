@@ -1,7 +1,7 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const params = @import("../routes/params.zig");
-const Context = @import("../middle/context.zig").Context;
+const Exchange = @import("../middle/context.zig").Exchange;
 const Locals = @import("../middle/context.zig").Locals;
 const Item = @import("../data/item.zig").CollectionItem;
 const Collection = @import("../data/collection.zig").Collection;
@@ -9,9 +9,11 @@ const ItemRelation = @import("../data/item_relations.zig").ItemRelation;
 const ControllerError = @import("../routes/router-errors.zig").ControllerError;
 const request = @import("../middle/context.zig");
 
-pub fn onPostRelation(ctx: *Context) !void {
+pub fn onPostRelation(ctx: *Exchange) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
+    std.debug.assert(c.db != null);
+    std.debug.assert(c.user != null);
     const fromId = try params.paramAs(i64, ctx, "fromId");
     const toId = try params.paramAs(i64, ctx, "toId");
 
@@ -23,9 +25,11 @@ pub fn onPostRelation(ctx: *Context) !void {
     try request.sendJson(ctx, id);
 }
 
-pub fn onDeleteRelation(ctx: *Context) !void {
+pub fn onDeleteRelation(ctx: *Exchange) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
+    std.debug.assert(c.db != null);
+    std.debug.assert(c.user != null);
     const itemAId = try params.paramAs(i64, ctx, "itemAId");
     const itemBId = try params.paramAs(i64, ctx, "itemBId");
 

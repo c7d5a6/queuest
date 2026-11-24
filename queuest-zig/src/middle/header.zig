@@ -1,7 +1,7 @@
 const std = @import("std");
 const context = @import("context.zig");
 const Application = context.Application;
-const Context = context.Context;
+const Exchange = context.Exchange;
 
 const prod_origin: []const u8 = "https://queuest.c7d5a6.com";
 const dev_origin: []const u8 = "http://localhost:4200";
@@ -10,14 +10,14 @@ const dev_origin: []const u8 = "http://localhost:4200";
 /// Baz itself answers `OPTIONS` (with `Allow`) and 404/405 through global hooks.
 pub const middleware: Application.Middleware = .{ .before = before };
 
-fn before(ctx: *Context) !Application.Decision {
+fn before(ctx: *Exchange) !Application.Decision {
     try addHeaders(ctx);
     return .continue_request;
 }
 
 /// Also called from the error hook: Baz discards the draft response
 /// (headers included) when a handler fails.
-pub fn addHeaders(ctx: *Context) !void {
+pub fn addHeaders(ctx: *Exchange) !void {
     const origin = corsOrigin(ctx.request.header("origin"), ctx.shared.allow_localhost);
     std.debug.assert(origin.len > 0);
     try ctx.response.header("Access-Control-Allow-Origin", origin);

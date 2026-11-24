@@ -1,10 +1,10 @@
 const std = @import("std");
 const sqlite = @import("sqlite");
 const Db = sqlite.Db;
-const utils = @import("utils.zig");
-const Id = utils.Id;
-const getSolo = utils.getSolo;
-const getList = utils.getList;
+const query = @import("query.zig");
+const Id = query.Id;
+const getSolo = query.getSolo;
+const getList = query.getList;
 
 const table_name = "collection_tbl";
 

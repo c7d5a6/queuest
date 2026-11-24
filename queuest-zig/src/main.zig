@@ -71,7 +71,7 @@ const g = @import("services/graph.zig");
 
 test {
     _ = @import("services/collections.zig");
-    _ = @import("data/utils.zig");
+    _ = @import("data/query.zig");
     _ = @import("db/open.zig");
     _ = @import("db/migrate.zig");
     _ = @import("dev.zig");

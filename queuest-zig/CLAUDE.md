@@ -16,5 +16,5 @@ Zig backend of Queuest: baz (HTTP) + zig-sqlite, Firebase JWT auth.
 - `src/main.zig` wires shared state, baz app and routes.
 - `src/routes/` route table, param parsing, error to status mapping.
 - `src/middle/` baz hooks: `header` (global CORS), then per route `arena`, `auth`, `sqlite`, `user`.
-- `src/services/` handlers (`fn(ctx: *Context) !void`); `src/data/` SQL; `src/db/` open + migrations.
+- `src/services/` handlers (`fn(ctx: *Exchange) !void`); `src/data/` SQL; `src/db/` open + migrations.
 - `tests/sqlite/` data-layer tests against a copied seeded DB.

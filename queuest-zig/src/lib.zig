@@ -4,6 +4,6 @@ pub const User = @import("data/user.zig").User;
 pub const Collection = @import("data/collection.zig").Collection;
 pub const CollectionItem = @import("data/item.zig").CollectionItem;
 pub const ItemRelation = @import("data/item_relations.zig").ItemRelation;
-pub const Id = @import("data/utils.zig").Id;
+pub const Id = @import("data/query.zig").Id;
 pub const Graph = @import("services/graph.zig").Graph;
 pub const seed_sql = @embedFile("db/seed.sql");

@@ -1,8 +1,8 @@
 const std = @import("std");
 const sqlite = @import("sqlite");
 const Db = sqlite.Db;
-const utils = @import("utils.zig");
-const Id = utils.Id;
+const query = @import("query.zig");
+const Id = query.Id;
 const CollectionItem = @import("item.zig").CollectionItem;
 
 pub const ItemRelation = struct {
@@ -39,7 +39,7 @@ pub const ItemRelation = struct {
 
         var stmt = try db.prepareDynamic(sql);
         defer stmt.deinit();
-        return utils.collectAll(ItemRelation, &stmt, allocator, .{});
+        return query.collectAll(ItemRelation, &stmt, allocator, .{});
     }
 
     pub fn insertItemRelation(

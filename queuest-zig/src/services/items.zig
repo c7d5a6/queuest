@@ -3,7 +3,7 @@ const Allocator = std.mem.Allocator;
 const params = @import("../routes/params.zig");
 const Graph = @import("graph.zig").Graph;
 const gsize = @import("graph.zig").gsize;
-const Context = @import("../middle/context.zig").Context;
+const Exchange = @import("../middle/context.zig").Exchange;
 const Locals = @import("../middle/context.zig").Locals;
 const Item = @import("../data/item.zig").CollectionItem;
 const Collection = @import("../data/collection.zig").Collection;
@@ -26,9 +26,11 @@ fn toIt(item: Item) It {
     };
 }
 
-pub fn onGetItems(ctx: *Context) !void {
+pub fn onGetItems(ctx: *Exchange) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
+    std.debug.assert(c.db != null);
+    std.debug.assert(c.user != null);
     const collectionId = try params.paramAs(i64, ctx, "collectionId");
     const user = c.user orelse return error.InternalError;
     _ = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
@@ -60,9 +62,11 @@ pub fn onGetItems(ctx: *Context) !void {
     try request.sendJson(ctx, res);
 }
 
-pub fn onGetBestPair(ctx: *Context) !void {
+pub fn onGetBestPair(ctx: *Exchange) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
+    std.debug.assert(c.db != null);
+    std.debug.assert(c.user != null);
     const collectionId = try params.paramAs(i64, ctx, "collectionId");
     const id = try params.paramAs(i64, ctx, "collectionItemId");
     const strict = try params.paramAs(bool, ctx, "strict");
@@ -141,9 +145,11 @@ fn setGraphEdges(a: Allocator, c: *Locals, items: []Item, graph: *Graph) !void {
     }
 }
 
-pub fn onPostItem(ctx: *Context) !void {
+pub fn onPostItem(ctx: *Exchange) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
+    std.debug.assert(c.db != null);
+    std.debug.assert(c.user != null);
     const body = ctx.request.body().contiguous() orelse return error.BadRequest;
 
     const collectionId = try params.paramAs(i64, ctx, "collectionId");
@@ -162,9 +168,11 @@ pub fn onPostItem(ctx: *Context) !void {
     try request.sendJson(ctx, id);
 }
 
-pub fn onDeleteItem(ctx: *Context) !void {
+pub fn onDeleteItem(ctx: *Exchange) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
+    std.debug.assert(c.db != null);
+    std.debug.assert(c.user != null);
     const collectionId = try params.paramAs(i64, ctx, "collectionId");
     const collectionItemId = try params.paramAs(i64, ctx, "collectionItemId");
     std.debug.assert(collectionId != 0);
@@ -198,7 +206,7 @@ fn toItRel(item: Item, pair: Item, relations: std.ArrayList(ItemRelation)) ItRel
     };
 }
 
-fn parseExcludeIds(a: Allocator, ctx: *Context) ControllerError![]const i64 {
+fn parseExcludeIds(a: Allocator, ctx: *Exchange) ControllerError![]const i64 {
     const query = ctx.request.query() catch return error.BadRequest;
     const raw = (query.firstRaw("exclude") orelse return &.{}).value_raw;
     var list = std.ArrayList(i64).initCapacity(a, 0) catch return error.InternalError;
@@ -322,9 +330,11 @@ fn getBestPair(
     return null;
 }
 
-pub fn onGetLeastCalibratedItem(ctx: *Context) !void {
+pub fn onGetLeastCalibratedItem(ctx: *Exchange) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
+    std.debug.assert(c.db != null);
+    std.debug.assert(c.user != null);
     const collectionId = try params.paramAs(i64, ctx, "collectionId");
     const user = c.user orelse return error.InternalError;
     _ = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch

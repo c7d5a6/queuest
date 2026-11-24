@@ -6,7 +6,7 @@ const Allocator = mem.Allocator;
 const firebase = @import("../auth/firebase.zig");
 const context = @import("context.zig");
 const Application = context.Application;
-const Context = context.Context;
+const Exchange = context.Exchange;
 
 const base64Url = std.base64.url_safe.decoderWithIgnore(" \t\r\n");
 
@@ -32,7 +32,7 @@ const bearer_prefix = "Bearer ";
 pub const middleware: Application.Middleware = .{ .before = before };
 
 /// Requires a valid Firebase bearer token; responds 401 otherwise.
-fn before(ctx: *Context) !Application.Decision {
+fn before(ctx: *Exchange) !Application.Decision {
     const header = ctx.request.header("authorization") orelse {
         try ctx.response.text(401, "Unauthorized");
         return .respond;

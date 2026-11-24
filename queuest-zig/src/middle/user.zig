@@ -2,12 +2,12 @@ const std = @import("std");
 const User = @import("../data/user.zig").User;
 const context = @import("context.zig");
 const Application = context.Application;
-const Context = context.Context;
+const Exchange = context.Exchange;
 
 /// Loads the user for the authenticated uid, creating it on first sight.
 pub const middleware: Application.Middleware = .{ .before = before };
 
-fn before(ctx: *Context) !Application.Decision {
+fn before(ctx: *Exchange) !Application.Decision {
     const db = ctx.locals.db orelse return error.InternalError;
     const uuid = ctx.locals.auth.uuid orelse return error.InternalError;
     if (try User.findByUID(db, uuid)) |user| {

@@ -1,7 +1,7 @@
 const std = @import("std");
 const context = @import("../middle/context.zig");
 const Application = context.Application;
-const Context = context.Context;
+const Exchange = context.Exchange;
 const header = @import("../middle/header.zig");
 const arena = @import("../middle/arena.zig");
 const auth = @import("../middle/auth.zig");
@@ -64,7 +64,7 @@ fn delete(
     try app.routeWith("DELETE", path, handler, authorized);
 }
 
-fn hello(ctx: *Context) !void {
+fn hello(ctx: *Exchange) !void {
     return ctx.response.bytes(
         200,
         "text/html",
@@ -72,7 +72,7 @@ fn hello(ctx: *Context) !void {
     );
 }
 
-fn onError(ctx: *Context, err: anyerror) !void {
+fn onError(ctx: *Exchange, err: anyerror) !void {
     std.log.info("request failed: {s}", .{@errorName(err)});
     try header.addHeaders(ctx);
     return ctx.response.text(httpStatus(err), @errorName(err));

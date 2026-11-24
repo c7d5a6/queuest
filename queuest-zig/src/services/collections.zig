@@ -1,32 +1,38 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const params = @import("../routes/params.zig");
-const Context = @import("../middle/context.zig").Context;
+const Exchange = @import("../middle/context.zig").Exchange;
 const Collection = @import("../data/collection.zig").Collection;
 const ControllerError = @import("../routes/router-errors.zig").ControllerError;
 const request = @import("../middle/context.zig");
 
-pub fn onGetCollections(ctx: *Context) !void {
+pub fn onGetCollections(ctx: *Exchange) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
+    std.debug.assert(c.db != null);
+    std.debug.assert(c.user != null);
     const user = c.user orelse return error.InternalError;
     const collections = Collection.findAllForUserId(c.db.?, a, user.id) catch
         return error.InternalError;
     try request.sendJson(ctx, collections.items);
 }
 
-pub fn onGetFavCollections(ctx: *Context) !void {
+pub fn onGetFavCollections(ctx: *Exchange) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
+    std.debug.assert(c.db != null);
+    std.debug.assert(c.user != null);
     const user = c.user orelse return error.InternalError;
     const collections = Collection.findAllFavForUserId(c.db.?, a, user.id) catch
         return error.InternalError;
     try request.sendJson(ctx, collections.items);
 }
 
-pub fn onGetCollection(ctx: *Context) !void {
+pub fn onGetCollection(ctx: *Exchange) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
+    std.debug.assert(c.db != null);
+    std.debug.assert(c.user != null);
     const collectionId = try params.paramAs(i64, ctx, "collectionId");
     const user = c.user orelse return error.InternalError;
     const collection = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
@@ -34,9 +40,11 @@ pub fn onGetCollection(ctx: *Context) !void {
     try request.sendJson(ctx, collection);
 }
 
-pub fn onPostCollection(ctx: *Context) !void {
+pub fn onPostCollection(ctx: *Exchange) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
+    std.debug.assert(c.db != null);
+    std.debug.assert(c.user != null);
     const body = ctx.request.body().contiguous() orelse return error.BadRequest;
 
     const CollectionCreate = struct { name: []const u8, favourite_yn: bool };
@@ -49,9 +57,11 @@ pub fn onPostCollection(ctx: *Context) !void {
     try request.sendJson(ctx, id);
 }
 
-pub fn onPostFavCollection(ctx: *Context) !void {
+pub fn onPostFavCollection(ctx: *Exchange) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
+    std.debug.assert(c.db != null);
+    std.debug.assert(c.user != null);
     const collectionId = try params.paramAs(i64, ctx, "collectionId");
     const user = c.user orelse return error.InternalError;
     std.debug.assert(collectionId != 0);
@@ -65,9 +75,11 @@ pub fn onPostFavCollection(ctx: *Context) !void {
     try ctx.response.text(200, "");
 }
 
-pub fn onPostVisitCollection(ctx: *Context) !void {
+pub fn onPostVisitCollection(ctx: *Exchange) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
+    std.debug.assert(c.db != null);
+    std.debug.assert(c.user != null);
     const collectionId = try params.paramAs(i64, ctx, "collectionId");
     const user = c.user orelse return error.InternalError;
     const collection = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
@@ -78,9 +90,11 @@ pub fn onPostVisitCollection(ctx: *Context) !void {
     try ctx.response.text(200, "");
 }
 
-pub fn onDeleteFavCollection(ctx: *Context) !void {
+pub fn onDeleteFavCollection(ctx: *Exchange) !void {
     const a = request.arena(ctx);
     const c = ctx.locals;
+    std.debug.assert(c.db != null);
+    std.debug.assert(c.user != null);
     const collectionId = try params.paramAs(i64, ctx, "collectionId");
     const user = c.user orelse return error.InternalError;
     std.debug.assert(collectionId != 0);
