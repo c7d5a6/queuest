@@ -1,45 +1,30 @@
 const std = @import("std");
-const zap = @import("zap");
-const contextLib = @import("context.zig");
-const Context = contextLib.Context;
+const context = @import("context.zig");
+const Application = context.Application;
+const Context = context.Context;
 
 const prod_origin: []const u8 = "https://queuest.c7d5a6.com";
 const dev_origin: []const u8 = "http://localhost:4200";
 
-const Handler = zap.Middleware.Handler(Context);
+/// Global middleware: CORS and cache headers on every response.
+/// Baz itself answers `OPTIONS` (with `Allow`) and 404/405 through global hooks.
+pub const middleware: Application.Middleware = .{ .before = before };
 
-pub const HeaderMiddleWare = struct {
-    handler: Handler,
-    allow_localhost: bool,
+fn before(ctx: *Context) !Application.Decision {
+    try addHeaders(ctx);
+    return .continue_request;
+}
 
-    const Self = @This();
-
-    pub fn init(other: ?*Handler, allow_localhost: bool) Self {
-        return .{
-            .handler = Handler.init(onRequest, other),
-            .allow_localhost = allow_localhost,
-        };
-    }
-
-    pub fn getHandler(self: *Self) *Handler {
-        return &self.handler;
-    }
-
-    pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) !bool {
-        const self: *Self = @fieldParentPtr("handler", handler);
-        const origin = corsOrigin(r.getHeader("origin"), self.allow_localhost);
-        std.debug.assert(origin.len > 0);
-        r.setHeader("Access-Control-Allow-Origin", origin) catch unreachable;
-        r.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PATCH, OPTIONS") catch unreachable;
-        r.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization") catch unreachable;
-        r.setHeader("Expires", "0") catch unreachable;
-        if (r.methodAsEnum() == .OPTIONS) {
-            r.sendBody("") catch unreachable;
-            return true;
-        }
-        return handler.handleOther(r, context);
-    }
-};
+/// Also called from the error hook: Baz discards the draft response
+/// (headers included) when a handler fails.
+pub fn addHeaders(ctx: *Context) !void {
+    const origin = corsOrigin(ctx.request.header("origin"), ctx.shared.allow_localhost);
+    std.debug.assert(origin.len > 0);
+    try ctx.response.header("Access-Control-Allow-Origin", origin);
+    try ctx.response.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PATCH, OPTIONS");
+    try ctx.response.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    try ctx.response.header("Expires", "0");
+}
 
 fn corsOrigin(request_origin: ?[]const u8, allow_localhost: bool) []const u8 {
     if (request_origin) |o| {

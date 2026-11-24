@@ -6,8 +6,8 @@ const builtin = @import("builtin");
 /// `DEV=1` / `true` / `on` enables it. `DEV=0` / `false` / `off` disables it.
 /// Unset follows the build: on in Debug, off in Release*.
 pub fn enabled(environ: *const std.process.Environ.Map) bool {
-    const v = environ.get("DEV") orelse return builtin.mode == .Debug;
-    if (v.len == 0) return builtin.mode == .Debug;
+    const v = environ.get("DEV") orelse return builtin.mode == .debug;
+    if (v.len == 0) return builtin.mode == .debug;
     if (isOn(v)) return true;
     if (isOff(v)) return false;
     std.log.err("DEV must be 1/true/on or 0/false/off, got {s}", .{v});
@@ -25,7 +25,7 @@ fn isOff(v: []const u8) bool {
 test "DEV unset follows build mode" {
     var map = std.process.Environ.Map.init(std.testing.allocator);
     defer map.deinit();
-    try std.testing.expectEqual(builtin.mode == .Debug, enabled(&map));
+    try std.testing.expectEqual(builtin.mode == .debug, enabled(&map));
 }
 
 test "DEV 1 and 0 override build mode" {

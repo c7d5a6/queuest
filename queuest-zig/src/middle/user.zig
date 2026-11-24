@@ -1,46 +1,20 @@
 const std = @import("std");
-const parseUnsigned = std.fmt.parseUnsigned;
-const mem = std.mem;
-const Allocator = mem.Allocator;
-const zap = @import("zap");
-const firebase = @import("../auth/firebase.zig");
 const User = @import("../data/user.zig").User;
-const contextLib = @import("context.zig");
-const Context = contextLib.Context;
-const Session = contextLib.Session;
-const Auth = contextLib.Auth;
+const context = @import("context.zig");
+const Application = context.Application;
+const Context = context.Context;
 
-const Handler = zap.Middleware.Handler(Context);
+/// Loads the user for the authenticated uid, creating it on first sight.
+pub const middleware: Application.Middleware = .{ .before = before };
 
-pub const UserMiddleware = struct {
-    handler: Handler,
-    allocator: Allocator,
-    const Self = @This();
-
-    pub fn init(other: ?*Handler, allocator: Allocator) Self {
-        return .{
-            .handler = Handler.init(onRequest, other),
-            .allocator = allocator,
-        };
+fn before(ctx: *Context) !Application.Decision {
+    const db = ctx.locals.db orelse return error.InternalError;
+    const uuid = ctx.locals.auth.uuid orelse return error.InternalError;
+    if (try User.findByUID(db, uuid)) |user| {
+        ctx.locals.user = user;
+        return .continue_request;
     }
-
-    pub fn getHandler(self: *Self) *Handler {
-        return &self.handler;
-    }
-
-    pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) !bool {
-        // const self: *Self = @fieldParentPtr("handler", handler);
-        std.debug.assert(context.db != null);
-        if (context.auth.?.uuid) |uuid| {
-            var user = User.findByUID(context.db.?, uuid) catch unreachable;
-            if (user) |u| {
-                context.user = u;
-            } else {
-                User.create(context.db.?, uuid, "email") catch unreachable;
-                user = User.findByUID(context.db.?, uuid) catch unreachable;
-                context.user = user orelse unreachable;
-            }
-        }
-        return handler.handleOther(r, context);
-    }
-};
+    try User.create(db, uuid, "email");
+    ctx.locals.user = try User.findByUID(db, uuid) orelse return error.InternalError;
+    return .continue_request;
+}

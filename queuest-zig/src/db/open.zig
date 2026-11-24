@@ -4,7 +4,7 @@ const sqlite = @import("sqlite");
 const default_path: [:0]const u8 = "queuest.db";
 const max_path_len: usize = 4095;
 
-var path_buf: [max_path_len:0]u8 = [_:0]u8{0} ** max_path_len;
+var path_buf: [max_path_len:0]u8 = @splat(0);
 
 pub fn pathFromEnv(environ: *const std.process.Environ.Map) [:0]const u8 {
     const env = environ.get("SQLITE_PATH") orelse return default_path;

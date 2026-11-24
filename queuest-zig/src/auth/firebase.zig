@@ -180,7 +180,7 @@ fn hashMessage(message: []const u8) [digets_bits]u8 {
     const p_len = 256 - (prefix.len + msg_hashed.len) - 3;
     const message_hashed: [256]u8 =
         [2]u8{ 0, 1 } ++
-        ([1]u8{0xff} ** p_len) ++
+        @as([p_len]u8, @splat(0xff)) ++
         [1]u8{0} ++
         prefix ++
         msg_hashed;

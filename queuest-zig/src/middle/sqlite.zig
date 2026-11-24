@@ -1,45 +1,34 @@
 const std = @import("std");
-const Allocator = std.mem.Allocator;
-const zap = @import("zap");
-const sqlite = @import("sqlite");
-const contextLib = @import("context.zig");
-const Context = contextLib.Context;
+const context = @import("context.zig");
+const Application = context.Application;
+const Context = context.Context;
 
-const Handler = zap.Middleware.Handler(Context);
-
-pub const SqliteMiddleware = struct {
-    handler: Handler,
-    allocator: Allocator,
-    db: *sqlite.Db,
-    const Self = @This();
-
-    pub fn init(other: ?*Handler, allocator: Allocator, db: *sqlite.Db) Self {
-        std.debug.assert(@intFromPtr(db.db) != 0);
-        return .{
-            .handler = Handler.init(onRequest, other),
-            .allocator = allocator,
-            .db = db,
-        };
-    }
-
-    pub fn getHandler(self: *Self) *Handler {
-        return &self.handler;
-    }
-
-    pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) !bool {
-        const self: *Self = @fieldParentPtr("handler", handler);
-        context.db = self.db;
-
-        try self.db.exec("BEGIN IMMEDIATE", .{}, .{});
-        const ok = handler.handleOther(r, context) catch |err| {
-            self.db.exec("ROLLBACK", .{}, .{}) catch {};
-            return err;
-        };
-        if (ok) {
-            try self.db.exec("COMMIT", .{}, .{});
-        } else {
-            self.db.exec("ROLLBACK", .{}, .{}) catch {};
-        }
-        return ok;
-    }
+/// One IMMEDIATE transaction per request: committed after a successful handler,
+/// rolled back on error or early response.
+pub const middleware: Application.Middleware = .{
+    .before = before,
+    .after = after,
+    .cleanup = cleanup,
 };
+
+fn before(ctx: *Context) !Application.Decision {
+    const db = ctx.shared.db;
+    try db.exec("BEGIN IMMEDIATE", .{}, .{});
+    ctx.locals.db = db;
+    ctx.locals.in_transaction = true;
+    return .continue_request;
+}
+
+fn after(ctx: *Context) !void {
+    std.debug.assert(ctx.locals.in_transaction);
+    try ctx.shared.db.exec("COMMIT", .{}, .{});
+    ctx.locals.in_transaction = false;
+}
+
+fn cleanup(ctx: *Context) void {
+    if (!ctx.locals.in_transaction) return;
+    ctx.shared.db.exec("ROLLBACK", .{}, .{}) catch |err| {
+        std.log.err("ROLLBACK failed: {}", .{err});
+    };
+    ctx.locals.in_transaction = false;
+}

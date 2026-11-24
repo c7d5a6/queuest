@@ -1,16 +1,19 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
-const zap = @import("zap");
-const Request = zap.Request;
+const params = @import("../routes/params.zig");
 const Context = @import("../middle/context.zig").Context;
+const Locals = @import("../middle/context.zig").Locals;
 const Item = @import("../data/item.zig").CollectionItem;
 const Collection = @import("../data/collection.zig").Collection;
 const ItemRelation = @import("../data/item_relations.zig").ItemRelation;
 const ControllerError = @import("../routes/router-errors.zig").ControllerError;
+const request = @import("../middle/context.zig");
 
-pub fn on_post_relation(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
-    const fromId = params.fromId;
-    const toId = params.toId;
+pub fn on_post_relation(ctx: *Context) !void {
+    const a = request.arena(ctx);
+    const c = ctx.locals;
+    const fromId = try params.paramAs(i64, ctx, "fromId");
+    const toId = try params.paramAs(i64, ctx, "toId");
 
     try assertItemsAccess(a, c, fromId, toId);
 
@@ -20,22 +23,23 @@ pub fn on_post_relation(a: Allocator, r: Request, c: *Context, params: anytype) 
         .escape_unicode = true,
         .emit_null_optional_fields = false,
     }) catch return error.InternalError;
-    r.setContentType(.JSON) catch return;
-    r.sendJson(json) catch return;
+    try ctx.response.jsonBytes(200, json);
 }
 
-pub fn on_delete_relation(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
-    const itemAId = params.itemAId;
-    const itemBId = params.itemBId;
+pub fn on_delete_relation(ctx: *Context) !void {
+    const a = request.arena(ctx);
+    const c = ctx.locals;
+    const itemAId = try params.paramAs(i64, ctx, "itemAId");
+    const itemBId = try params.paramAs(i64, ctx, "itemBId");
 
     try assertItemsAccess(a, c, itemAId, itemBId);
 
     ItemRelation.deleteItemRelation(c.db.?, itemAId, itemBId) catch return error.InternalError;
 
-    r.sendBody("") catch return;
+    try ctx.response.text(200, "");
 }
 
-fn assertItemsAccess(a: Allocator, c: *Context, fromId: i64, toId: i64) ControllerError!void {
+fn assertItemsAccess(a: Allocator, c: *Locals, fromId: i64, toId: i64) ControllerError!void {
     std.debug.assert(fromId != 0);
     std.debug.assert(toId != 0);
     const fromItem = (Item.findCollectionIdById(c.db.?, fromId) catch

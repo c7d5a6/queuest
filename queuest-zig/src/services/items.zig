@@ -1,14 +1,15 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
-const zap = @import("zap");
-const Request = zap.Request;
+const params = @import("../routes/params.zig");
 const Graph = @import("graph.zig").Graph;
 const gsize = @import("graph.zig").gsize;
 const Context = @import("../middle/context.zig").Context;
+const Locals = @import("../middle/context.zig").Locals;
 const Item = @import("../data/item.zig").CollectionItem;
 const Collection = @import("../data/collection.zig").Collection;
 const ItemRelation = @import("../data/item_relations.zig").ItemRelation;
 const ControllerError = @import("../routes/router-errors.zig").ControllerError;
+const request = @import("../middle/context.zig");
 
 const It = struct { id: i64, name: [:0]const u8 };
 const Rel = struct { from: i64, to: i64 };
@@ -25,8 +26,10 @@ fn toIt(item: Item) It {
     };
 }
 
-pub fn on_get_items(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
-    const collectionId = params.collectionId;
+pub fn on_get_items(ctx: *Context) !void {
+    const a = request.arena(ctx);
+    const c = ctx.locals;
+    const collectionId = try params.paramAs(i64, ctx, "collectionId");
     const user = c.user orelse return error.InternalError;
     _ = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
         return error.InternalError) orelse return error.NotFound;
@@ -53,15 +56,16 @@ pub fn on_get_items(a: Allocator, r: Request, c: *Context, params: anytype) Cont
     const Result = struct { id: i64, items: []It, calibrated: f64 };
     const res = Result{ .id = collectionId, .items = resultSorted.items, .calibrated = 0.5 };
     const json = std.json.Stringify.valueAlloc(a, res, .{ .escape_unicode = true, .emit_null_optional_fields = false, .whitespace = .minified }) catch return error.InternalError;
-    r.setContentType(.JSON) catch return;
-    r.sendJson(json) catch return;
+    try ctx.response.jsonBytes(200, json);
 }
 
-pub fn on_get_best_pair(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
-    const collectionId = params.collectionId;
-    const id = params.collectionItemId;
-    const strict: bool = params.strict;
-    const exclude = parseExcludeIds(a, r) catch return error.BadRequest;
+pub fn on_get_best_pair(ctx: *Context) !void {
+    const a = request.arena(ctx);
+    const c = ctx.locals;
+    const collectionId = try params.paramAs(i64, ctx, "collectionId");
+    const id = try params.paramAs(i64, ctx, "collectionItemId");
+    const strict = try params.paramAs(bool, ctx, "strict");
+    const exclude = parseExcludeIds(a, ctx) catch return error.BadRequest;
 
     const user = c.user orelse return error.InternalError;
     std.debug.assert(collectionId != 0);
@@ -90,8 +94,7 @@ pub fn on_get_best_pair(a: Allocator, r: Request, c: *Context, params: anytype) 
             .emit_null_optional_fields = false,
             .whitespace = .minified,
         }) catch return error.InternalError;
-        r.setContentType(.JSON) catch return;
-        r.sendJson(json) catch return;
+        try ctx.response.jsonBytes(200, json);
         return;
     }
 
@@ -112,11 +115,10 @@ pub fn on_get_best_pair(a: Allocator, r: Request, c: *Context, params: anytype) 
         .emit_null_optional_fields = false,
         .whitespace = .minified,
     }) catch return error.InternalError;
-    r.setContentType(.JSON) catch return;
-    r.sendJson(json) catch return;
+    try ctx.response.jsonBytes(200, json);
 }
 
-fn setGraphEdges(a: Allocator, c: *Context, items: []Item, graph: *Graph) !void {
+fn setGraphEdges(a: Allocator, c: *Locals, items: []Item, graph: *Graph) !void {
     const relations = ItemRelation.findAllForItemIds(c.db.?, a, items) catch return error.InternalError;
     for (relations.items) |rel| {
         const from_id = rel.collection_item_from_id;
@@ -143,27 +145,29 @@ fn setGraphEdges(a: Allocator, c: *Context, items: []Item, graph: *Graph) !void 
     }
 }
 
-pub fn on_post_item(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
-    r.parseBody() catch return error.InternalError;
-    const body = r.body orelse return error.InternalError;
+pub fn on_post_item(ctx: *Context) !void {
+    const a = request.arena(ctx);
+    const c = ctx.locals;
+    const body = ctx.request.body().contiguous() orelse return error.BadRequest;
 
-    const collectionId = params.collectionId;
+    const collectionId = try params.paramAs(i64, ctx, "collectionId");
     const user = c.user orelse return error.InternalError;
     _ = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
         return error.InternalError) orelse return error.NotFound;
 
     const CreateItem = struct { name: []const u8 };
-    const create = std.json.parseFromSlice(CreateItem, a, body, .{ .ignore_unknown_fields = true }) catch return error.InternalError;
+    const create = std.json.parseFromSlice(CreateItem, a, body, .{ .ignore_unknown_fields = true }) catch return error.BadRequest;
     const id = Item.insertItem(c.db.?, create.value.name, collectionId) catch return error.InternalError;
 
     const json = std.json.Stringify.valueAlloc(a, id, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch return error.InternalError;
-    r.setContentType(.JSON) catch return;
-    r.sendJson(json) catch return;
+    try ctx.response.jsonBytes(200, json);
 }
 
-pub fn on_delete_item(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
-    const collectionId = params.collectionId;
-    const collectionItemId = params.collectionItemId;
+pub fn on_delete_item(ctx: *Context) !void {
+    const a = request.arena(ctx);
+    const c = ctx.locals;
+    const collectionId = try params.paramAs(i64, ctx, "collectionId");
+    const collectionItemId = try params.paramAs(i64, ctx, "collectionItemId");
     std.debug.assert(collectionId != 0);
     std.debug.assert(collectionItemId != 0);
     const user = c.user orelse return error.InternalError;
@@ -177,7 +181,7 @@ pub fn on_delete_item(a: Allocator, r: Request, c: *Context, params: anytype) Co
 
     Item.deleteItem(c.db.?, collectionItemId) catch return error.InternalError;
 
-    r.sendBody("") catch return;
+    try ctx.response.text(200, "");
 }
 
 fn toItRel(item: Item, pair: Item, relations: std.ArrayList(ItemRelation)) ItRel {
@@ -195,8 +199,9 @@ fn toItRel(item: Item, pair: Item, relations: std.ArrayList(ItemRelation)) ItRel
     };
 }
 
-fn parseExcludeIds(a: Allocator, r: Request) ControllerError![]const i64 {
-    const raw = r.getParamSlice("exclude") orelse return &.{};
+fn parseExcludeIds(a: Allocator, ctx: *Context) ControllerError![]const i64 {
+    const query = ctx.request.query() catch return error.BadRequest;
+    const raw = (query.firstRaw("exclude") orelse return &.{}).value_raw;
     var list = std.ArrayList(i64).initCapacity(a, 0) catch return error.InternalError;
     var it = std.mem.tokenizeScalar(u8, raw, ',');
     while (it.next()) |s| {
@@ -318,8 +323,10 @@ fn getBestPair(
     return null;
 }
 
-pub fn on_get_least_calibrated_item(a: Allocator, r: Request, c: *Context, params: anytype) ControllerError!void {
-    const collectionId = params.collectionId;
+pub fn on_get_least_calibrated_item(ctx: *Context) !void {
+    const a = request.arena(ctx);
+    const c = ctx.locals;
+    const collectionId = try params.paramAs(i64, ctx, "collectionId");
     const user = c.user orelse return error.InternalError;
     _ = (Collection.findByIdAndUserId(c.db.?, a, collectionId, user.id) catch
         return error.InternalError) orelse return error.NotFound;
@@ -361,10 +368,9 @@ pub fn on_get_least_calibrated_item(a: Allocator, r: Request, c: *Context, param
     if (result) |res| {
         const it = toIt(res);
         const json = std.json.Stringify.valueAlloc(a, it, .{ .escape_unicode = true, .emit_null_optional_fields = false }) catch return error.InternalError;
-        r.setContentType(.JSON) catch return;
-        r.sendJson(json) catch return;
+        try ctx.response.jsonBytes(200, json);
     } else {
-        r.sendBody("") catch return;
+        try ctx.response.text(200, "");
     }
 }
 

@@ -1,235 +1,62 @@
 const std = @import("std");
-const zap = @import("zap");
-const Method = zap.http.Method;
-const Context = @import("../middle/context.zig").Context;
+const context = @import("../middle/context.zig");
+const Application = context.Application;
+const Context = context.Context;
+const header = @import("../middle/header.zig");
+const arena = @import("../middle/arena.zig");
+const auth = @import("../middle/auth.zig");
+const sqlite = @import("../middle/sqlite.zig");
+const user = @import("../middle/user.zig");
 const collections = @import("../services/collections.zig");
 const items = @import("../services/items.zig");
 const items_relations = @import("../services/items_relations.zig");
-const Regex = @import("matcher.zig").Regex;
-const router_errors = @import("router-errors.zig");
-const ControllerError = router_errors.ControllerError;
-const httpStatus = router_errors.httpStatus;
+const httpStatus = @import("router-errors.zig").httpStatus;
 
-pub const ControllerRequest = *const fn (std.mem.Allocator, zap.Request, *Context, anytype) ControllerError!void;
-pub const DispatchRoutes = *const fn (std.mem.Allocator, zap.Request, *Context) void;
+pub const on_error: Application.ErrorHandler = onError;
 
-var arena: std.heap.ArenaAllocator = undefined;
-
-const Access = enum {
-    Unauthorized,
-    Authorized,
+/// Hooks for every route that needs a signed-in user, in running order.
+const authorized: Application.RouteOptions = .{
+    .middleware = &.{
+        arena.middleware,
+        auth.middleware,
+        sqlite.middleware,
+        user.middleware,
+    },
 };
 
-pub const Path = struct {
-    path: [:0]const u8,
-    method: ControllerRequest,
-    httpMethod: Method,
-    access: Access,
-    methodType: type,
-};
-//
-// --- Paths of REST methods
-//
-const rt = [_]struct { Method, Access, [:0]const u8, type, ControllerRequest }{
-    .{ .GET, .Unauthorized, "/api/hello", struct {}, on_request_verbose },
+/// Register all routes. Baz picks the most specific path (`/collections/fav`
+/// beats `/collections/:id`) and answers 404/405, OPTIONS and HEAD itself.
+pub fn register(app: *Application) !void {
+    try app.route("GET", "/api/hello", hello);
     // -- Collections
-    .{ .GET, .Authorized, "/collections", struct {}, collections.on_get_collections },
-    .{ .GET, .Authorized, "/collections/fav", struct {}, collections.on_get_fav_collections },
-    .{ .GET, .Authorized, "/collections/{collectionId}", struct { collectionId: i64 }, collections.on_get_collection },
-    .{ .POST, .Authorized, "/collections", struct {}, collections.on_post_collection },
-    .{ .POST, .Authorized, "/collections/fav/{collectionId}", struct { collectionId: i64 }, collections.on_post_fav_collection },
-    .{ .POST, .Authorized, "/collections/visit/{collectionId}", struct { collectionId: i64 }, collections.on_post_visit_collection },
-    .{ .DELETE, .Authorized, "/collections/fav/{collectionId}", struct { collectionId: i64 }, collections.on_delete_fav_collection },
+    try app.routeWith("GET", "/collections", collections.on_get_collections, authorized);
+    try app.routeWith("GET", "/collections/fav", collections.on_get_fav_collections, authorized);
+    try app.routeWith("GET", "/collections/:collectionId", collections.on_get_collection, authorized);
+    try app.routeWith("POST", "/collections", collections.on_post_collection, authorized);
+    try app.routeWith("POST", "/collections/fav/:collectionId", collections.on_post_fav_collection, authorized);
+    try app.routeWith("POST", "/collections/visit/:collectionId", collections.on_post_visit_collection, authorized);
+    try app.routeWith("DELETE", "/collections/fav/:collectionId", collections.on_delete_fav_collection, authorized);
     // -- Items
-    .{ .GET, .Authorized, "/collections/{collectionId}/items", struct { collectionId: i64 }, items.on_get_items },
-    .{ .GET, .Authorized, "/collections/{collectionId}/items/least-calibrated", struct { collectionId: i64 }, items.on_get_least_calibrated_item },
-    .{ .GET, .Authorized, "/collections/{collectionId}/items/{collectionItemId}/bestpair/{strict}", struct { collectionId: i64, collectionItemId: i64, strict: bool }, items.on_get_best_pair },
-    .{ .POST, .Authorized, "/collections/{collectionId}/items", struct { collectionId: i64 }, items.on_post_item },
-    .{ .DELETE, .Authorized, "/collections/{collectionId}/items/{collectionItemId}", struct { collectionId: i64, collectionItemId: i64 }, items.on_delete_item },
+    try app.routeWith("GET", "/collections/:collectionId/items", items.on_get_items, authorized);
+    try app.routeWith("GET", "/collections/:collectionId/items/least-calibrated", items.on_get_least_calibrated_item, authorized);
+    try app.routeWith("GET", "/collections/:collectionId/items/:collectionItemId/bestpair/:strict", items.on_get_best_pair, authorized);
+    try app.routeWith("POST", "/collections/:collectionId/items", items.on_post_item, authorized);
+    try app.routeWith("DELETE", "/collections/:collectionId/items/:collectionItemId", items.on_delete_item, authorized);
     // -- ItemsRelation
-    .{ .POST, .Authorized, "/relations/{fromId}/{toId}", struct { fromId: i64, toId: i64 }, items_relations.on_post_relation },
-    .{ .DELETE, .Authorized, "/relations/{itemAId}/{itemBId}", struct { itemAId: i64, itemBId: i64 }, items_relations.on_delete_relation },
-};
-const routes: [rt.len]Path = init_rts: {
-    var initial: [rt.len]Path = undefined;
-    for (&initial, 0..) |*pt, i| {
-        pt.* = Path{
-            .httpMethod = rt[i][0],
-            .access = rt[i][1],
-            .path = rt[i][2],
-            .methodType = rt[i][3],
-            .method = rt[i][4],
-        };
-    }
-    break :init_rts initial;
-};
-var routesMatcher: []Regex = undefined;
-
-//
-// --- Setup
-//
-pub fn setup_routes(a: std.mem.Allocator) !void {
-    arena = std.heap.ArenaAllocator.init(a);
-    routesMatcher = arena.allocator().alloc(Regex, rt.len) catch unreachable;
-    {
-        var arena_tmp = std.heap.ArenaAllocator.init(a);
-        defer arena_tmp.deinit();
-        inline for (0..rt.len) |i| {
-            const pathPattern = getPathPattern(arena_tmp.allocator(), rt[i][2]);
-            const regex: Regex = Regex.init(pathPattern) catch unreachable;
-            routesMatcher[i] = regex;
-        }
-    }
+    try app.routeWith("POST", "/relations/:fromId/:toId", items_relations.on_post_relation, authorized);
+    try app.routeWith("DELETE", "/relations/:itemAId/:itemBId", items_relations.on_delete_relation, authorized);
 }
 
-pub fn deinit() void {
-    for (routesMatcher) |route| {
-        route.deinit();
-    }
-    arena.deinit();
+fn hello(ctx: *Context) !void {
+    return ctx.response.bytes(200, "text/html", "<html><body><h1>Hello from Baz!!!</h1></body></html>");
 }
 
-const regStart = "^";
-const paramRx = "([^/?]+)";
-const urlEnd = "(\\?[^&?=]+=[^&?=]+(&[^&?=]+=[^&?=]+)*)?$";
-
-fn getPathPattern(a: std.mem.Allocator, path: [:0]const u8) [:0]u8 {
-    var urlReg = a.alloc(u8, 1024 + path.len) catch unreachable;
-    var start: usize = 0;
-
-    var end: usize = regStart.len;
-    @memcpy(urlReg[start..end], regStart);
-    start = end;
-
-    var startPath: usize = 0;
-    while (std.mem.indexOfScalarPos(u8, path[0..], startPath, '{')) |pos| {
-        const endPath = std.mem.indexOfScalarPos(u8, path[0..], pos, '}') orelse unreachable;
-        end = end + pos - startPath;
-        @memcpy(urlReg[start..end], path[startPath..pos]);
-        startPath = endPath + 1;
-        start = end;
-
-        end = end + paramRx.len;
-        @memcpy(urlReg[start..end], paramRx);
-        start = end;
-    }
-
-    end = end + path.len - startPath;
-    @memcpy(urlReg[start..end], path[startPath..]);
-    start = end;
-
-    end = end + urlEnd.len;
-    @memcpy(urlReg[start..end], urlEnd);
-
-    urlReg[end] = 0;
-    return urlReg[0..end :0];
+fn onError(ctx: *Context, err: anyerror) !void {
+    std.log.info("request failed: {s}", .{@errorName(err)});
+    try header.addHeaders(ctx);
+    return ctx.response.text(httpStatus(err), @errorName(err));
 }
 
-fn getRouteParams(comptime T: type, comptime path: []const u8, url: []const u8) T {
-    const params_type_info = @typeInfo(T);
-    if (params_type_info != .@"struct") {
-        @compileError("expected tuple or struct argument, found " ++ @typeName(T));
-    }
-    var result: T = undefined;
-    comptime var start = 0;
-    comptime var i = 0;
-    var valueStart: usize = 0;
-    inline while (comptime std.mem.indexOfScalarPos(u8, path[0..], start, '{')) |pos| : (i += 1) {
-        valueStart = valueStart + pos - start;
-        const end = comptime std.mem.indexOfScalarPos(u8, path[0..], pos, '}') orelse unreachable;
-        const valueEnd = std.mem.indexOfScalarPos(u8, url[0..], valueStart, '/') orelse url.len;
-        const paramName = path[pos + 1 .. end];
-        const paramValue = url[valueStart..valueEnd];
-        switch (@FieldType(T, paramName)) {
-            i64 => {
-                std.log.debug("parse int param value: {s}", .{paramValue});
-                const value = std.fmt.parseInt(i64, paramValue, 10) catch unreachable;
-                @field(result, paramName) = value;
-            },
-            bool => {
-                std.log.debug("parse bool param value: {s}", .{paramValue});
-
-                if (paramValue.len == 5 and std.mem.eql(u8, paramValue, "false")) {
-                    @field(result, paramName) = false;
-                    break;
-                }
-                if (paramValue.len == 4 and std.mem.eql(u8, paramValue, "true")) {
-                    @field(result, paramName) = true;
-                    break;
-                }
-                unreachable;
-            },
-            else => unreachable,
-        }
-        start = end;
-        valueStart = valueEnd - 1;
-    }
-
-    return result;
+test {
+    _ = @import("params.zig");
 }
-
-fn on_request_verbose(a: std.mem.Allocator, r: zap.Request, c: *Context, params: anytype) ControllerError!void {
-    _ = c;
-    _ = params;
-    _ = a;
-    r.sendBody("<html><body><h1>Hello from ZAP!!!</h1></body></html>") catch return;
-}
-
-pub fn dispatch_routes(a: std.mem.Allocator, r: zap.Request, c: *Context) void {
-    // dispatch
-    const httpMethod = r.methodAsEnum();
-    if (r.path) |path| {
-        inline for (routes, 0..) |route, i| {
-            if (httpMethod == route.httpMethod and routesMatcher[i].matches(a, path) catch false) {
-                if (route.access == .Authorized and (c.auth == null or !c.auth.?.authenticated)) {
-                    r.sendError(error.Error, null, 401);
-                    return;
-                }
-                const params = getRouteParams(route.methodType, route.path, path);
-                std.log.info("method: {any}, params: {any}\n", .{ httpMethod, params });
-                route.method(a, r, c, params) catch |err| {
-                    r.sendError(err, null, httpStatus(err));
-                };
-                return;
-            }
-        }
-    }
-    r.sendError(error.Error, null, 404);
-}
-
-const expect = std.testing.expect;
-
-test "create and match path" {
-    var gpa = std.heap.DebugAllocator(.{
-        .thread_safe = true,
-    }){};
-    const allocator = gpa.allocator();
-
-    const pathStr = "/api/hello/{id}/fav/{favid}";
-    const pathPattern = getPathPattern(allocator, pathStr);
-    const regex: Regex = Regex.init(pathPattern) catch unreachable;
-    defer regex.deinit();
-    const pathIn = [_]u8{ '/', 'a', 'p', 'i', '/', 'h', 'e', 'l', 'l', 'o', '/', '1', '/', 'f', 'a', 'v', '/', '5', '0', '/' };
-    const t = try regex.matches(std.heap.page_allocator, pathIn[0..19]);
-    const f = try regex.matches(std.heap.page_allocator, pathIn[0..]);
-    try expect(t);
-    try expect(!f);
-}
-
-test "test" {
-    const path = "/api/hello/{id}/fav/{favId}/{i}";
-    const paramType = struct { id: i64, favId: i64, i: i64 };
-
-    const param = getRouteParams(paramType, path, "/api/hello/12/fav/5/1");
-
-    try expect(param.id == 12);
-    try expect(param.favId == 5);
-    try expect(param.i == 1);
-}
-
-fn testApiFn(r: zap.Request, c: *Context) void {
-    _ = r;
-    _ = c;
-}
-
-// test "check"

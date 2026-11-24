@@ -3,14 +3,11 @@ const parseUnsigned = std.fmt.parseUnsigned;
 const json = std.json;
 const mem = std.mem;
 const Allocator = mem.Allocator;
-const zap = @import("zap");
 const firebase = @import("../auth/firebase.zig");
-const contextLib = @import("context.zig");
-const Context = contextLib.Context;
-const Session = contextLib.Session;
-const Auth = contextLib.Auth;
+const context = @import("context.zig");
+const Application = context.Application;
+const Context = context.Context;
 
-const Handler = zap.Middleware.Handler(Context);
 const base64Url = std.base64.url_safe.decoderWithIgnore(" \t\r\n");
 
 const AuthError = error{
@@ -30,54 +27,30 @@ const AuthError = error{
 
 const log = std.log.scoped(.auth);
 
-pub const JWTMiddleware = struct {
-    handler: Handler,
-    allocator: Allocator,
+const bearer_prefix = "Bearer ";
 
-    const Self = @This();
+pub const middleware: Application.Middleware = .{ .before = before };
 
-    pub fn init(other: ?*Handler, allocator: Allocator) Self {
-        return .{
-            .handler = Handler.init(onRequest, other),
-            .allocator = allocator,
-        };
-    }
-
-    pub fn getHandler(self: *Self) *Handler {
-        return &self.handler;
-    }
-
-    pub fn onRequest(handler: *Handler, r: zap.Request, context: *Context) !bool {
-        const self: *Self = @fieldParentPtr("handler", handler);
-        var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit();
-        const authHeader = zap.Auth.extractAuthHeader(.Bearer, &r);
-        if (authHeader != null) {
-            const allocator = arena.allocator();
-            const sub = parseJWT(allocator, contextLib.SharedAllocator.getIo(), authHeader.?) catch |err| {
-                log.err("JWT rejected: {}", .{err});
-                r.sendError(err, if (@errorReturnTrace()) |t| t.* else null, 401);
-                return false;
-            };
-            context.auth = Auth{
-                .authenticated = true,
-                .uuid = sub,
-            };
-            log.debug("Sub: {s}\n", .{sub});
-            log.debug("uuid: {s}\n", .{context.auth.?.uuid.?});
-        } else {
-            context.auth = Auth{
-                .authenticated = false,
-            };
-        }
-
-        return handler.handleOther(r, context);
-    }
-};
+/// Requires a valid Firebase bearer token; responds 401 otherwise.
+fn before(ctx: *Context) !Application.Decision {
+    const header = ctx.request.header("authorization") orelse {
+        try ctx.response.text(401, "Unauthorized");
+        return .respond;
+    };
+    const a = context.arena(ctx);
+    const sub = parseJWT(a, ctx.shared.io, header) catch |err| {
+        log.err("JWT rejected: {}", .{err});
+        try ctx.response.text(401, @errorName(err));
+        return .respond;
+    };
+    ctx.locals.auth = .{ .authenticated = true, .uuid = sub };
+    log.debug("Sub: {s}\n", .{sub});
+    return .continue_request;
+}
 
 fn parseJWT(allocator: Allocator, io: std.Io, jwt: []const u8) AuthError![]const u8 {
     log.debug("JWT Middleware: set user in context {?s}\n\n", .{jwt});
-    const bearer = zap.Auth.AuthScheme.Bearer.str();
+    const bearer = bearer_prefix;
     const jwt_start = bearer.len + (mem.indexOfPos(u8, jwt, 0, bearer) orelse
         return error.ErrorParsingHeader);
     const jwt_body_start = mem.indexOfPos(u8, jwt, jwt_start, ".") orelse

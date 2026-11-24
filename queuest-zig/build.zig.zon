@@ -5,7 +5,7 @@
     .version = "0.0.0",
 
     .fingerprint = 0x4384a559ece59c00,
-    .minimum_zig_version = "0.16.0",
+    .minimum_zig_version = "0.17.0",
 
     // This field is optional.
     // Each dependency must either provide a `url` and `hash`, or a `path`.
@@ -13,13 +13,13 @@
     // Once all dependencies are fetched, `zig build` no longer requires
     // internet connectivity.
     .dependencies = .{
-        .zap = .{
-            .url = "git+https://github.com/zigzap/zap#f6099ecec496c7ec623c5913baa5b6b5da2e883d",
-            .hash = "zap-0.10.6-GoeB8y-IJAD3m9zkAkeTQalzU1NuvO072u8hA78Irdp8",
+        .baz = .{
+            .url = "git+https://github.com/technologylab-ai/baz#8c8a3edf5363492d6cf7aaba5c535920cd9b5e7e",
+            .hash = "baz-0.1.0-q-QL0xG3ZwAOzcf76C5Brs4SBzn_ktG0j2xBdYU_xTmU",
         },
         .sqlite = .{
-            .url = "git+https://github.com/vrischmann/zig-sqlite#946d77c526258760b52836187af32d1a192c5d36",
-            .hash = "sqlite-3.48.0-F2R_azCQDgBGaWDIX4g2vxKpuqzYEQOOfAeJGMNocPu0",
+            .url = "git+https://github.com/vrischmann/zig-sqlite#1eba1e490629897e71dc3a23aad6fe9a319e0c82",
+            .hash = "sqlite-3.48.0-F2R_azOoDgB4eu7BHE5c8WtBnKufFQnhD1xqD5TgTxg4",
         },
     },
     .paths = .{
